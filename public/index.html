@@ -118,7 +118,6 @@ background: var(--s1);
 grid-column: 2;
 grid-row: 1;
 }
-.fab { display: none !important; }
 .sidebar-header { display: flex !important; }
 .screen-pad { padding: 28px 32px; }
 .pc-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; padding: 0 32px 32px; }
@@ -126,27 +125,16 @@ grid-row: 1;
 .stats-row { padding: 24px 32px 20px; }
 .topbar { padding: 0 32px; }
 .scroll-inner { max-width: 860px; margin: 0 auto; }
-.desktop-add-btn {
+/* FAB on desktop - right aligned, fixed width */
+.fab {
 position: fixed !important;
 bottom: 32px;
 right: 32px;
-width: 56px;
-height: 56px;
-border-radius: 50%;
-background: var(--green);
-color: #fff;
-display: flex !important;
-align-items: center;
-justify-content: center;
-font-size: 20px;
-cursor: pointer;
-box-shadow: 0 4px 14px rgba(16,185,129,.3);
-transition: all .18s;
-z-index: 150;
-border: none;
+width: auto !important;
+min-width: 140px;
+margin: 0 !important;
+padding: 13px 20px !important;
 }
-.desktop-add-btn:hover { background: #0ea572; transform: scale(1.05); }
-.desktop-add-btn:active { transform: scale(.95); }
 .desktop-only { display: flex !important; }
 }
 .desktop-only { display: none !important; }
@@ -646,7 +634,6 @@ GameZone
 </div>
 </div>
 <button class="fab" onclick="openSheet('sheet-addpc')"><i class="fa-solid fa-plus"></i> Add PC</button>
-<button class="desktop-only desktop-add-btn" onclick="openSheet('sheet-addpc')" title="Add PC"><i class="fa-solid fa-plus"></i></button>
 </div>
 <!-- ════════════════════ PC CONTROL ════════════════════ -->
 <div class="screen" id="screen-pccontrol">
