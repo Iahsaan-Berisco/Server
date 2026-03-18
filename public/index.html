@@ -51,14 +51,12 @@ GLOBAL TEXT SELECTION (DISABLED BY DEFAULT)
 -ms-user-select: none;
 user-select: none;
 }
-/* Enable selection only for group ID */
 .mono-block, #s-id {
 -webkit-user-select: text !important;
 -moz-user-select: text !important;
 -ms-user-select: text !important;
 user-select: text !important;
 }
-/* Also enable for form inputs */
 input, textarea {
 -webkit-user-select: text !important;
 -moz-user-select: text !important;
@@ -133,8 +131,8 @@ grid-row: 1;
 .action-grid { padding: 0 32px; }
 .stats-row { padding: 24px 32px 20px; }
 .topbar { padding: 0 32px; }
+.main-header { padding: 0 32px !important; }
 .scroll-inner { max-width: 860px; margin: 0 auto; }
-/* Desktop floating add button - ONLY visible on desktop */
 .desktop-add-btn {
 position: fixed !important;
 bottom: 32px;
@@ -156,9 +154,11 @@ border: none;
 }
 .desktop-add-btn:hover { background: #0ea572; transform: scale(1.05); }
 .desktop-add-btn:active { transform: scale(.95); }
+.desktop-add-btn.hidden { display: none !important; }
 .desktop-only { display: flex !important; }
+.sidebar-bottom-btn { position: relative !important; border-top: none !important; background: transparent !important; padding: 16px 20px !important; }
 }
-
+.desktop-only { display: none !important; }
 /* ──────────────────────────────────────────
 TOPBAR
 ────────────────────────────────────────── */
@@ -187,6 +187,63 @@ background: none; border: none; cursor: pointer; color: var(--t3);
 border-radius: var(--r); font-size: 16px; transition: color .15s, background .15s;
 }
 .icon-btn:hover { color: var(--t1); background: var(--s3); }
+/* ──────────────────────────────────────────
+MAIN CONTENT HEADER
+────────────────────────────────────────── */
+.main-header {
+height: var(--nav-h);
+padding: 0 18px;
+display: flex; 
+align-items: center; 
+justify-content: space-between;
+background: var(--s1); 
+border-bottom: 1px solid var(--bd);
+flex-shrink: 0; 
+position: sticky; 
+top: 0; 
+z-index: 50;
+}
+.profile-section {
+display: flex; 
+align-items: center; 
+gap: 10px;
+}
+.profile-avatar {
+width: 32px; 
+height: 32px; 
+border-radius: 50%; 
+background: var(--green-bg); 
+border: 1px solid var(--green-bd);
+display: flex; 
+align-items: center; 
+justify-content: center;
+font-size: 13px; 
+font-weight: 800; 
+color: var(--green);
+}
+.profile-name {
+font-size: 13px; 
+font-weight: 600; 
+color: var(--t1);
+}
+.toggle-btn {
+display: flex; 
+align-items: center; 
+gap: 6px;
+padding: 6px 10px; 
+border-radius: var(--r);
+background: var(--s3); 
+border: none; 
+color: var(--t2);
+font-size: 11px; 
+font-weight: 600; 
+cursor: pointer;
+font-family: var(--sans); 
+transition: all .15s;
+}
+.toggle-btn:hover { background: var(--s4); color: var(--t1); }
+.toggle-btn i { font-size: 10px; }
+.fab.hidden { display: none !important; }
 /* ──────────────────────────────────────────
 SCROLL AREA
 ────────────────────────────────────────── */
@@ -231,8 +288,6 @@ font-family: var(--sans); transition: all .18s;
 display: flex; align-items: center; justify-content: center; gap: 5px;
 }
 .tab-btn.active { background: var(--s2); color: var(--t1); }
-    /* Mobile: hide desktop-only elements */
-.desktop-only { display: none !important; }
 /* ──────────────────────────────────────────
 FORM FIELDS
 ────────────────────────────────────────── */
@@ -271,9 +326,12 @@ SIDEBAR (GROUPS)
 ────────────────────────────────────────── */
 .sidebar-header {
 display: none;
-align-items: center; justify-content: space-between;
-padding: 0 20px; height: var(--nav-h);
-border-bottom: 1px solid var(--bd); flex-shrink: 0;
+align-items: center; 
+justify-content: flex-start;
+padding: 0 20px; 
+height: var(--nav-h);
+border-bottom: 1px solid var(--bd); 
+flex-shrink: 0;
 }
 .sidebar-brand {
 display: flex; align-items: center; gap: 10px;
@@ -303,6 +361,16 @@ font-size: 14px; color: var(--t2); transition: background .15s;
 .group-item-name { font-size: 14px; font-weight: 600; }
 .group-item-sub { font-size: 11px; color: var(--t2); margin-top: 1px; }
 .group-item-arrow { color: var(--t3); font-size: 11px; }
+/* Sidebar bottom button for New Group */
+.sidebar-bottom-btn {
+position: absolute;
+bottom: 0;
+left: 0;
+right: 0;
+padding: 16px;
+background: var(--s1);
+border-top: 1px solid var(--bd);
+}
 /* ──────────────────────────────────────────
 DASHBOARD STATS
 ────────────────────────────────────────── */
@@ -625,10 +693,6 @@ animation: _spin .6s linear infinite; display: inline-block;
 <div class="sidebar-brand-icon"><i class="fa-solid fa-gamepad"></i></div>
 GameZone
 </div>
-<div class="sidebar-actions">
-<button class="icon-btn" onclick="openSheet('sheet-newgroup')" title="New Group"><i class="fa-solid fa-plus"></i></button>
-<button class="icon-btn" onclick="doLogout()" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
-</div>
 </div>
 <div class="topbar mobile-topbar">
 <div class="topbar-title">Groups</div>
@@ -636,15 +700,24 @@ GameZone
 </div>
 <div class="scroll-area">
 <div class="screen-pad" id="groups-list"></div>
+<div class="sidebar-bottom-btn">
+<button class="btn btn-primary btn-full" onclick="openSheet('sheet-newgroup')">
+<i class="fa-solid fa-plus"></i> New Group
+</button>
 </div>
-<button class="fab" onclick="openSheet('sheet-newgroup')"><i class="fa-solid fa-plus"></i> New Group</button>
+</div>
 </div>
 <!-- ════════════════════ DASHBOARD ════════════════════ -->
 <div class="screen" id="screen-dashboard">
-<div class="topbar">
-<button class="back-btn" onclick="goBack('groups')"><i class="fa-solid fa-chevron-left"></i> Back</button>
+<div class="main-header">
 <div class="topbar-title" id="dash-title">Dashboard</div>
-<button class="icon-btn" onclick="showScreen('settings')"><i class="fa-solid fa-gear"></i></button>
+<div class="profile-section">
+<button class="toggle-btn" onclick="toggleFabVisibility()" id="fab-toggle">
+<i class="fa-solid fa-eye"></i> <span id="fab-toggle-text">Hide</span>
+</button>
+<div class="profile-avatar" id="profile-avatar">U</div>
+<div class="profile-name" id="profile-name">User</div>
+</div>
 </div>
 <div class="scroll-area">
 <div class="scroll-inner">
@@ -661,7 +734,7 @@ GameZone
 </div>
 <!-- ════════════════════ PC CONTROL ════════════════════ -->
 <div class="screen" id="screen-pccontrol">
-<div class="topbar">
+<div class="main-header">
 <button class="back-btn" onclick="goBack('dashboard')"><i class="fa-solid fa-chevron-left"></i></button>
 <div class="topbar-title" id="pc-title">PC</div>
 <div id="pc-pill" class="status-pill"></div>
@@ -696,7 +769,7 @@ GameZone
 </div>
 <!-- ════════════════════ SETTINGS ════════════════════ -->
 <div class="screen" id="screen-settings">
-<div class="topbar">
+<div class="main-header">
 <button class="back-btn" onclick="goBack('dashboard')"><i class="fa-solid fa-chevron-left"></i></button>
 <div class="topbar-title">Settings</div>
 <div style="width:34px"></div>
@@ -872,12 +945,33 @@ const state = { token:null, user:null, serverUrl:null, groups:[], activeGroup:nu
 const _pay = {};
 let currentScreen = 'login';
 let _toastT;
+let fabVisible = true;
 
 window.addEventListener('load', () => {
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 state.token = localStorage.getItem('gz_token');
 state.user = JSON.parse(localStorage.getItem('gz_user') || 'null');
 state.serverUrl = localStorage.getItem('gz_server') || '';
+
+// Load profile display
+if (state.user && state.user.username) {
+const initial = state.user.username.charAt(0).toUpperCase();
+document.getElementById('profile-avatar').textContent = initial;
+document.getElementById('profile-name').textContent = state.user.username;
+}
+
+// Load FAB visibility preference
+const savedFabVisible = localStorage.getItem('gz_fab_visible');
+if (savedFabVisible !== null) {
+fabVisible = savedFabVisible === '1';
+if (!fabVisible) {
+const fabs = document.querySelectorAll('.fab, .desktop-add-btn');
+fabs.forEach(fab => fab.classList.add('hidden'));
+document.getElementById('fab-toggle-text').textContent = 'Show';
+document.getElementById('fab-toggle').innerHTML = '<i class="fa-solid fa-eye-slash"></i> <span id="fab-toggle-text">Show</span>';
+}
+}
+
 if (state.token && state.user) { showScreen('groups'); loadGroups(); }
 else { const s = localStorage.getItem('gz_server')||''; if(s) document.getElementById('login-server').value=s; }
 setInterval(() => {
@@ -888,27 +982,27 @@ if (currentScreen==='pccontrol') renderPCActions();
 
 const MAIN_SCREENS = ['screen-dashboard','screen-pccontrol','screen-settings'];
 function showScreen(name) {
-    const isDesktop = window.innerWidth >= 1024;
-    if (isDesktop) {
-        if (name === 'login') {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById('screen-login').classList.add('active');
-        } else if (name === 'groups') {
-            MAIN_SCREENS.forEach(id => document.getElementById(id).classList.remove('active'));
-            document.getElementById('screen-login').classList.remove('active');
-        } else {
-            MAIN_SCREENS.forEach(id => document.getElementById(id).classList.remove('active'));
-            document.getElementById('screen-login').classList.remove('active');
-            const el = document.getElementById('screen-' + name);
-            if (el) el.classList.add('active');
-        }
-    } else {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        const el = document.getElementById('screen-' + name);
-        if (el) el.classList.add('active');
-    }
-    currentScreen = name;
-    if (name === 'settings') { loadAdmins(); loadDeletePCList(); loadReorderPCList(); }
+const isDesktop = window.innerWidth >= 1024;
+if (isDesktop) {
+if (name === 'login') {
+document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+document.getElementById('screen-login').classList.add('active');
+} else if (name === 'groups') {
+MAIN_SCREENS.forEach(id => document.getElementById(id).classList.remove('active'));
+document.getElementById('screen-login').classList.remove('active');
+} else {
+MAIN_SCREENS.forEach(id => document.getElementById(id).classList.remove('active'));
+document.getElementById('screen-login').classList.remove('active');
+const el = document.getElementById('screen-' + name);
+if (el) el.classList.add('active');
+}
+} else {
+document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+const el = document.getElementById('screen-' + name);
+if (el) el.classList.add('active');
+}
+currentScreen = name;
+if (name === 'settings') { loadAdmins(); loadDeletePCList(); loadReorderPCList(); }
 }
 
 function goBack(to) { showScreen(to); }
@@ -922,6 +1016,20 @@ document.getElementById(id).classList.remove('open');
 document.getElementById('bg-' + id.replace('sheet-','')).classList.remove('open');
 }
 
+function toggleFabVisibility() {
+fabVisible = !fabVisible;
+const fabs = document.querySelectorAll('.fab, .desktop-add-btn');
+fabs.forEach(fab => {
+if (fabVisible) fab.classList.remove('hidden');
+else fab.classList.add('hidden');
+});
+document.getElementById('fab-toggle-text').textContent = fabVisible ? 'Hide' : 'Show';
+document.getElementById('fab-toggle').innerHTML = fabVisible 
+? '<i class="fa-solid fa-eye"></i> <span id="fab-toggle-text">Hide</span>'
+: '<i class="fa-solid fa-eye-slash"></i> <span id="fab-toggle-text">Show</span>';
+localStorage.setItem('gz_fab_visible', fabVisible ? '1' : '0');
+}
+
 async function api(method, path, body) {
 const res = await fetch(state.serverUrl+'/api'+path, {
 method,
@@ -930,7 +1038,7 @@ body: body ? JSON.stringify(body) : undefined
 });
 const contentType = res.headers.get('content-type');
 if (!contentType || !contentType.includes('application/json')) {
-    throw new Error('Server returned invalid response');
+throw new Error('Server returned invalid response');
 }
 const data = await res.json();
 if (!res.ok) throw new Error(data.error||'Request failed');
@@ -945,14 +1053,14 @@ document.getElementById('register-form').style.display = tab==='register'?'block
 }
 
 async function fetchWithTimeout(url, options, timeout = 10000) {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeout);
-    try {
-        const res = await fetch(url, { ...options, signal: controller.signal });
-        return res;
-    } finally {
-        clearTimeout(id);
-    }
+const controller = new AbortController();
+const id = setTimeout(() => controller.abort(), timeout);
+try {
+const res = await fetch(url, { ...options, signal: controller.signal });
+return res;
+} finally {
+clearTimeout(id);
+}
 }
 
 async function doLogin() {
@@ -965,17 +1073,17 @@ const btn = document.getElementById('login-btn');
 btn.disabled = true;
 document.getElementById('login-btn-text').innerHTML = '<span class="spin"></span>';
 try {
-    const res = await fetchWithTimeout(server+'/api/login', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({username,password})
-    }, 15000);
-    const d = await res.json();
-    if (d.error) throw new Error(d.error);
-    saveAuth(server,d.token,d.user); showScreen('groups'); loadGroups(); toast('Signed in','ok');
-} catch(e) { 
-    if (e.name === 'AbortError') toast('Connection timed out','err');
-    else toast(e.message||'Login failed','err'); 
+const res = await fetchWithTimeout(server+'/api/login', {
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({username,password})
+}, 15000);
+const d = await res.json();
+if (d.error) throw new Error(d.error);
+saveAuth(server,d.token,d.user); showScreen('groups'); loadGroups(); toast('Signed in','ok');
+} catch(e) {
+if (e.name === 'AbortError') toast('Connection timed out','err');
+else toast(e.message||'Login failed','err');
 }
 finally { btn.disabled=false; document.getElementById('login-btn-text').textContent='Sign In'; }
 }
@@ -990,17 +1098,17 @@ const btn = document.getElementById('reg-btn');
 btn.disabled = true;
 document.getElementById('reg-btn-text').innerHTML = '<span class="spin"></span>';
 try {
-    const res = await fetchWithTimeout(server+'/api/register', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({username,password})
-    }, 15000);
-    const d = await res.json();
-    if (d.error) throw new Error(d.error);
-    saveAuth(server,d.token,d.user); showScreen('groups'); loadGroups(); toast('Account created','ok');
-} catch(e) { 
-    if (e.name === 'AbortError') toast('Connection timed out','err');
-    else toast(e.message||'Registration failed','err'); 
+const res = await fetchWithTimeout(server+'/api/register', {
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({username,password})
+}, 15000);
+const d = await res.json();
+if (d.error) throw new Error(d.error);
+saveAuth(server,d.token,d.user); showScreen('groups'); loadGroups(); toast('Account created','ok');
+} catch(e) {
+if (e.name === 'AbortError') toast('Connection timed out','err');
+else toast(e.message||'Registration failed','err');
 }
 finally { btn.disabled=false; document.getElementById('reg-btn-text').textContent='Create Account'; }
 }
@@ -1010,7 +1118,14 @@ state.token=token; state.user=user; state.serverUrl=server;
 localStorage.setItem('gz_token',token);
 localStorage.setItem('gz_user',JSON.stringify(user));
 localStorage.setItem('gz_server',server);
+// Update profile display
+if (user && user.username) {
+const initial = user.username.charAt(0).toUpperCase();
+document.getElementById('profile-avatar').textContent = initial;
+document.getElementById('profile-name').textContent = user.username;
 }
+}
+
 function doLogout() {
 if (!confirm('Logout?')) return;
 state.token=null; state.user=null;
@@ -1023,6 +1138,7 @@ async function loadGroups() {
 try { state.groups = await api('GET','/groups'); renderGroups(); }
 catch(e) { toast('Failed to load groups','err'); }
 }
+
 function renderGroups() {
 const el = document.getElementById('groups-list');
 if (!state.groups.length) {
@@ -1039,6 +1155,7 @@ el.innerHTML = state.groups.map(g =>
 </div>`
 ).join('');
 }
+
 async function createGroup() {
 const name = document.getElementById('newgroup-name').value.trim();
 if (!name) { toast('Enter a name','err'); return; }
@@ -1052,6 +1169,7 @@ toast('Group created','ok');
 } catch(e) { toast(e.message,'err'); }
 finally { document.getElementById('newgroup-btn-text').textContent='Create'; }
 }
+
 function openGroup(id) {
 state.activeGroup = state.groups.find(g=>g.id===id);
 document.getElementById('dash-title').textContent = state.activeGroup.name;
@@ -1064,6 +1182,7 @@ async function loadPCs() {
 try { state.pcs = await api('GET','/groups/'+state.activeGroup.id+'/pcs'); renderPCs(); }
 catch(e) { toast('Failed to load PCs','err'); }
 }
+
 function renderPCs() {
 const now = Math.floor(Date.now()/1000);
 const online = state.pcs.filter(p=>p.is_online).length;
@@ -1102,6 +1221,7 @@ return `<div class="pc-card" onclick="openPC('${pc.id}')" style="--pc-color:${co
 </div>`;
 }).join('');
 }
+
 async function addPC() {
 const name = document.getElementById('addpc-name').value.trim();
 const password = document.getElementById('addpc-pass').value;
@@ -1140,9 +1260,9 @@ if (newIdx < 0 || newIdx >= sortedPcs.length) return;
 const [moved] = sortedPcs.splice(idx, 1);
 sortedPcs.splice(newIdx, 0, moved);
 sortedPcs.forEach((pc, i) => {
-    pc.order = i;
-    const originalPc = state.pcs.find(p => p.id === pc.id);
-    if (originalPc) originalPc.order = i;
+pc.order = i;
+const originalPc = state.pcs.find(p => p.id === pc.id);
+if (originalPc) originalPc.order = i;
 });
 loadReorderPCList();
 }
@@ -1153,17 +1273,17 @@ const orderData = sortedPcs.map((pc,idx)=>({pc_id:pc.id, order:idx}));
 document.getElementById('reorder-btn-text').innerHTML='<span class="spin"></span>';
 try {
 try {
-    await api('POST','/groups/'+state.activeGroup.id+'/pcs/reorder',{order:orderData});
+await api('POST','/groups/'+state.activeGroup.id+'/pcs/reorder',{order:orderData});
 } catch(e) {
-    console.log('Order saved locally (server endpoint not available)');
+console.log('Order saved locally (server endpoint not available)');
 }
 closeSheet('sheet-reorderpc');
 toast('PC order saved','ok');
 renderPCs();
-} catch(e) { 
-    closeSheet('sheet-reorderpc');
-    toast('Order saved locally','ok');
-    renderPCs();
+} catch(e) {
+closeSheet('sheet-reorderpc');
+toast('Order saved locally','ok');
+renderPCs();
 }
 finally { document.getElementById('reorder-btn-text').textContent='Save Order'; }
 }
@@ -1173,6 +1293,7 @@ state.activePc = state.pcs.find(p=>p.id===id);
 document.getElementById('pc-title').textContent = state.activePc.name;
 updateOnlinePill(); renderPCActions(); showScreen('pccontrol');
 }
+
 function updateOnlinePill() {
 const pc = state.activePc; if(!pc) return;
 const pill = document.getElementById('pc-pill');
@@ -1184,6 +1305,7 @@ pill.innerHTML = '<span class="dot" style="background:var(--t3)"></span> Offline
 pill.style.cssText = '';
 }
 }
+
 function renderPCActions() {
 const pc = state.activePc; if(!pc) return;
 const now = Math.floor(Date.now()/1000);
@@ -1224,6 +1346,7 @@ sessionArea.innerHTML = `<div class="section-head">Session Control</div>
 </div>`;
 }
 }
+
 function togglePay(status) {
 if (!state.activePc) return;
 const id = state.activePc.id;
@@ -1241,6 +1364,7 @@ updatePcField(state.activePc.id,'stopwatch_start',0);
 toast('Session started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 function startCustomSession() {
 const hrs=parseInt(document.getElementById('custom-hrs').value)||0;
 const mins=parseInt(document.getElementById('custom-mins').value)||0;
@@ -1250,6 +1374,7 @@ document.getElementById('custom-hrs').value='';
 document.getElementById('custom-mins').value='';
 startSession(total);
 }
+
 async function startStopwatch() {
 closeSheet('sheet-startsession');
 try {
@@ -1259,6 +1384,7 @@ updatePcField(state.activePc.id,'session_end',0);
 toast('Free timer started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 async function addTime(mins) {
 closeSheet('sheet-addtime');
 try {
@@ -1266,13 +1392,14 @@ if (state.activePc.stopwatch_start>0) {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'session_end',r.session_end);
 updatePcField(state.activePc.id,'stopwatch_start',0);
-toast('Free timer \u2192 '+mins+'m','ok'); return;
+toast('Free timer → '+mins+'m','ok'); return;
 }
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'session_end',r.session_end);
 toast('+'+mins+'m added','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 function addCustomTime() {
 const hrs=parseInt(document.getElementById('add-hrs').value)||0;
 const mins=parseInt(document.getElementById('add-mins').value)||0;
@@ -1282,6 +1409,7 @@ document.getElementById('add-hrs').value='';
 document.getElementById('add-mins').value='';
 addTime(total);
 }
+
 async function removeTime(mins) {
 closeSheet('sheet-removetime');
 try {
@@ -1290,6 +1418,7 @@ updatePcField(state.activePc.id,'session_end',r.session_end);
 toast('-'+mins+'m removed','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 function removeCustomTime() {
 const hrs=parseInt(document.getElementById('rem-hrs').value)||0;
 const mins=parseInt(document.getElementById('rem-mins').value)||0;
@@ -1299,18 +1428,21 @@ document.getElementById('rem-hrs').value='';
 document.getElementById('rem-mins').value='';
 removeTime(total);
 }
+
 function confirmEndSession() {
 if (!confirm('End session on '+state.activePc.name+'?\nScreen will lock immediately.')) return;
 api('POST','/pcs/'+state.activePc.id+'/session/end',{group_id:state.activeGroup.id})
 .then(()=>{ updatePcField(state.activePc.id,'session_end',0); updatePcField(state.activePc.id,'stopwatch_start',0); toast('Session ended','ok'); })
 .catch(e=>toast(e.message,'err'));
 }
+
 async function pcCmd(action) {
 try {
 await api('POST','/pcs/'+state.activePc.id+'/'+action,{group_id:state.activeGroup.id});
 toast(action==='lock'?'Screen locked':'Screen unlocked','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 function updatePcField(pcId,field,value) {
 const pc = state.pcs.find(p=>p.id===pcId);
 if (pc) pc[field]=value;
@@ -1329,6 +1461,7 @@ if (!apps.length) { document.getElementById('apps-list').innerHTML='<div style="
 document.getElementById('apps-list').innerHTML = apps.map((a,i)=>`<div class="app-row"><div class="app-name"><i class="fa-solid fa-file"></i>${a.name}</div><button class="launch-btn" onclick="launchApp(${i})"><i class="fa-solid fa-play"></i> Launch</button></div>`).join('');
 } catch(e) { document.getElementById('apps-list').innerHTML='<div style="color:var(--red);text-align:center;padding:20px">Failed to load apps</div>'; }
 }
+
 async function launchApp(i) {
 const app = window._apps?.[i]; if(!app) return;
 closeSheet('sheet-apps');
@@ -1344,6 +1477,7 @@ document.getElementById('admins-list').innerHTML = admins.length
 : '<div style="color:var(--t2);padding:8px 0;font-size:12px">No additional admins</div>';
 } catch(e) {}
 }
+
 async function addAdmin() {
 const username = document.getElementById('addadmin-user').value.trim();
 if (!username) { toast('Enter a username','err'); return; }
@@ -1356,16 +1490,19 @@ toast(username+' added','ok'); loadAdmins();
 } catch(e) { toast(e.message,'err'); }
 finally { document.getElementById('addadmin-btn-text').textContent='Add Admin'; }
 }
+
 async function removeAdmin(id,username) {
 if (!confirm('Remove '+username+' as admin?')) return;
 try { await api('DELETE','/groups/'+state.activeGroup.id+'/admins/'+id); toast(username+' removed','ok'); loadAdmins(); }
 catch(e) { toast(e.message,'err'); }
 }
+
 function loadDeletePCList() {
 const el = document.getElementById('delete-pc-list');
 if (!state.pcs?.length) { el.innerHTML='<div style="color:var(--t2);padding:8px 0;font-size:12px">No PCs in this group</div>'; return; }
 el.innerHTML = state.pcs.map(pc=>`<div class="pc-del-row"><div class="pc-del-name"><i class="fa-solid fa-computer" style="color:var(--t3)"></i>${pc.name}</div><button class="pc-del-btn" onclick="deletePC('${pc.id}','${pc.name}')">Delete</button></div>`).join('');
 }
+
 async function deletePC(pcId,name) {
 if (!confirm('Delete "'+name+'"\nThis cannot be undone.')) return;
 try {
@@ -1374,6 +1511,7 @@ state.pcs = state.pcs.filter(p=>p.id!==pcId);
 renderPCs(); loadDeletePCList(); toast(name+' deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 async function confirmDeleteGroup() {
 if (!confirm('Delete "'+state.activeGroup.name+'"\nAll PCs in this group will be removed.')) return;
 try {
@@ -1402,6 +1540,7 @@ const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
 if (h>0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
+
 function toast(msg,type='ok') {
 const el = document.getElementById('toast');
 el.textContent = msg;
