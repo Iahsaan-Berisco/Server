@@ -158,8 +158,7 @@ border: none;
 .desktop-add-btn:active { transform: scale(.95); }
 .desktop-only { display: flex !important; }
 }
-/* Mobile: hide desktop-only elements */
-.desktop-only { display: none !important; }
+
 /* ──────────────────────────────────────────
 TOPBAR
 ────────────────────────────────────────── */
@@ -232,6 +231,8 @@ font-family: var(--sans); transition: all .18s;
 display: flex; align-items: center; justify-content: center; gap: 5px;
 }
 .tab-btn.active { background: var(--s2); color: var(--t1); }
+    /* Mobile: hide desktop-only elements */
+.desktop-only { display: none !important; }
 /* ──────────────────────────────────────────
 FORM FIELDS
 ────────────────────────────────────────── */
@@ -656,7 +657,7 @@ GameZone
 </div>
 </div>
 <button class="fab" onclick="openSheet('sheet-addpc')"><i class="fa-solid fa-plus"></i> Add PC</button>
-<button class="desktop-add-btn" onclick="openSheet('sheet-addpc')" title="Add PC"><i class="fa-solid fa-plus"></i></button>
+<button class="desktop-add-btn desktop-only" onclick="openSheet('sheet-addpc')" title="Add PC"><i class="fa-solid fa-plus"></i></button>
 </div>
 <!-- ════════════════════ PC CONTROL ════════════════════ -->
 <div class="screen" id="screen-pccontrol">
