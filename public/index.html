@@ -118,11 +118,16 @@ grid-row: 1;
 .action-grid { padding: 0 32px; }
 .stats-row { padding: 24px 32px 20px; }
 .topbar { padding: 0 32px; }
-.scroll-inner { max-width: 860px; }
+/* Center content on desktop */
+.scroll-inner { max-width: 860px; margin: 0 auto; }
 /* Sheet centered */
 .sheet { left: 50%; right: auto; transform: translate(-50%, 100%); width: 480px; border-radius: var(--r3); bottom: 40px; }
 .sheet.open { transform: translate(-50%, 0); }
+/* Desktop-only utility */
+.desktop-only { display: flex !important; }
 }
+/* Mobile-only utility */
+.desktop-only { display: none; }
 /* ──────────────────────────────────────────
 TOPBAR
 ────────────────────────────────────────── */
@@ -590,6 +595,8 @@ GameZone
 <div class="topbar">
 <button class="back-btn" onclick="goBack('groups')"><i class="fa-solid fa-chevron-left"></i> Back</button>
 <div class="topbar-title" id="dash-title">Dashboard</div>
+<!-- Added Add PC Button (Desktop Only) -->
+<button class="icon-btn desktop-only" onclick="openSheet('sheet-addpc')" title="Add PC"><i class="fa-solid fa-plus"></i></button>
 <button class="icon-btn" onclick="showScreen('settings')"><i class="fa-solid fa-gear"></i></button>
 </div>
 <div class="scroll-area">
@@ -1260,7 +1267,7 @@ if (!state.pcs?.length) { el.innerHTML='<div style="color:var(--t2);padding:8px 
 el.innerHTML = state.pcs.map(pc=>`<div class="pc-del-row"><div class="pc-del-name"><i class="fa-solid fa-computer" style="color:var(--t3)"></i>${pc.name}</div><button class="pc-del-btn" onclick="deletePC('${pc.id}','${pc.name}')">Delete</button></div>`).join('');
 }
 async function deletePC(pcId,name) {
-if (!confirm('Delete "'+name+'"?\nThis cannot be undone.')) return;
+if (!confirm('Delete "'+name+'"\nThis cannot be undone.')) return;
 try {
 await api('DELETE','/groups/'+state.activeGroup.id+'/pcs/'+pcId);
 state.pcs = state.pcs.filter(p=>p.id!==pcId);
@@ -1268,7 +1275,7 @@ renderPCs(); loadDeletePCList(); toast(name+' deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 async function confirmDeleteGroup() {
-if (!confirm('Delete "'+state.activeGroup.name+'"?\nAll PCs in this group will be removed.')) return;
+if (!confirm('Delete "'+state.activeGroup.name+'"\nAll PCs in this group will be removed.')) return;
 try {
 await api('DELETE','/groups/'+state.activeGroup.id);
 state.groups = state.groups.filter(g=>g.id!==state.activeGroup.id);
