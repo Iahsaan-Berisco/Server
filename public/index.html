@@ -535,14 +535,19 @@ socket:null,
 const _pay = {};
 let currentScreen = 'login';
 let _toastTimer;
+
 // ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
 window.addEventListener('load', () => {
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+console.log('[GameZone] App loaded');
+if ('serviceWorker' in navigator) {
+navigator.serviceWorker.register('/sw.js').catch(e => console.log('[SW] Register failed:', e));
+}
 state.token = localStorage.getItem('gz_token');
 state.user = JSON.parse(localStorage.getItem('gz_user') || 'null');
 state.serverUrl = localStorage.getItem('gz_server') || '';
+console.log('[GameZone] Token exists:', !!state.token);
 if (state.token && state.user) {
 showScreen('groups');
 loadGroups();
@@ -555,35 +560,52 @@ if (currentScreen === 'dashboard') renderPCs();
 if (currentScreen === 'pccontrol') renderPCActions();
 }, 1000);
 });
+
 // ═══════════════════════════════════════════════════════
 // ROUTING
 // ═══════════════════════════════════════════════════════
 function showScreen(name) {
+console.log('[GameZone] Showing screen:', name);
 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
 const el = document.getElementById('screen-' + name);
-if (el) el.classList.add('active');
+if (el) {
+el.classList.add('active');
+console.log('[GameZone] Screen element found');
+} else {
+console.error('[GameZone] Screen element NOT found:', 'screen-' + name);
+}
 currentScreen = name;
 if (name === 'settings') {
 loadAdmins();
 loadDeletePCList();
 }
 }
+
 function goBack(to) {
 showScreen(to);
 }
+
 // ═══════════════════════════════════════════════════════
 // SHEETS
 // ═══════════════════════════════════════════════════════
 function openSheet(id) {
+console.log('[GameZone] Opening sheet:', id);
 const name = id.replace('sheet-', '');
-document.getElementById(id)?.classList.add('open');
-document.getElementById('overlay-' + name)?.classList.add('open');
+const sheet = document.getElementById(id);
+const overlay = document.getElementById('overlay-' + name);
+if (sheet) sheet.classList.add('open');
+if (overlay) overlay.classList.add('open');
 }
+
 function closeSheet(id) {
+console.log('[GameZone] Closing sheet:', id);
 const name = id.replace('sheet-', '');
-document.getElementById(id)?.classList.remove('open');
-document.getElementById('overlay-' + name)?.classList.remove('open');
+const sheet = document.getElementById(id);
+const overlay = document.getElementById('overlay-' + name);
+if (sheet) sheet.classList.remove('open');
+if (overlay) overlay.classList.remove('open');
 }
+
 // ═══════════════════════════════════════════════════════
 // API
 // ═══════════════════════════════════════════════════════
@@ -600,73 +622,106 @@ const data = await res.json();
 if (!res.ok) throw new Error(data.error || 'Request failed');
 return data;
 }
+
 // ═══════════════════════════════════════════════════════
 // AUTH
 // ═══════════════════════════════════════════════════════
 function switchTab(tab) {
-document.getElementById('tab-login').classList.toggle('active', tab === 'login');
-document.getElementById('tab-register').classList.toggle('active', tab === 'register');
-document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
-document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+console.log('[GameZone] Switching tab to:', tab);
+const loginTab = document.getElementById('tab-login');
+const registerTab = document.getElementById('tab-register');
+const loginForm = document.getElementById('login-form');
+const registerForm = document.getElementById('register-form');
+
+if (loginTab && registerTab && loginForm && registerForm) {
+loginTab.classList.toggle('active', tab === 'login');
+registerTab.classList.toggle('active', tab === 'register');
+loginForm.style.display = tab === 'login' ? 'block' : 'none';
+registerForm.style.display = tab === 'register' ? 'block' : 'none';
+console.log('[GameZone] Tab switched successfully');
+} else {
+console.error('[GameZone] Tab elements not found');
 }
+}
+
 async function doLogin() {
+console.log('[GameZone] Login attempt');
 const server = document.getElementById('login-server').value.trim().replace(/\/$/, '');
 const username = document.getElementById('login-user').value.trim();
 const password = document.getElementById('login-pass').value;
+
+console.log('[GameZone] Server:', server, 'Username:', username);
+
 if (!server || !username || !password) {
 toast('Fill all fields', 'error');
+console.log('[GameZone] Validation failed - missing fields');
 return;
 }
+
 state.serverUrl = server;
 const btn = document.getElementById('login-btn');
 btn.disabled = true;
 document.getElementById('login-btn-text').innerHTML = '<span class="spinner"></span>';
+
 try {
+console.log('[GameZone] Sending login request to:', server + '/api/login');
 const d = await fetch(server + '/api/login', {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({ username, password })
 }).then(r => r.json());
+
 if (d.error) throw new Error(d.error);
 saveAuth(server, d.token, d.user);
 showScreen('groups');
 loadGroups();
+toast('Login successful', 'success');
 } catch (e) {
-toast(e.message || 'Login failed', 'error');
+console.error('[GameZone] Login error:', e);
+toast(e.message || 'Login failed - Check server URL', 'error');
 } finally {
 btn.disabled = false;
 document.getElementById('login-btn-text').textContent = 'Login';
 }
 }
+
 async function doRegister() {
+console.log('[GameZone] Register attempt');
 const server = document.getElementById('reg-server').value.trim().replace(/\/$/, '');
 const username = document.getElementById('reg-user').value.trim();
 const password = document.getElementById('reg-pass').value;
+
 if (!server || !username || !password) {
 toast('Fill all fields', 'error');
 return;
 }
+
 state.serverUrl = server;
 const btn = document.getElementById('reg-btn');
 btn.disabled = true;
 document.getElementById('reg-btn-text').innerHTML = '<span class="spinner"></span>';
+
 try {
 const d = await fetch(server + '/api/register', {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({ username, password })
 }).then(r => r.json());
+
 if (d.error) throw new Error(d.error);
 saveAuth(server, d.token, d.user);
 showScreen('groups');
 loadGroups();
+toast('Registration successful', 'success');
 } catch (e) {
-toast(e.message || 'Registration failed', 'error');
+console.error('[GameZone] Register error:', e);
+toast(e.message || 'Registration failed - Check server URL', 'error');
 } finally {
 btn.disabled = false;
 document.getElementById('reg-btn-text').textContent = 'Create Account';
 }
 }
+
 function saveAuth(server, token, user) {
 state.token = token;
 state.user = user;
@@ -674,7 +729,9 @@ state.serverUrl = server;
 localStorage.setItem('gz_token', token);
 localStorage.setItem('gz_user', JSON.stringify(user));
 localStorage.setItem('gz_server', server);
+console.log('[GameZone] Auth saved');
 }
+
 function doLogout() {
 if (!confirm('Logout?')) return;
 state.token = null;
@@ -684,6 +741,7 @@ localStorage.removeItem('gz_user');
 if (state.socket) state.socket.disconnect();
 showScreen('login');
 }
+
 // ═══════════════════════════════════════════════════════
 // GROUPS
 // ═══════════════════════════════════════════════════════
@@ -692,9 +750,11 @@ try {
 state.groups = await api('GET', '/groups');
 renderGroups();
 } catch (e) {
+console.error('[GameZone] Load groups error:', e);
 toast('Failed to load groups', 'error');
 }
 }
+
 function renderGroups() {
 const el = document.getElementById('groups-list');
 if (!state.groups.length) {
@@ -707,6 +767,7 @@ el.innerHTML = state.groups.map(g => `
 <span class="chevron"><i class="fa-solid fa-chevron-right"></i></span>
 </div>`).join('');
 }
+
 async function createGroup() {
 const name = document.getElementById('newgroup-name').value.trim();
 if (!name) {
@@ -727,6 +788,7 @@ toast(e.message, 'error');
 document.getElementById('newgroup-btn-text').textContent = 'Create';
 }
 }
+
 function openGroup(id) {
 state.activeGroup = state.groups.find(g => g.id === id);
 document.getElementById('dash-title').textContent = state.activeGroup.name;
@@ -736,6 +798,7 @@ showScreen('dashboard');
 loadPCs();
 connectSocket();
 }
+
 // ═══════════════════════════════════════════════════════
 // PCs
 // ═══════════════════════════════════════════════════════
@@ -747,6 +810,7 @@ renderPCs();
 toast('Failed to load PCs', 'error');
 }
 }
+
 function renderPCs() {
 const now = Math.floor(Date.now() / 1000);
 const online = state.pcs.filter(p => p.is_online).length;
@@ -787,6 +851,7 @@ ${payBadge}
 </div>`;
 }).join('');
 }
+
 async function addPC() {
 const name = document.getElementById('addpc-name').value.trim();
 const password = document.getElementById('addpc-pass').value;
@@ -811,6 +876,7 @@ toast(e.message, 'error');
 document.getElementById('addpc-btn-text').textContent = 'Add PC';
 }
 }
+
 // ═══════════════════════════════════════════════════════
 // PC CONTROL
 // ═══════════════════════════════════════════════════════
@@ -821,6 +887,7 @@ updateOnlinePill();
 renderPCActions();
 showScreen('pccontrol');
 }
+
 function updateOnlinePill() {
 const pc = state.activePc;
 if (!pc) return;
@@ -830,6 +897,7 @@ pill.innerHTML = pc.is_online
 : '<i class="fa-solid fa-circle" style="color:var(--text-muted);font-size:8px"></i> Offline';
 pill.style.cssText = `color:${pc.is_online ? 'var(--success)' : 'var(--text-muted)'};border-color:${pc.is_online ? 'var(--success)' : 'var(--border-subtle)'}`;
 }
+
 function renderPCActions() {
 const pc = state.activePc;
 if (!pc) return;
@@ -838,6 +906,7 @@ const left = pc.session_end > now ? pc.session_end - now : 0;
 const isWatch = pc.stopwatch_start > 0;
 const isActive = left > 0 || isWatch;
 const pay = _pay[pc.id] || null;
+
 // Timer Section (Top)
 const timerSection = document.getElementById('pc-timer-section');
 if (isActive) {
@@ -854,6 +923,7 @@ timerSection.innerHTML = `
 } else {
 timerSection.innerHTML = '';
 }
+
 // Session Section (Bottom)
 const sessionSection = document.getElementById('pc-session-section');
 if (isActive) {
@@ -885,6 +955,7 @@ sessionSection.innerHTML = `
 </div>`;
 }
 }
+
 function togglePay(status) {
 if (!state.activePc) return;
 const id = state.activePc.id;
@@ -893,6 +964,7 @@ renderPCActions();
 renderPCs();
 toast(_pay[id] ? `Marked ${_pay[id]}` : 'Payment cleared', 'success');
 }
+
 // ═══════════════════════════════════════════════════════
 // SESSION ACTIONS
 // ═══════════════════════════════════════════════════════
@@ -907,6 +979,7 @@ toast('Session started', 'success');
 toast(e.message, 'error');
 }
 }
+
 function startCustomSession() {
 const hrs = parseInt(document.getElementById('custom-hrs').value) || 0;
 const mins = parseInt(document.getElementById('custom-mins').value) || 0;
@@ -919,6 +992,7 @@ document.getElementById('custom-hrs').value = '';
 document.getElementById('custom-mins').value = '';
 startSession(total);
 }
+
 async function startStopwatch() {
 closeSheet('sheet-startsession');
 try {
@@ -930,6 +1004,7 @@ toast('Free timer started', 'success');
 toast(e.message, 'error');
 }
 }
+
 async function addTime(mins) {
 closeSheet('sheet-addtime');
 try {
@@ -947,6 +1022,7 @@ toast(`+${mins}m added`, 'success');
 toast(e.message, 'error');
 }
 }
+
 function addCustomTime() {
 const hrs = parseInt(document.getElementById('add-hrs').value) || 0;
 const mins = parseInt(document.getElementById('add-mins').value) || 0;
@@ -959,6 +1035,7 @@ document.getElementById('add-hrs').value = '';
 document.getElementById('add-mins').value = '';
 addTime(total);
 }
+
 async function removeTime(mins) {
 closeSheet('sheet-removetime');
 try {
@@ -969,6 +1046,7 @@ toast(`-${mins}m removed`, 'success');
 toast(e.message, 'error');
 }
 }
+
 function removeCustomTime() {
 const hrs = parseInt(document.getElementById('rem-hrs').value) || 0;
 const mins = parseInt(document.getElementById('rem-mins').value) || 0;
@@ -981,9 +1059,9 @@ document.getElementById('rem-hrs').value = '';
 document.getElementById('rem-mins').value = '';
 removeTime(total);
 }
+
 function confirmEndSession() {
-if (!confirm('End session on ' + state.activePc.name + '?
-Screen will lock immediately.')) return;
+if (!confirm('End session on ' + state.activePc.name + '?\nScreen will lock immediately.')) return;
 api('POST', '/pcs/' + state.activePc.id + '/session/end', { group_id: state.activeGroup.id })
 .then(() => {
 updatePcField(state.activePc.id, 'session_end', 0);
@@ -992,6 +1070,7 @@ toast('Session ended', 'success');
 })
 .catch(e => toast(e.message, 'error'));
 }
+
 async function pcCmd(action) {
 try {
 await api('POST', '/pcs/' + state.activePc.id + '/' + action, { group_id: state.activeGroup.id });
@@ -1000,6 +1079,7 @@ toast(action === 'lock' ? 'Screen locked' : 'Screen unlocked', 'success');
 toast(e.message, 'error');
 }
 }
+
 function updatePcField(pcId, field, value) {
 const pc = state.pcs.find(p => p.id === pcId);
 if (pc) pc[field] = value;
@@ -1009,6 +1089,7 @@ renderPCActions();
 }
 renderPCs();
 }
+
 // ═══════════════════════════════════════════════════════
 // APPS
 // ═══════════════════════════════════════════════════════
@@ -1032,6 +1113,7 @@ document.getElementById('apps-list').innerHTML = apps.map((a, i) => `
 document.getElementById('apps-list').innerHTML = '<div style="color:var(--danger);text-align:center;padding:20px">Failed to load apps</div>';
 }
 }
+
 async function launchApp(i) {
 const app = window._apps?.[i];
 if (!app) return;
@@ -1043,6 +1125,7 @@ toast(app.name + ' launched', 'success');
 toast(e.message, 'error');
 }
 }
+
 // ═══════════════════════════════════════════════════════
 // SETTINGS
 // ═══════════════════════════════════════════════════════
@@ -1059,6 +1142,7 @@ document.getElementById('admins-list').innerHTML = admins.length
 : '<div style="color:var(--text-muted);padding:10px 0;font-size:13px">No additional admins</div>';
 } catch (e) {}
 }
+
 async function addAdmin() {
 const username = document.getElementById('addadmin-user').value.trim();
 if (!username) {
@@ -1078,6 +1162,7 @@ toast(e.message, 'error');
 document.getElementById('addadmin-btn-text').textContent = 'Add';
 }
 }
+
 async function removeAdmin(id, username) {
 if (!confirm('Remove ' + username + ' as admin?')) return;
 try {
@@ -1088,6 +1173,7 @@ loadAdmins();
 toast(e.message, 'error');
 }
 }
+
 function loadDeletePCList() {
 const el = document.getElementById('delete-pc-list');
 if (!state.pcs || !state.pcs.length) {
@@ -1100,9 +1186,9 @@ el.innerHTML = state.pcs.map(pc => `
 <button class="pc-delete-btn" onclick="deletePC('${pc.id}','${pc.name}')"><i class="fa-solid fa-trash"></i> Delete</button>
 </div>`).join('');
 }
+
 async function deletePC(pcId, name) {
-if (!confirm('Delete "' + name + '"?
-This cannot be undone.')) return;
+if (!confirm('Delete "' + name + '"?\nThis cannot be undone.')) return;
 try {
 await api('DELETE', '/groups/' + state.activeGroup.id + '/pcs/' + pcId);
 state.pcs = state.pcs.filter(p => p.id !== pcId);
@@ -1113,9 +1199,9 @@ toast(name + ' deleted', 'success');
 toast(e.message, 'error');
 }
 }
+
 async function confirmDeleteGroup() {
-if (!confirm('Delete "' + state.activeGroup.name + '"?
-This removes ALL PCs in this group. Cannot be undone.')) return;
+if (!confirm('Delete "' + state.activeGroup.name + '"?\nThis removes ALL PCs in this group. Cannot be undone.')) return;
 try {
 await api('DELETE', '/groups/' + state.activeGroup.id);
 state.groups = state.groups.filter(g => g.id !== state.activeGroup.id);
@@ -1126,6 +1212,7 @@ toast('Group deleted', 'success');
 toast(e.message, 'error');
 }
 }
+
 // ═══════════════════════════════════════════════════════
 // SOCKET
 // ═══════════════════════════════════════════════════════
@@ -1147,6 +1234,7 @@ updateOnlinePill();
 }
 });
 }
+
 // ═══════════════════════════════════════════════════════
 // UTILS
 // ═══════════════════════════════════════════════════════
@@ -1156,6 +1244,7 @@ const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = secs 
 if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
+
 function toast(msg, type = 'success') {
 const el = document.getElementById('toast');
 el.textContent = msg;
