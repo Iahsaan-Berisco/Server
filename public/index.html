@@ -8,7 +8,8 @@
 <meta name="theme-color" content="#09090b">
 <title>GameZone Manager</title>
 <link rel="manifest" href="/manifest.json">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="/socket.io/socket.io.js"></script>
 <style>
 /* ═══════════════════════════════════════════════════════
@@ -16,103 +17,119 @@
    ═══════════════════════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-    /* Palette: Zinc & Indigo */
     --bg:#09090b;
     --surface:#18181b;
     --surface-2:#27272a;
     --border:#3f3f46;
     --border-light:#52525b;
     
-    /* Accents */
     --primary:#6366f1;
     --primary-hover:#4f46e5;
     --success:#22c55e;
     --warning:#eab308;
     --danger:#ef4444;
     
-    /* Text */
     --text:#fafafa;
     --text-muted:#a1a1aa;
     
-    /* Dimensions */
     --radius:10px;
     --radius-lg:16px;
+    --sidebar-width:280px;
+    --header-height:64px;
 }
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow:hidden;user-select:none;-webkit-user-select:none}
 #app{height:100dvh;overflow:hidden;position:relative}
 
 /* ═══════════════════════════════════════════════════════
-   LAYOUT & RESPONSIVENESS
+   LAYOUT - DESKTOP
    ═══════════════════════════════════════════════════════ */
-/* Mobile First */
+@media(min-width:1024px){
+    #app{display:grid;grid-template-columns:var(--sidebar-width) 1fr}
+    
+    /* Login - Full Width Centered */
+    #screen-login{grid-column:1 / -1; justify-content:center; align-items:center}
+    #screen-login.active{display:flex}
+    #screen-login:not(.active){display:none}
+    
+    /* Sidebar (Groups) */
+    #screen-groups{grid-column:1; border-right:1px solid var(--border); background:var(--bg)}
+    #screen-groups:not(.active){display:none}
+    #screen-groups .topbar{display:none} /* Hide mobile topbar on desktop */
+    
+    /* Main Content */
+    #screen-dashboard,#screen-pccontrol,#screen-settings{grid-column:2; background:var(--bg)}
+    #screen-dashboard.active,#screen-pccontrol.active,#screen-settings.active{display:flex}
+    #screen-dashboard:not(.active),#screen-pccontrol:not(.active),#screen-settings:not(.active){display:none}
+    
+    /* Desktop Specific Adjustments */
+    .pc-grid{grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px; padding:24px}
+    .action-grid{gap:14px; padding:0 24px}
+    .action-grid.three{grid-template-columns:1fr 1fr 1fr}
+    .fab{display:none}
+    .topbar{padding:16px 24px}
+    .padded{padding:24px}
+    .timer-inline{font-size:64px}
+    .sheet{max-width:480px; left:50%; bottom:40px; transform:translate(-50%, 100%)}
+    .sheet.open{transform:translate(-50%, 0)}
+    
+    /* Sidebar Header */
+    .sidebar-header{height:var(--header-height); display:flex; align-items:center; justify-content:space-between; padding:0 20px; border-bottom:1px solid var(--border)}
+    .sidebar-logo{display:flex; align-items:center; gap:10px; font-size:18px; font-weight:700}
+    .sidebar-logo i{color:var(--primary); font-size:22px}
+    
+    /* Desktop Groups List */
+    #screen-groups .scroll-content{padding-top:0}
+    #screen-groups .padded{padding:16px}
+}
+
+/* ═══════════════════════════════════════════════════════
+   LAYOUT - MOBILE
+   ═══════════════════════════════════════════════════════ */
 .screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);
 opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;transform:translateY(10px);
 overflow:hidden}
 .screen.active{opacity:1;pointer-events:all;transform:translateY(0)}
 
-/* Desktop Layout */
-@media(min-width:900px){
-    #app{display:grid;grid-template-columns:280px 1fr;height:100dvh}
-    
-    /* Login Screen - Full Width & Centered */
-    #screen-login{grid-column:1 / -1; justify-content:center; align-items:center; background:var(--bg)}
-    #screen-login.active{display:flex}
-    #screen-login:not(.active){display:none}
-    
-    /* Groups becomes the Sidebar */
-    #screen-groups{grid-column:1; border-right:1px solid var(--border); background:var(--bg); position:relative; opacity:1; pointer-events:all; transform:none}
-    #screen-groups:not(.active){display:none}
-    
-    /* Main Content Area */
-    #screen-dashboard,#screen-pccontrol,#screen-settings{grid-column:2; background:var(--bg)}
-    #screen-dashboard.active,#screen-pccontrol.active,#screen-settings.active{display:flex}
-    #screen-dashboard:not(.active),#screen-pccontrol:not(.active),#screen-settings:not(.active){display:none}
-    
-    /* Adjust Grids for Desktop */
-    .pc-grid{grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:16px; padding:24px}
-    .action-grid.three{grid-template-columns:1fr 1fr 1fr}
-    .fab{display:none}
-    .topbar{padding:20px 32px}
-    .padded{padding:24px 32px}
-    .sheet{max-width:480px; left:50%; bottom:40px; transform:translate(-50%, 100%); border:1px solid var(--border)}
-    .sheet.open{transform:translate(-50%, 0)}
-}
-
-/* Safe Areas */
+/* ═══════════════════════════════════════════════════════
+   GLOBAL HEADER (Mobile)
+   ═══════════════════════════════════════════════════════ */
 .safe-top{padding-top:max(20px,env(safe-area-inset-top))}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;
-padding-top:max(16px,env(safe-area-inset-top));background:rgba(9,9,11,0.8);backdrop-filter:blur(10px);position:sticky;top:0;
-z-index:10;border-bottom:1px solid var(--border)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;
+padding-top:max(14px,env(safe-area-inset-top));background:rgba(9,9,11,0.95);backdrop-filter:blur(10px);position:sticky;top:0;
+z-index:10;border-bottom:1px solid var(--border);height:var(--header-height)}
 .topbar-title{font-size:16px;font-weight:600;letter-spacing:-0.3px}
-.back-btn{color:var(--text);font-size:14px;font-weight:500;background:none;border:none;cursor:pointer;padding:4px 0;opacity:0.7}
+.back-btn{color:var(--text);font-size:14px;font-weight:500;background:none;border:none;cursor:pointer;padding:4px 0;opacity:0.7;display:flex;align-items:center;gap:6px}
 .back-btn:hover{opacity:1}
-.icon-btn{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:18px;padding:4px;transition:color .2s}
-.icon-btn:hover{color:var(--text)}
+.back-btn i{font-size:16px}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:18px;padding:8px;border-radius:8px;transition:all .2s}
+.icon-btn:hover{background:var(--surface-2);color:var(--text)}
 
-/* Scroll */
+/* ═══════════════════════════════════════════════════════
+   SCROLL & PADDING
+   ═══════════════════════════════════════════════════════ */
 .scroll-content{flex:1;overflow-y:scroll;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 .scroll-content::-webkit-scrollbar{width:6px}
 .scroll-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 .padded{padding:20px}
 
 /* ═══════════════════════════════════════════════════════
-   COMPONENTS
+   LOGIN SCREEN
    ═══════════════════════════════════════════════════════ */
-/* Login */
 #screen-login{justify-content:center; align-items:center}
-.login-wrap{padding:40px 24px;display:flex;flex-direction:column;width:100%;max-width:400px}
-.logo-mark{width:56px;height:56px;background:var(--surface);border:1px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:24px}
-.login-title{font-size:24px;font-weight:600;margin-bottom:4px;letter-spacing:-0.5px}
+.login-wrap{padding:40px 24px;display:flex;flex-direction:column;width:100%;max-width:420px}
+.logo-mark{width:64px;height:64px;background:var(--surface);border:1px solid var(--border);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:24px}
+.logo-mark i{font-size:28px; color:var(--primary)}
+.login-title{font-size:26px;font-weight:700;margin-bottom:4px;letter-spacing:-0.5px}
 .login-sub{color:var(--text-muted);font-size:14px;margin-bottom:32px}
-.tab-bar{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px;margin-bottom:24px}
-.tab-btn{flex:1;padding:8px;border-radius:6px;font-size:13px;font-weight:500;background:none;border:none;color:var(--text-muted);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
-.tab-btn.active{background:var(--bg);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,0.2)}
+.tab-bar{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:24px}
+.tab-btn{flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:500;background:none;border:none;color:var(--text-muted);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.tab-btn.active{background:var(--bg);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.3)}
 .field{margin-bottom:16px}
 .field label{display:block;font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:6px}
-.field input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;transition:border-color .2s}
+.field input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 15px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;transition:border-color .2s}
 .field input:focus{border-color:var(--primary)}
 .field input::placeholder{color:var(--text-muted)}
-.btn{width:100%;padding:12px;border-radius:8px;font-size:14px;font-weight:500;border:none;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
+.btn{width:100%;padding:14px;border-radius:10px;font-size:14px;font-weight:600;border:none;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
 .btn:active{transform:scale(.98)}
 .btn-primary{background:var(--text);color:var(--bg)}
 .btn-primary:hover{background:#e4e4e7}
@@ -122,117 +139,137 @@ z-index:10;border-bottom:1px solid var(--border)}
 .btn-danger{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:var(--danger)}
 .btn-danger:hover{background:rgba(239,68,68,0.2)}
 
-/* Cards & Lists */
+/* ═══════════════════════════════════════════════════════
+   GROUPS & CARDS
+   ═══════════════════════════════════════════════════════ */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px}
-.group-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .2s}
+.group-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .2s}
 .group-card:hover{border-color:var(--text-muted);background:var(--surface-2)}
 .group-card:active{transform:scale(.98)}
-.group-name{font-size:15px;font-weight:500;margin-bottom:2px}
+.group-name{font-size:15px;font-weight:600;margin-bottom:2px}
 .group-sub{font-size:12px;color:var(--text-muted)}
 
-/* Stats */
+/* ═══════════════════════════════════════════════════════
+   STATS BAR
+   ═══════════════════════════════════════════════════════ */
 .stats-bar{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin:0 20px 20px;overflow:hidden}
 .stat-item{flex:1;padding:16px 0;text-align:center;position:relative}
 .stat-item+.stat-item{border-left:1px solid var(--border)}
-.stat-num{font-size:22px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.stat-num{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace}
 .stat-label{font-size:10px;color:var(--text-muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
 
-/* PC Grid */
+/* ═══════════════════════════════════════════════════════
+   PC GRID
+   ═══════════════════════════════════════════════════════ */
 .pc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px 20px}
 .pc-tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all .2s;position:relative}
 .pc-tile:hover{border-color:var(--text-muted);background:var(--surface-2)}
 .pc-tile:active{transform:scale(.98)}
 .pc-tile-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
-.pc-tile-name{font-size:14px;font-weight:500}
-.pc-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
-.pc-timer{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:500;line-height:1;margin-bottom:8px}
-.pc-status-badge{display:inline-block;font-size:10px;font-weight:500;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:0.5px;background:var(--bg);border:1px solid var(--border)}
-.pay-badge{font-size:10px;font-weight:500;padding:2px 6px;border-radius:4px;float:right}
+.pc-tile-name{font-size:14px;font-weight:600}
+.pc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.pc-timer{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600;line-height:1;margin-bottom:8px}
+.pc-status-badge{display:inline-block;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:0.5px;background:var(--bg);border:1px solid var(--border)}
+.pay-badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;float:right}
 
-/* PC Control */
+/* ═══════════════════════════════════════════════════════
+   PC CONTROL
+   ═══════════════════════════════════════════════════════ */
+.pc-header{padding:0 20px 16px; border-bottom:1px solid var(--border); margin-bottom:16px}
+.pc-header-info{display:flex; align-items:center; gap:12px; margin-bottom:12px}
+.pc-header-name{font-size:18px; font-weight:700}
 .section-label{font-size:11px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin:0 20px 12px;font-weight:600}
 .action-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px;margin-bottom:16px}
 .action-grid.three{grid-template-columns:1fr 1fr 1fr}
-.action-tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 12px;text-align:center;cursor:pointer;transition:all .2s}
+.action-tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 12px;text-align:center;cursor:pointer;transition:all .2s}
 .action-tile:hover{background:var(--surface-2);border-color:var(--text-muted)}
 .action-tile:active{transform:scale(.96)}
 .action-tile.full{grid-column:span 2}
 .action-tile.full3{grid-column:span 3}
-.action-icon{font-size:20px;margin-bottom:8px}
-.action-label{font-size:13px;font-weight:500}
+.action-icon{font-size:22px;margin-bottom:8px}
+.action-label{font-size:13px;font-weight:600}
 .action-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
 
 /* Timer inline row */
 .timer-row{display:flex;align-items:center;justify-content:space-between;padding:0 20px;margin-bottom:20px}
-.timer-inline{font-family:'JetBrains Mono',monospace;font-size:56px;font-weight:600;line-height:1;letter-spacing:-2px}
+.timer-inline{font-family:'JetBrains Mono',monospace;font-size:56px;font-weight:700;line-height:1;letter-spacing:-2px}
 .pay-btns{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
-.pay-btn{padding:8px 16px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;border:1px solid var(--border);background:var(--bg);color:var(--text-muted);transition:all .2s;min-width:100px;text-align:center}
+.pay-btn{padding:9px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;border:1px solid var(--border);background:var(--bg);color:var(--text-muted);transition:all .2s;min-width:100px;text-align:center}
 .pay-btn:hover{border-color:var(--text-muted)}
 .pay-btn.active-paid{border-color:var(--success);color:var(--success);background:rgba(34,197,94,0.1)}
 .pay-btn.active-unpaid{border-color:var(--danger);color:var(--danger);background:rgba(239,68,68,0.1)}
 
-/* Sheets (Bottom Modals) */
-.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(2px);z-index:100;opacity:0;pointer-events:none;transition:opacity .2s}
+/* ═══════════════════════════════════════════════════════
+   SHEETS (Bottom Modals)
+   ═══════════════════════════════════════════════════════ */
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:100;opacity:0;pointer-events:none;transition:opacity .2s}
 .sheet-overlay.open{opacity:1;pointer-events:all}
-.sheet{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-radius:16px 16px 0 0;padding:0 24px;padding-bottom:max(24px,env(safe-area-inset-bottom));z-index:101;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,0,1);max-height:85dvh;overflow-y:auto;border:1px solid var(--border);border-bottom:none}
+.sheet{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-radius:20px 20px 0 0;padding:0 24px;padding-bottom:max(24px,env(safe-area-inset-bottom));z-index:101;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,0,1);max-height:85dvh;overflow-y:auto;border:1px solid var(--border);border-bottom:none}
 .sheet.open{transform:translateY(0)}
-.sheet-handle{width:32px;height:4px;background:var(--border);border-radius:2px;margin:16px auto 20px}
-.sheet-title{font-size:18px;font-weight:600;margin-bottom:4px}
+.sheet-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:16px auto 20px}
+.sheet-title{font-size:19px;font-weight:700;margin-bottom:4px}
 .sheet-sub{font-size:13px;color:var(--text-muted);margin-bottom:24px}
 .time-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
-.time-chip{padding:10px 16px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:500;color:var(--text);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
+.time-chip{padding:11px 18px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:500;color:var(--text);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
 .time-chip:hover{border-color:var(--text-muted)}
 .time-chip:active{transform:scale(.95)}
 .time-chip.primary{border-color:var(--primary);color:var(--primary)}
 .time-chip.danger{border-color:var(--danger);color:var(--danger)}
 .custom-row{display:flex;gap:10px;margin-bottom:8px}
-.custom-row input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none}
+.custom-row input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:13px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none}
 .modal-btns{display:flex;gap:10px;margin-top:20px}
 
 /* Apps list */
-.app-item{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.app-item{display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--border);cursor:pointer}
 .app-item:last-child{border-bottom:none}
 .app-item-name{font-size:14px;font-weight:500}
-.launch-btn{background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:500;padding:6px 12px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;flex-shrink:0;margin-left:10px}
+.launch-btn{background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;flex-shrink:0;margin-left:10px}
 .launch-btn:hover{border-color:var(--text-muted)}
 
 /* Settings */
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border)}
 .settings-row:last-child{border-bottom:none}
-.settings-label{font-size:14px;font-weight:500;margin-bottom:2px}
+.settings-label{font-size:14px;font-weight:600;margin-bottom:2px}
 .settings-value{font-size:12px;color:var(--text-muted)}
-.mono{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--primary);background:rgba(99,102,241,0.1);padding:8px 12px;border-radius:6px;word-break:break-all;border:1px solid rgba(99,102,241,0.2);margin-top:6px}
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--primary);background:rgba(99,102,241,0.1);padding:9px 13px;border-radius:8px;word-break:break-all;border:1px solid rgba(99,102,241,0.2);margin-top:6px}
 .admin-item{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border)}
 .admin-item:last-child{border-bottom:none}
-.admin-avatar{width:32px;height:32px;border-radius:6px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--text);flex-shrink:0}
+.admin-avatar{width:34px;height:34px;border-radius:8px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text);flex-shrink:0}
 .admin-name{font-size:14px;font-weight:500;flex:1}
 .remove-btn{color:var(--danger);font-size:12px;font-weight:500;cursor:pointer;background:none;border:none;padding:6px;font-family:'Inter',sans-serif}
 .remove-btn:hover{text-decoration:underline}
 
 /* PC list for delete */
-.pc-delete-item{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.pc-delete-item{display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--border)}
 .pc-delete-item:last-child{border-bottom:none}
 .pc-delete-name{font-size:14px;font-weight:500}
-.pc-delete-btn{background:var(--bg);border:1px solid var(--border);color:var(--danger);font-size:12px;font-weight:500;padding:6px 12px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif}
+.pc-delete-btn{background:var(--bg);border:1px solid var(--border);color:var(--danger);font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif}
 .pc-delete-btn:hover{border-color:var(--danger)}
 
 /* Toast */
-.toast{position:fixed;bottom:max(24px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 20px;font-size:13px;font-weight:500;z-index:200;white-space:nowrap;transition:transform .3s cubic-bezier(.32,0,0,1);box-shadow:0 10px 30px rgba(0,0,0,0.5);display:flex;align-items:center;gap:8px}
+.toast{position:fixed;bottom:max(24px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 22px;font-size:13px;font-weight:500;z-index:200;white-space:nowrap;transition:transform .3s cubic-bezier(.32,0,0,1);box-shadow:0 10px 40px rgba(0,0,0,0.5);display:flex;align-items:center;gap:10px}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .toast.success{border-color:var(--success);color:var(--success)}
 .toast.error{border-color:var(--danger);color:var(--danger)}
-.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.1);border-top-color:var(--text);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,0.1);border-top-color:var(--text);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
 .spinner.light{border-color:rgba(255,255,255,0.1);border-top-color:var(--text)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .empty-state{text-align:center;padding:60px 20px}
-.empty-icon{font-size:40px;margin-bottom:16px;opacity:0.3}
-.empty-title{font-size:15px;font-weight:500;margin-bottom:4px}
+.empty-icon{font-size:44px;margin-bottom:16px;opacity:0.3; color:var(--text-muted)}
+.empty-title{font-size:15px;font-weight:600;margin-bottom:4px}
 .empty-sub{color:var(--text-muted);font-size:13px}
-.fab{margin:0 20px 20px;padding:14px;background:var(--text);color:var(--bg);border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;margin-bottom:max(20px,calc(env(safe-area-inset-bottom)+8px));box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.fab{margin:0 20px 20px;padding:15px;background:var(--text);color:var(--bg);border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;margin-bottom:max(20px,calc(env(safe-area-inset-bottom)+8px));box-shadow:0 4px 15px rgba(0,0,0,0.3)}
 .fab:hover{background:#e4e4e7}
 .fab:active{transform:scale(.97)}
 .chevron{color:var(--text-muted);font-size:16px}
-.online-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:4px 8px;border-radius:4px;background:var(--bg);border:1px solid var(--border)}
+.online-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--border)}
+.online-pill i{font-size:10px}
+
+/* Icon Animations */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.icon-pulse{i{animation:pulse 2s infinite}}
+.icon-bounce{i{animation:bounce 2s infinite}}
 </style>
 </head>
 <body>
@@ -240,46 +277,48 @@ z-index:10;border-bottom:1px solid var(--border)}
 <!-- LOGIN -->
 <div class="screen active" id="screen-login">
 <div class="login-wrap safe-top">
-<div class="logo-mark">⚡</div>
+<div class="logo-mark"><i class="fa-solid fa-gamepad"></i></div>
 <div class="login-title">GameZone</div>
-<div class="login-sub">Management System</div>
+<div class="login-sub">PC Management System</div>
 <div class="tab-bar">
-<button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Login</button>
-<button class="tab-btn" id="tab-register" onclick="switchTab('register')">Register</button>
+<button class="tab-btn active" id="tab-login" onclick="switchTab('login')"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+<button class="tab-btn" id="tab-register" onclick="switchTab('register')"><i class="fa-solid fa-user-plus"></i> Register</button>
 </div>
 <div id="login-form">
-<div class="field"><label>Server URL</label><input type="url" id="login-server" placeholder="https://..." autocomplete="off"></div>
-<div class="field"><label>Username</label><input type="text" id="login-user" placeholder="Username" autocomplete="username"></div>
-<div class="field"><label>Password</label><input type="password" id="login-pass" placeholder="Password" autocomplete="current-password"></div>
+<div class="field"><label><i class="fa-solid fa-server"></i> Server URL</label><input type="url" id="login-server" placeholder="https://..." autocomplete="off"></div>
+<div class="field"><label><i class="fa-solid fa-user"></i> Username</label><input type="text" id="login-user" placeholder="Username" autocomplete="username"></div>
+<div class="field"><label><i class="fa-solid fa-lock"></i> Password</label><input type="password" id="login-pass" placeholder="Password" autocomplete="current-password"></div>
 <div style="height:6px"></div>
 <button class="btn btn-primary" id="login-btn" onclick="doLogin()"><span id="login-btn-text">Login</span></button>
 </div>
 <div id="register-form" style="display:none">
-<div class="field"><label>Server URL</label><input type="url" id="reg-server" placeholder="https://..." autocomplete="off"></div>
-<div class="field"><label>Username</label><input type="text" id="reg-user" placeholder="Username" autocomplete="username"></div>
-<div class="field"><label>Password</label><input type="password" id="reg-pass" placeholder="Password" autocomplete="new-password"></div>
+<div class="field"><label><i class="fa-solid fa-server"></i> Server URL</label><input type="url" id="reg-server" placeholder="https://..." autocomplete="off"></div>
+<div class="field"><label><i class="fa-solid fa-user"></i> Username</label><input type="text" id="reg-user" placeholder="Username" autocomplete="username"></div>
+<div class="field"><label><i class="fa-solid fa-lock"></i> Password</label><input type="password" id="reg-pass" placeholder="Password" autocomplete="new-password"></div>
 <div style="height:6px"></div>
 <button class="btn btn-primary" id="reg-btn" onclick="doRegister()"><span id="reg-btn-text">Create Account</span></button>
 </div>
 </div>
 </div>
-<!-- GROUPS -->
+
+<!-- GROUPS (Sidebar on Desktop) -->
 <div class="screen" id="screen-groups">
-<div class="topbar safe-top">
-<div class="topbar-title">GameZone</div>
-<button class="icon-btn" onclick="doLogout()">⏻</button>
+<div class="sidebar-header">
+<div class="sidebar-logo"><i class="fa-solid fa-gamepad icon-bounce"></i> GameZone</div>
+<button class="icon-btn" onclick="doLogout()"><i class="fa-solid fa-right-from-bracket"></i></button>
 </div>
 <div class="scroll-content">
 <div class="padded" id="groups-list"></div>
 </div>
-<button class="fab" onclick="openSheet('sheet-newgroup')">＋ New Group</button>
+<button class="fab" onclick="openSheet('sheet-newgroup')"><i class="fa-solid fa-plus"></i> New Group</button>
 </div>
+
 <!-- DASHBOARD -->
 <div class="screen" id="screen-dashboard">
 <div class="topbar safe-top">
-<button class="back-btn" onclick="goBack('groups')">← Back</button>
+<button class="back-btn" onclick="goBack('groups')"><i class="fa-solid fa-arrow-left"></i> Back</button>
 <div class="topbar-title" id="dash-title">Dashboard</div>
-<button class="icon-btn" onclick="showScreen('settings')">⚙</button>
+<button class="icon-btn" onclick="showScreen('settings')"><i class="fa-solid fa-gear"></i></button>
 </div>
 <div class="scroll-content">
 <div class="stats-bar">
@@ -289,24 +328,52 @@ z-index:10;border-bottom:1px solid var(--border)}
 </div>
 <div class="pc-grid" id="pc-grid"></div>
 </div>
-<button class="fab" onclick="openSheet('sheet-addpc')">＋ Add PC</button>
+<button class="fab" onclick="openSheet('sheet-addpc')"><i class="fa-solid fa-plus"></i> Add PC</button>
 </div>
+
 <!-- PC CONTROL -->
 <div class="screen" id="screen-pccontrol">
 <div class="topbar safe-top">
-<button class="back-btn" onclick="goBack('dashboard')">← Back</button>
-<div id="pc-control-name" class="topbar-title">PC</div>
+<button class="back-btn" onclick="goBack('dashboard')"><i class="fa-solid fa-arrow-left"></i></button>
+<div class="topbar-title" id="pc-control-name">PC</div>
 <div id="pc-online-pill" class="online-pill"></div>
 </div>
 <div class="scroll-content">
-<div id="pc-actions" style="padding-top:12px;display:flex;flex-direction:column;min-height:100%">
+<!-- Timer & Payment (Top) -->
+<div id="pc-timer-section"></div>
+
+<!-- Screen Controls (Middle) -->
+<div class="section-label">Screen Control</div>
+<div class="action-grid" style="margin-bottom:14px">
+<div class="action-tile" onclick="pcCmd('lock')">
+<div class="action-icon"><i class="fa-solid fa-lock icon-pulse"></i></div>
+<div class="action-label">Lock</div>
+</div>
+<div class="action-tile" onclick="pcCmd('unlock')">
+<div class="action-icon"><i class="fa-solid fa-lock-open"></i></div>
+<div class="action-label">Unlock</div>
 </div>
 </div>
+
+<!-- Apps (Middle) -->
+<div class="section-label">Applications</div>
+<div class="action-grid" style="margin-bottom:14px">
+<div class="action-tile full" onclick="openApps()">
+<div class="action-icon"><i class="fa-solid fa-rocket icon-bounce"></i></div>
+<div class="action-label">Launch App</div>
+<div class="action-sub">Open remotely</div>
 </div>
+</div>
+
+<!-- Session Controls (Bottom) -->
+<div id="pc-session-section"></div>
+</div>
+</div>
+
 <!-- SETTINGS -->
 <div class="screen" id="screen-settings">
 <div class="topbar safe-top">
-<button class="back-btn" onclick="goBack('dashboard')">← Back</button>
+<button class="back-btn" onclick="goBack('dashboard')"><i class="fa-solid fa-arrow-left"></i></button>
 <div class="topbar-title">Settings</div>
 <div style="width:50px"></div>
 </div>
@@ -325,17 +392,18 @@ z-index:10;border-bottom:1px solid var(--border)}
 </div>
 <div class="section-label" style="margin:24px 0 12px;padding:0">Administrators</div>
 <div id="admins-list"></div>
-<button class="btn btn-outline" style="margin-top:12px" onclick="openSheet('sheet-addadmin')">＋ Add Admin</button>
+<button class="btn btn-outline" style="margin-top:12px" onclick="openSheet('sheet-addadmin')"><i class="fa-solid fa-user-plus"></i> Add Admin</button>
 <div class="section-label" style="margin:24px 0 12px;padding:0">Management</div>
-<button class="btn btn-outline" onclick="openSheet('sheet-deletepc')">🗑 Delete PC</button>
+<button class="btn btn-outline" onclick="openSheet('sheet-deletepc')"><i class="fa-solid fa-trash"></i> Delete PC</button>
 <div style="height:16px"></div>
-<button class="btn btn-danger" onclick="confirmDeleteGroup()">🗑 Delete Group</button>
+<button class="btn btn-danger" onclick="confirmDeleteGroup()"><i class="fa-solid fa-trash-can"></i> Delete Group</button>
 <div style="height:10px"></div>
-<button class="btn btn-danger" onclick="doLogout()">Logout</button>
+<button class="btn btn-danger" onclick="doLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
 <div style="height:20px"></div>
 </div>
 </div>
 </div>
+
 <!-- SHEETS -->
 <div class="sheet-overlay" id="overlay-newgroup" onclick="closeSheet('sheet-newgroup')"></div>
 <div class="sheet" id="sheet-newgroup">
@@ -348,6 +416,7 @@ z-index:10;border-bottom:1px solid var(--border)}
 <button class="btn btn-primary" onclick="createGroup()"><span id="newgroup-btn-text">Create</span></button>
 </div>
 </div>
+
 <div class="sheet-overlay" id="overlay-addpc" onclick="closeSheet('sheet-addpc')"></div>
 <div class="sheet" id="sheet-addpc">
 <div class="sheet-handle"></div>
@@ -361,52 +430,55 @@ z-index:10;border-bottom:1px solid var(--border)}
 <button class="btn btn-primary" onclick="addPC()"><span id="addpc-btn-text">Add</span></button>
 </div>
 </div>
+
 <div class="sheet-overlay" id="overlay-startsession" onclick="closeSheet('sheet-startsession')"></div>
 <div class="sheet" id="sheet-startsession">
 <div class="sheet-handle"></div>
 <div class="sheet-title">Start Session</div>
 <div class="sheet-sub">Select duration or start free timer</div>
 <div class="time-chips">
-<div class="time-chip" onclick="startSession(30)">30m</div>
-<div class="time-chip" onclick="startSession(60)">1h</div>
-<div class="time-chip" onclick="startSession(90)">1.5h</div>
-<div class="time-chip" onclick="startSession(120)">2h</div>
-<div class="time-chip" onclick="startSession(180)">3h</div>
+<div class="time-chip" onclick="startSession(30)"><i class="fa-regular fa-clock"></i> 30m</div>
+<div class="time-chip" onclick="startSession(60)"><i class="fa-regular fa-clock"></i> 1h</div>
+<div class="time-chip" onclick="startSession(90)"><i class="fa-regular fa-clock"></i> 1.5h</div>
+<div class="time-chip" onclick="startSession(120)"><i class="fa-regular fa-clock"></i> 2h</div>
+<div class="time-chip" onclick="startSession(180)"><i class="fa-regular fa-clock"></i> 3h</div>
 </div>
 <div style="color:var(--text-muted);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Custom</div>
 <div class="custom-row" style="margin-bottom:16px">
 <input type="number" id="custom-hrs" placeholder="hrs" min="0" max="24">
 <span style="color:var(--text-muted);font-size:16px;font-weight:500;align-self:center">:</span>
 <input type="number" id="custom-mins" placeholder="min" min="0" max="59">
-<button class="btn btn-primary" style="width:auto;padding:12px 18px;flex-shrink:0" onclick="startCustomSession()">Start</button>
+<button class="btn btn-primary" style="width:auto;padding:13px 18px;flex-shrink:0" onclick="startCustomSession()">Start</button>
 </div>
-<div onclick="startStopwatch()" style="background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);color:var(--warning);width:100%;text-align:center;border-radius:8px;padding:14px;font-size:14px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:8px">
-⏱ Free Timer (Count Up)
+<div onclick="startStopwatch()" style="background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);color:var(--warning);width:100%;text-align:center;border-radius:10px;padding:15px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:8px">
+<i class="fa-solid fa-stopwatch"></i> Free Timer (Count Up)
 </div>
 </div>
+
 <div class="sheet-overlay" id="overlay-addtime" onclick="closeSheet('sheet-addtime')"></div>
 <div class="sheet" id="sheet-addtime">
 <div class="sheet-handle"></div>
 <div class="sheet-title">Add Time</div>
 <div class="time-chips">
-<div class="time-chip primary" onclick="addTime(30)">+30m</div>
-<div class="time-chip primary" onclick="addTime(60)">+1h</div>
-<div class="time-chip primary" onclick="addTime(90)">+1.5h</div>
-<div class="time-chip primary" onclick="addTime(120)">+2h</div>
-<div class="time-chip primary" onclick="addTime(180)">+3h</div>
+<div class="time-chip primary" onclick="addTime(30)"><i class="fa-solid fa-plus"></i> 30m</div>
+<div class="time-chip primary" onclick="addTime(60)"><i class="fa-solid fa-plus"></i> 1h</div>
+<div class="time-chip primary" onclick="addTime(90)"><i class="fa-solid fa-plus"></i> 1.5h</div>
+<div class="time-chip primary" onclick="addTime(120)"><i class="fa-solid fa-plus"></i> 2h</div>
+<div class="time-chip primary" onclick="addTime(180)"><i class="fa-solid fa-plus"></i> 3h</div>
 </div>
 <div style="color:var(--text-muted);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Custom</div>
 <div class="custom-row" style="margin-bottom:20px">
 <input type="number" id="add-hrs" placeholder="hrs" min="0" max="24">
 <span style="color:var(--text-muted);font-size:16px;font-weight:500;align-self:center">:</span>
 <input type="number" id="add-mins" placeholder="min" min="0" max="59">
-<button class="btn btn-primary" style="width:auto;padding:12px 18px;flex-shrink:0" onclick="addCustomTime()">Add</button>
+<button class="btn btn-primary" style="width:auto;padding:13px 18px;flex-shrink:0" onclick="addCustomTime()">Add</button>
 </div>
 </div>
+
 <div class="sheet-overlay" id="overlay-removetime" onclick="closeSheet('sheet-removetime')"></div>
 <div class="sheet" id="sheet-removetime">
 <div class="sheet-handle"></div>
-<div class="sheet-title" style="color:var(--danger)">Remove Time</div>
+<div class="sheet-title" style="color:var(--danger)"><i class="fa-solid fa-minus"></i> Remove Time</div>
 <div class="time-chips">
 <div class="time-chip danger" onclick="removeTime(15)">-15m</div>
 <div class="time-chip danger" onclick="removeTime(30)">-30m</div>
@@ -418,9 +490,10 @@ z-index:10;border-bottom:1px solid var(--border)}
 <input type="number" id="rem-hrs" placeholder="hrs" min="0" max="24">
 <span style="color:var(--text-muted);font-size:16px;font-weight:500;align-self:center">:</span>
 <input type="number" id="rem-mins" placeholder="min" min="0" max="59">
-<button style="flex-shrink:0;background:var(--danger);color:#fff;border:none;border-radius:6px;padding:12px 18px;font-size:14px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif" onclick="removeCustomTime()">Remove</button>
+<button style="flex-shrink:0;background:var(--danger);color:#fff;border:none;border-radius:8px;padding:13px 18px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif" onclick="removeCustomTime()">Remove</button>
 </div>
 </div>
+
 <div class="sheet-overlay" id="overlay-apps" onclick="closeSheet('sheet-apps')"></div>
 <div class="sheet" id="sheet-apps">
 <div class="sheet-handle"></div>
@@ -428,6 +501,7 @@ z-index:10;border-bottom:1px solid var(--border)}
 <div class="sheet-sub" id="apps-pc-name"></div>
 <div id="apps-list"><div style="text-align:center;padding:30px"><span class="spinner light"></span></div></div>
 </div>
+
 <div class="sheet-overlay" id="overlay-addadmin" onclick="closeSheet('sheet-addadmin')"></div>
 <div class="sheet" id="sheet-addadmin">
 <div class="sheet-handle"></div>
@@ -439,6 +513,7 @@ z-index:10;border-bottom:1px solid var(--border)}
 <button class="btn btn-primary" onclick="addAdmin()"><span id="addadmin-btn-text">Add</span></button>
 </div>
 </div>
+
 <div class="sheet-overlay" id="overlay-deletepc" onclick="closeSheet('sheet-deletepc')"></div>
 <div class="sheet" id="sheet-deletepc">
 <div class="sheet-handle"></div>
@@ -446,8 +521,10 @@ z-index:10;border-bottom:1px solid var(--border)}
 <div class="sheet-sub">Select a PC to remove</div>
 <div id="delete-pc-list"><div style="text-align:center;padding:20px"><span class="spinner light"></span></div></div>
 </div>
+
 <div class="toast" id="toast"></div>
 </div>
+
 <script>
 // ═══════════════════════════════════════════════════════
 // STATE
@@ -468,22 +545,18 @@ let _toastTimer;
 window.addEventListener('load', () => {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
     
-    // Load saved auth from localStorage
     state.token = localStorage.getItem('gz_token');
     state.user = JSON.parse(localStorage.getItem('gz_user') || 'null');
     state.serverUrl = localStorage.getItem('gz_server') || '';
     
     if (state.token && state.user) {
-        // User is logged in, show groups
         showScreen('groups');
         loadGroups();
     } else {
-        // Show login screen
         const s = localStorage.getItem('gz_server') || '';
         if (s) document.getElementById('login-server').value = s;
     }
     
-    // Live timer tick
     setInterval(() => {
         if (currentScreen === 'dashboard') renderPCs();
         if (currentScreen === 'pccontrol') renderPCActions();
@@ -544,11 +617,9 @@ async function api(method, path, body) {
 // AUTH
 // ═══════════════════════════════════════════════════════
 function switchTab(tab) {
-    // Update tab buttons
     document.getElementById('tab-login').classList.toggle('active', tab === 'login');
     document.getElementById('tab-register').classList.toggle('active', tab === 'register');
     
-    // Show/hide forms
     document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
     document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
 }
@@ -657,13 +728,13 @@ async function loadGroups() {
 function renderGroups() {
     const el = document.getElementById('groups-list');
     if (!state.groups.length) {
-        el.innerHTML = '<div class="empty-state"><div class="empty-icon">🏪</div><div class="empty-title">No Groups yet</div><div class="empty-sub">Create your first group below</div></div>';
+        el.innerHTML = '<div class="empty-state"><div class="empty-icon"><i class="fa-solid fa-store"></i></div><div class="empty-title">No Groups yet</div><div class="empty-sub">Create your first group below</div></div>';
         return;
     }
     el.innerHTML = state.groups.map(g => `
     <div class="group-card" onclick="openGroup('${g.id}')">
-        <div><div class="group-name">${g.name}</div><div class="group-sub">Tap to manage PCs</div></div>
-        <span class="chevron">›</span>
+        <div><div class="group-name"><i class="fa-solid fa-network-wired"></i> ${g.name}</div><div class="group-sub">Tap to manage PCs</div></div>
+        <span class="chevron"><i class="fa-solid fa-chevron-right"></i></span>
     </div>`).join('');
 }
 
@@ -720,7 +791,7 @@ function renderPCs() {
     
     const grid = document.getElementById('pc-grid');
     if (!state.pcs.length) {
-        grid.innerHTML = '<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">🖥️</div><div class="empty-title">No PCs yet</div><div class="empty-sub">Tap "+ Add PC" to register one</div></div></div>';
+        grid.innerHTML = '<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon"><i class="fa-solid fa-desktop"></i></div><div class="empty-title">No PCs yet</div><div class="empty-sub">Tap "+ Add PC" to register one</div></div></div>';
         return;
     }
     grid.innerHTML = state.pcs.map(pc => {
@@ -733,14 +804,14 @@ function renderPCs() {
         const timer = !pc.is_online ? '···' : isWatch ? fmtTime(elapsed) : left > 0 ? fmtTime(left) : '—';
         const pay = _pay[pc.id];
         const payBadge = pay === 'paid'
-            ? `<span class="pay-badge" style="background:rgba(34,197,94,0.1);color:var(--success)">Paid</span>`
+            ? `<span class="pay-badge" style="background:rgba(34,197,94,0.1);color:var(--success)"><i class="fa-solid fa-check"></i> Paid</span>`
             : pay === 'unpaid'
-            ? `<span class="pay-badge" style="background:rgba(239,68,68,0.1);color:var(--danger)">Unpaid</span>`
+            ? `<span class="pay-badge" style="background:rgba(239,68,68,0.1);color:var(--danger)"><i class="fa-solid fa-xmark"></i> Unpaid</span>`
             : '';
         return `
         <div class="pc-tile" onclick="openPC('${pc.id}')" style="border-color:${color}44">
             <div class="pc-tile-header">
-                <div class="pc-tile-name">${pc.name}</div>
+                <div class="pc-tile-name"><i class="fa-solid fa-computer"></i> ${pc.name}</div>
                 <div class="pc-dot" style="background:${color}"></div>
             </div>
             <div class="pc-timer" style="color:${color}">${timer}</div>
@@ -792,7 +863,9 @@ function updateOnlinePill() {
     const pc = state.activePc;
     if (!pc) return;
     const pill = document.getElementById('pc-online-pill');
-    pill.textContent = pc.is_online ? 'Online' : 'Offline';
+    pill.innerHTML = pc.is_online 
+        ? '<i class="fa-solid fa-circle" style="color:var(--success);font-size:8px"></i> Online' 
+        : '<i class="fa-solid fa-circle" style="color:var(--text-muted);font-size:8px"></i> Offline';
     pill.style.cssText = `color:${pc.is_online ? 'var(--success)' : 'var(--text-muted)'};border-color:${pc.is_online ? 'var(--success)' : 'var(--border)'}`;
 }
 
@@ -804,72 +877,54 @@ function renderPCActions() {
     const isWatch = pc.stopwatch_start > 0;
     const isActive = left > 0 || isWatch;
     const pay = _pay[pc.id] || null;
-    const el = document.getElementById('pc-actions');
-    let html = '';
     
+    // Timer Section (Top)
+    const timerSection = document.getElementById('pc-timer-section');
     if (isActive) {
         const timerColor = isWatch ? 'var(--primary)' : left < 300 ? 'var(--warning)' : left < 60 ? 'var(--danger)' : 'var(--success)';
         const timerVal = isWatch ? fmtTime(Math.floor(Date.now() / 1000) - pc.stopwatch_start) : fmtTime(left);
-        html += `
+        timerSection.innerHTML = `
         <div class="timer-row">
             <div class="timer-inline" style="color:${timerColor}">${timerVal}</div>
             <div class="pay-btns">
-                <button class="pay-btn ${pay === 'paid' ? 'active-paid' : ''}" onclick="togglePay('paid')">Paid</button>
-                <button class="pay-btn ${pay === 'unpaid' ? 'active-unpaid' : ''}" onclick="togglePay('unpaid')">Unpaid</button>
-            </div>
-        </div>`;
-        html += `
-        <div class="section-label">Session</div>
-        <div class="action-grid three" style="margin-bottom:14px">
-            <div class="action-tile" onclick="openSheet('sheet-addtime')">
-                <div class="action-icon">⏱</div>
-                <div class="action-label">Add</div>
-            </div>
-            <div class="action-tile" onclick="openSheet('sheet-removetime')">
-                <div class="action-icon">⏳</div>
-                <div class="action-label">Remove</div>
-            </div>
-            <div class="action-tile" onclick="confirmEndSession()" style="color:var(--danger)">
-                <div class="action-icon">⏹</div>
-                <div class="action-label">End</div>
+                <button class="pay-btn ${pay === 'paid' ? 'active-paid' : ''}" onclick="togglePay('paid')"><i class="fa-solid fa-check"></i> Paid</button>
+                <button class="pay-btn ${pay === 'unpaid' ? 'active-unpaid' : ''}" onclick="togglePay('unpaid')"><i class="fa-solid fa-xmark"></i> Unpaid</button>
             </div>
         </div>`;
     } else {
-        html += `
-        <div class="section-label">Session</div>
+        timerSection.innerHTML = '';
+    }
+    
+    // Session Section (Bottom)
+    const sessionSection = document.getElementById('pc-session-section');
+    if (isActive) {
+        sessionSection.innerHTML = `
+        <div class="section-label">Session Control</div>
+        <div class="action-grid three" style="margin-bottom:14px">
+            <div class="action-tile" onclick="openSheet('sheet-addtime')">
+                <div class="action-icon"><i class="fa-solid fa-clock-plus" style="color:var(--primary)"></i></div>
+                <div class="action-label">Add Time</div>
+            </div>
+            <div class="action-tile" onclick="openSheet('sheet-removetime')">
+                <div class="action-icon"><i class="fa-solid fa-clock-minus" style="color:var(--warning)"></i></div>
+                <div class="action-label">Remove</div>
+            </div>
+            <div class="action-tile" onclick="confirmEndSession()">
+                <div class="action-icon"><i class="fa-solid fa-stop" style="color:var(--danger)"></i></div>
+                <div class="action-label">End Session</div>
+            </div>
+        </div>`;
+    } else {
+        sessionSection.innerHTML = `
+        <div class="section-label">Session Control</div>
         <div class="action-grid" style="margin-bottom:14px">
             <div class="action-tile full" onclick="openSheet('sheet-startsession')">
-                <div class="action-icon">▶</div>
+                <div class="action-icon"><i class="fa-solid fa-play" style="color:var(--success)"></i></div>
                 <div class="action-label">Start Session</div>
                 <div class="action-sub">Timed or free timer</div>
             </div>
         </div>`;
     }
-    
-    html += '<div style="flex:1"></div>';
-    html += `
-    <div class="section-label">Screen</div>
-    <div class="action-grid" style="margin-bottom:14px">
-        <div class="action-tile" onclick="pcCmd('lock')">
-            <div class="action-icon">🔒</div>
-            <div class="action-label">Lock</div>
-        </div>
-        <div class="action-tile" onclick="pcCmd('unlock')">
-            <div class="action-icon">🔓</div>
-            <div class="action-label">Unlock</div>
-        </div>
-    </div>`;
-    html += `
-    <div class="section-label">Apps</div>
-    <div class="action-grid" style="margin-bottom:14px">
-        <div class="action-tile full" onclick="openApps()">
-            <div class="action-icon">🚀</div>
-            <div class="action-label">Launch App</div>
-            <div class="action-sub">Open remotely</div>
-        </div>
-    </div>`;
-    
-    el.innerHTML = html;
 }
 
 function togglePay(status) {
@@ -1022,8 +1077,8 @@ async function openApps() {
         }
         document.getElementById('apps-list').innerHTML = apps.map((a, i) => `
         <div class="app-item">
-            <div><div class="app-item-name">${a.name}</div></div>
-            <button class="launch-btn" onclick="launchApp(${i})">Launch</button>
+            <div><div class="app-item-name"><i class="fa-solid fa-file"></i> ${a.name}</div></div>
+            <button class="launch-btn" onclick="launchApp(${i})"><i class="fa-solid fa-play"></i> Launch</button>
         </div>`).join('');
     } catch (e) {
         document.getElementById('apps-list').innerHTML = '<div style="color:var(--danger);text-align:center;padding:20px">Failed to load apps</div>';
@@ -1053,7 +1108,7 @@ async function loadAdmins() {
             <div class="admin-item">
                 <div class="admin-avatar">${a.username[0].toUpperCase()}</div>
                 <div class="admin-name">${a.username}</div>
-                <button class="remove-btn" onclick="removeAdmin('${a.id}','${a.username}')">Remove</button>
+                <button class="remove-btn" onclick="removeAdmin('${a.id}','${a.username}')"><i class="fa-solid fa-trash"></i> Remove</button>
             </div>`).join('')
             : '<div style="color:var(--text-muted);padding:10px 0;font-size:13px">No additional admins</div>';
     } catch (e) {}
@@ -1098,8 +1153,8 @@ function loadDeletePCList() {
     }
     el.innerHTML = state.pcs.map(pc => `
     <div class="pc-delete-item">
-        <div class="pc-delete-name">${pc.name}</div>
-        <button class="pc-delete-btn" onclick="deletePC('${pc.id}','${pc.name}')">Delete</button>
+        <div class="pc-delete-name"><i class="fa-solid fa-computer"></i> ${pc.name}</div>
+        <button class="pc-delete-btn" onclick="deletePC('${pc.id}','${pc.name}')"><i class="fa-solid fa-trash"></i> Delete</button>
     </div>`).join('');
 }
 
