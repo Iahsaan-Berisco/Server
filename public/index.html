@@ -98,7 +98,7 @@ align-items: center;
 #screen-groups {
 grid-column: 1;
 grid-row: 1;
-display: flex !important;    /* always shown on desktop */
+display: flex !important;
 border-right: 1px solid var(--bd);
 background: var(--s1);
 }
@@ -108,8 +108,30 @@ background: var(--s1);
 grid-column: 2;
 grid-row: 1;
 }
-/* FAB hidden on desktop */
+/* FAB hidden on desktop - replaced with floating button */
 .fab { display: none !important; }
+/* Desktop floating add button */
+.desktop-add-btn {
+position: fixed !important;
+bottom: 32px;
+right: 32px;
+width: 56px;
+height: 56px;
+border-radius: 50%;
+background: var(--green);
+color: #fff;
+display: flex !important;
+align-items: center;
+justify-content: center;
+font-size: 20px;
+cursor: pointer;
+box-shadow: 0 4px 14px rgba(16,185,129,.3);
+transition: all .18s;
+z-index: 150;
+border: none;
+}
+.desktop-add-btn:hover { background: #0ea572; transform: scale(1.05); }
+.desktop-add-btn:active { transform: scale(.95); }
 /* Desktop-only sidebar header */
 .sidebar-header { display: flex !important; }
 /* Wider paddings on desktop */
@@ -237,7 +259,7 @@ white-space: nowrap;
 SIDEBAR (GROUPS)
 ────────────────────────────────────────── */
 .sidebar-header {
-display: none; /* shown only on desktop via media query */
+display: none;
 align-items: center; justify-content: space-between;
 padding: 0 20px; height: var(--nav-h);
 border-bottom: 1px solid var(--bd); flex-shrink: 0;
@@ -427,6 +449,16 @@ font-size: 10px; font-weight: 700; color: var(--red); background: var(--red-bg);
 border: 1px solid var(--red-bd); padding: 5px 10px; border-radius: var(--r);
 cursor: pointer; font-family: var(--sans); text-transform: uppercase; letter-spacing: .4px;
 }
+/* Reorder buttons */
+.reorder-btns { display: flex; gap: 4px; }
+.reorder-btn {
+width: 28px; height: 28px; border-radius: var(--r);
+background: var(--s3); border: none; color: var(--t2);
+cursor: pointer; font-size: 11px; transition: all .15s;
+display: flex; align-items: center; justify-content: center;
+}
+.reorder-btn:hover { background: var(--green-bg); color: var(--green); }
+.reorder-btn:disabled { opacity: .3; cursor: not-allowed; }
 /* ──────────────────────────────────────────
 FAB
 ────────────────────────────────────────── */
@@ -439,6 +471,7 @@ background: var(--green); color: #fff;
 font-size: 13px; font-weight: 700; font-family: var(--sans);
 border: none; cursor: pointer; transition: all .18s;
 box-shadow: 0 4px 14px rgba(16,185,129,.3);
+width: calc(100% - 36px);
 }
 .fab:hover { background: #0ea572; }
 .fab:active { transform: scale(.97); }
@@ -569,7 +602,6 @@ animation: _spin .6s linear infinite; display: inline-block;
 </div>
 <!-- ════════════════════ GROUPS / SIDEBAR ════════════════════ -->
 <div class="screen" id="screen-groups">
-<!-- Desktop sidebar header -->
 <div class="sidebar-header">
 <div class="sidebar-brand">
 <div class="sidebar-brand-icon"><i class="fa-solid fa-gamepad"></i></div>
@@ -580,7 +612,6 @@ GameZone
 <button class="icon-btn" onclick="doLogout()" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
 </div>
 </div>
-<!-- Mobile topbar -->
 <div class="topbar mobile-topbar">
 <div class="topbar-title">Groups</div>
 <button class="icon-btn" onclick="doLogout()"><i class="fa-solid fa-right-from-bracket"></i></button>
@@ -595,8 +626,6 @@ GameZone
 <div class="topbar">
 <button class="back-btn" onclick="goBack('groups')"><i class="fa-solid fa-chevron-left"></i> Back</button>
 <div class="topbar-title" id="dash-title">Dashboard</div>
-<!-- Added Add PC Button (Desktop Only) -->
-<button class="icon-btn desktop-only" onclick="openSheet('sheet-addpc')" title="Add PC"><i class="fa-solid fa-plus"></i></button>
 <button class="icon-btn" onclick="showScreen('settings')"><i class="fa-solid fa-gear"></i></button>
 </div>
 <div class="scroll-area">
@@ -610,6 +639,7 @@ GameZone
 </div>
 </div>
 <button class="fab" onclick="openSheet('sheet-addpc')"><i class="fa-solid fa-plus"></i> Add PC</button>
+<button class="desktop-add-btn" onclick="openSheet('sheet-addpc')" title="Add PC"><i class="fa-solid fa-plus"></i></button>
 </div>
 <!-- ════════════════════ PC CONTROL ════════════════════ -->
 <div class="screen" id="screen-pccontrol">
@@ -673,6 +703,11 @@ GameZone
 <i class="fa-solid fa-user-plus"></i> Add Admin
 </button>
 <div style="height:20px"></div>
+<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:12px">PC Management</div>
+<button class="btn btn-ghost" style="margin-bottom:10px" onclick="openSheet('sheet-reorderpc')">
+<i class="fa-solid fa-arrow-up-arrow-down"></i> Reorder PCs
+</button>
+<div style="height:20px"></div>
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:12px">Danger Zone</div>
 <div style="display:flex;flex-direction:column;gap:10px">
 <button class="btn btn-ghost" onclick="openSheet('sheet-deletepc')">
@@ -712,6 +747,17 @@ GameZone
 <div class="sheet-btns">
 <button class="btn btn-ghost" onclick="closeSheet('sheet-addpc')">Cancel</button>
 <button class="btn btn-primary" onclick="addPC()"><span id="addpc-btn-text">Add PC</span></button>
+</div>
+</div>
+<div class="sheet-bg" id="bg-reorderpc" onclick="closeSheet('sheet-reorderpc')"></div>
+<div class="sheet" id="sheet-reorderpc">
+<div class="sheet-handle"></div>
+<div class="sheet-title">Reorder PCs</div>
+<div class="sheet-sub">Drag or use arrows to rearrange. No need to change PC credentials.</div>
+<div id="reorder-pc-list"><div style="text-align:center;padding:20px"><span class="spin"></span></div></div>
+<div class="sheet-btns">
+<button class="btn btn-ghost" onclick="closeSheet('sheet-reorderpc')">Cancel</button>
+<button class="btn btn-primary" onclick="savePCOrder()"><span id="reorder-btn-text">Save Order</span></button>
 </div>
 </div>
 <div class="sheet-bg" id="bg-startsession" onclick="closeSheet('sheet-startsession')"></div>
@@ -829,29 +875,24 @@ function showScreen(name) {
     const isDesktop = window.innerWidth >= 1024;
     if (isDesktop) {
         if (name === 'login') {
-            // Hide everything, show login overlay
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('screen-login').classList.add('active');
         } else if (name === 'groups') {
-            // On desktop, "going back to groups" just clears the main panel
             MAIN_SCREENS.forEach(id => document.getElementById(id).classList.remove('active'));
-            // FIX: Ensure login screen is hidden when navigating to groups
             document.getElementById('screen-login').classList.remove('active');
         } else {
-            // Activate sidebar + target main screen
             MAIN_SCREENS.forEach(id => document.getElementById(id).classList.remove('active'));
             document.getElementById('screen-login').classList.remove('active');
             const el = document.getElementById('screen-' + name);
             if (el) el.classList.add('active');
         }
     } else {
-        // Mobile: one screen at a time
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         const el = document.getElementById('screen-' + name);
         if (el) el.classList.add('active');
     }
     currentScreen = name;
-    if (name === 'settings') { loadAdmins(); loadDeletePCList(); }
+    if (name === 'settings') { loadAdmins(); loadDeletePCList(); loadReorderPCList(); }
 }
 
 function goBack(to) { showScreen(to); }
@@ -886,7 +927,6 @@ document.getElementById('login-form').style.display = tab==='login'?'block':'non
 document.getElementById('register-form').style.display = tab==='register'?'block':'none';
 }
 
-// Helper for fetch with timeout
 async function fetchWithTimeout(url, options, timeout = 10000) {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
@@ -908,7 +948,6 @@ const btn = document.getElementById('login-btn');
 btn.disabled = true;
 document.getElementById('login-btn-text').innerHTML = '<span class="spin"></span>';
 try {
-    // FIX: Added timeout to prevent infinite spinning
     const res = await fetchWithTimeout(server+'/api/login', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -934,7 +973,6 @@ const btn = document.getElementById('reg-btn');
 btn.disabled = true;
 document.getElementById('reg-btn-text').innerHTML = '<span class="spin"></span>';
 try {
-    // FIX: Added timeout to prevent infinite spinning
     const res = await fetchWithTimeout(server+'/api/register', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -1023,7 +1061,9 @@ if (!state.pcs.length) {
 grid.innerHTML = '<div style="grid-column:1/-1"><div class="empty"><div class="empty-ico"><i class="fa-solid fa-desktop"></i></div><div class="empty-h">No PCs yet</div><div class="empty-p">Tap "+ Add PC" to register one</div></div></div>';
 return;
 }
-grid.innerHTML = state.pcs.map(pc => {
+// Sort by order field if exists
+const sortedPcs = [...state.pcs].sort((a,b) => (a.order||0) - (b.order||0));
+grid.innerHTML = sortedPcs.map(pc => {
 const left = pc.session_end>now ? pc.session_end-now : 0;
 const isWatch = pc.stopwatch_start>0;
 const col  = !pc.is_online ? 'var(--t3)' : isWatch ? 'var(--blue)' : left>300 ? 'var(--green)' : left>0 ? 'var(--amber)' : 'var(--red)';
@@ -1062,6 +1102,47 @@ closeSheet('sheet-addpc');
 toast('PC added','ok');
 } catch(e) { toast(e.message,'err'); }
 finally { document.getElementById('addpc-btn-text').textContent='Add PC'; }
+}
+
+// ── REORDER PCs ──────────────────────────────────────────────
+function loadReorderPCList() {
+const el = document.getElementById('reorder-pc-list');
+if (!state.pcs?.length) { el.innerHTML='<div style="color:var(--t2);padding:8px 0;font-size:12px">No PCs in this group</div>'; return; }
+// Sort by current order
+const sortedPcs = [...state.pcs].sort((a,b) => (a.order||0) - (b.order||0));
+el.innerHTML = sortedPcs.map((pc,idx)=>`<div class="pc-del-row" data-pc-id="${pc.id}">
+<div class="pc-del-name"><i class="fa-solid fa-computer" style="color:var(--t3)"></i>${pc.name}</div>
+<div class="reorder-btns">
+<button class="reorder-btn" onclick="movePC('${pc.id}',-1)" ${idx===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button>
+<button class="reorder-btn" onclick="movePC('${pc.id}',1)" ${idx===sortedPcs.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button>
+</div>
+</div>`).join('');
+}
+function movePC(pcId, direction) {
+const sortedPcs = [...state.pcs].sort((a,b) => (a.order||0) - (b.order||0));
+const idx = sortedPcs.findIndex(p=>p.id===pcId);
+if (idx < 0) return;
+const newIdx = idx + direction;
+if (newIdx < 0 || newIdx >= sortedPcs.length) return;
+// Swap order values
+const temp = sortedPcs[idx].order||idx;
+sortedPcs[idx].order = sortedPcs[newIdx].order||newIdx;
+sortedPcs[newIdx].order = temp;
+// Update state
+state.pcs = sortedPcs;
+loadReorderPCList();
+}
+async function savePCOrder() {
+const sortedPcs = [...state.pcs].sort((a,b) => (a.order||0) - (b.order||0));
+const orderData = sortedPcs.map((pc,idx)=>({pc_id:pc.id, order:idx}));
+document.getElementById('reorder-btn-text').innerHTML='<span class="spin"></span>';
+try {
+await api('POST','/groups/'+state.activeGroup.id+'/pcs/reorder',{order:orderData});
+closeSheet('sheet-reorderpc');
+toast('PC order saved','ok');
+renderPCs();
+} catch(e) { toast(e.message,'err'); }
+finally { document.getElementById('reorder-btn-text').textContent='Save Order'; }
 }
 
 // ── PC CONTROL ───────────────────────────────────────────────
