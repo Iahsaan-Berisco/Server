@@ -158,7 +158,8 @@ border: none;
 .desktop-add-btn:active { transform: scale(.95); }
 .desktop-only { display: flex !important; }
 }
-
+/* Mobile: hide desktop-only elements */
+.desktop-only { display: none !important; }
 /* ──────────────────────────────────────────
 TOPBAR
 ────────────────────────────────────────── */
@@ -231,8 +232,6 @@ font-family: var(--sans); transition: all .18s;
 display: flex; align-items: center; justify-content: center; gap: 5px;
 }
 .tab-btn.active { background: var(--s2); color: var(--t1); }
-    /* Mobile: hide desktop-only elements */
-.desktop-only { display: none !important; }
 /* ──────────────────────────────────────────
 FORM FIELDS
 ────────────────────────────────────────── */
