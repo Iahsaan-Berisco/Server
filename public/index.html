@@ -3,1075 +3,1380 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#050d1a">
+<meta name="theme-color" content="#0f0f0f">
 <title>GameZone Manager</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="/socket.io/socket.io.js"></script>
 <style>
 :root {
-  --bg-base: #050d1a;
-  --bg-panel: #0a1628;
-  --bg-card: #0f1e35;
-  --bg-card-2: #162540;
-  --bg-input: #0a1628;
+  --bg: #0f0f0f;
+  --s1: #171717;
+  --s2: #1e1e1e;
+  --s3: #272727;
+  --s4: #303030;
 
-  --cyan: #00d4ff;
-  --cyan-dim: rgba(0, 212, 255, 0.12);
-  --cyan-border: rgba(0, 212, 255, 0.25);
-  --cyan-glow: 0 0 20px rgba(0, 212, 255, 0.15);
+  --green: #10b981;
+  --green-bg: rgba(16,185,129,.1);
+  --green-bd: rgba(16,185,129,.3);
 
-  --green: #00e676;
-  --green-dim: rgba(0, 230, 118, 0.1);
-  --green-border: rgba(0, 230, 118, 0.3);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,.1);
+  --red-bd: rgba(239,68,68,.3);
 
-  --orange: #ff6b35;
-  --orange-dim: rgba(255, 107, 53, 0.1);
-  --orange-border: rgba(255, 107, 53, 0.3);
+  --amber: #f59e0b;
+  --amber-bg: rgba(245,158,11,.1);
+  --amber-bd: rgba(245,158,11,.3);
 
-  --red: #ff3b5c;
-  --red-dim: rgba(255, 59, 92, 0.1);
-  --red-border: rgba(255, 59, 92, 0.3);
+  --blue: #3b82f6;
+  --blue-bg: rgba(59,130,246,.1);
+  --blue-bd: rgba(59,130,246,.3);
 
-  --yellow: #ffd60a;
-  --yellow-dim: rgba(255, 214, 10, 0.1);
+  --t1: #fafafa;
+  --t2: #a3a3a3;
+  --t3: #525252;
 
-  --text: #e8f4fd;
-  --text-2: #7a9bbf;
-  --text-3: #3d5a7a;
+  --bd: rgba(255,255,255,.07);
+  --bd2: rgba(255,255,255,.12);
 
-  --border: rgba(255, 255, 255, 0.05);
-  --border-2: rgba(255, 255, 255, 0.1);
+  --r: 10px;
+  --r2: 14px;
+  --r3: 20px;
 
-  --radius: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 18px;
+  --sans: 'Inter', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
 
-  --sidebar-w: 280px;
-  --header-h: 64px;
-
-  --font: 'Space Grotesk', sans-serif;
-  --mono: 'Space Mono', monospace;
+  --sidebar: 300px;
+  --nav-h: 60px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; background: var(--bg-base); color: var(--text); font-family: var(--font); overflow: hidden; }
-#app { height: 100dvh; overflow: hidden; position: relative; }
+html, body { height: 100%; background: var(--bg); color: var(--t1); font-family: var(--sans); overflow: hidden; }
 
-/* ─── DESKTOP ─── */
+/* ──────────────────────────────────────────
+   APP SHELL
+────────────────────────────────────────── */
+#app { height: 100dvh; position: relative; overflow: hidden; }
+
+/* ──────────────────────────────────────────
+   MOBILE: stacked absolute screens
+────────────────────────────────────────── */
+.screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  opacity: 0; pointer-events: none;
+  transform: translateY(10px);
+  transition: opacity .22s ease, transform .22s ease;
+  z-index: 10; overflow: hidden;
+}
+.screen.active { opacity: 1; pointer-events: all; transform: none; z-index: 20; }
+
+/* ──────────────────────────────────────────
+   DESKTOP OVERRIDES (1024+)
+────────────────────────────────────────── */
 @media (min-width: 1024px) {
-  #app { display: grid; grid-template-columns: var(--sidebar-w) 1fr; }
-  #screen-login { grid-column: 1 / -1; display: none; justify-content: center; align-items: center; }
+
+  /* App becomes a grid */
+  #app {
+    display: grid;
+    grid-template-columns: var(--sidebar) 1fr;
+    grid-template-rows: 1fr;
+    overflow: hidden;
+  }
+
+  /* Reset all screens from absolute to grid children */
+  .screen {
+    position: relative !important;
+    inset: auto !important;
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: all !important;
+    transition: none !important;
+    z-index: auto !important;
+    display: none;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  .screen.active { display: flex; }
+
+  /* Login: overlays everything */
+  #screen-login {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 200 !important;
+    display: none;
+    justify-content: center;
+    align-items: center;
+  }
   #screen-login.active { display: flex; }
-  #screen-groups { grid-column: 1; display: none; flex-direction: column; border-right: 1px solid var(--border); background: var(--bg-panel); }
-  #screen-groups.active { display: flex; }
-  #screen-groups .topbar { display: none; }
-  #screen-dashboard, #screen-pccontrol, #screen-settings { grid-column: 2; background: var(--bg-base); display: none; flex-direction: column; }
-  #screen-dashboard.active, #screen-pccontrol.active, #screen-settings.active { display: flex; }
-  .pc-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; padding: 24px 32px 32px; }
-  .action-grid { gap: 14px; padding: 0 32px; }
-  .action-grid.three { grid-template-columns: repeat(3, 1fr); }
-  .fab { display: none; }
+
+  /* Groups sidebar: always visible in col 1 when logged in */
+  #screen-groups {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex !important;    /* always shown on desktop */
+    border-right: 1px solid var(--bd);
+    background: var(--s1);
+  }
+  #screen-groups .mobile-topbar { display: none; }
+
+  /* Main content screens: col 2 */
+  #screen-dashboard, #screen-pccontrol, #screen-settings {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  /* FAB hidden on desktop */
+  .fab { display: none !important; }
+
+  /* Desktop-only sidebar header */
+  .sidebar-header { display: flex !important; }
+
+  /* Wider paddings on desktop */
+  .screen-pad { padding: 28px 32px; }
+  .pc-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; padding: 0 32px 32px; }
+  .action-grid { padding: 0 32px; }
+  .stats-row { padding: 24px 32px 20px; }
   .topbar { padding: 0 32px; }
-  .padded { padding: 32px; }
-  .timer-inline { font-size: 72px; }
-  .sidebar-header { height: var(--header-h); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-  .sidebar-logo { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
-  .sidebar-logo .logo-icon { width: 32px; height: 32px; background: var(--cyan-dim); border: 1px solid var(--cyan-border); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; }
-  .sidebar-logo .logo-icon i { color: var(--cyan); font-size: 14px; }
-  #screen-groups .scroll-content { padding-top: 0; }
-  #screen-groups .padded { padding: 16px 20px; }
-  .sheet { max-width: 480px; left: 50%; bottom: 40px; transform: translate(-50%, 100%); border-radius: var(--radius-xl); }
+  .scroll-inner { max-width: 860px; }
+
+  /* Sheet centered */
+  .sheet { left: 50%; right: auto; transform: translate(-50%, 100%); width: 480px; border-radius: var(--r3); bottom: 40px; }
   .sheet.open { transform: translate(-50%, 0); }
 }
 
-/* ─── SCREENS ─── */
-.screen {
-  position: absolute; inset: 0; display: flex; flex-direction: column;
-  background: var(--bg-base); opacity: 0; pointer-events: none;
-  transition: opacity 0.25s ease, transform 0.25s ease;
-  transform: translateY(10px); overflow: hidden; z-index: 10;
-}
-.screen.active { opacity: 1; pointer-events: all; transform: translateY(0); z-index: 20; }
-
-/* ─── TOPBAR ─── */
+/* ──────────────────────────────────────────
+   TOPBAR
+────────────────────────────────────────── */
 .topbar {
+  height: var(--nav-h);
+  padding: 0 18px;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 20px; padding-top: env(safe-area-inset-top);
-  height: calc(var(--header-h) + env(safe-area-inset-top));
-  background: var(--bg-panel); border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; z-index: 50; flex-shrink: 0;
+  background: var(--s1); border-bottom: 1px solid var(--bd);
+  flex-shrink: 0; position: sticky; top: 0; z-index: 50;
 }
-.topbar-title { font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--text-2); }
+.topbar-title {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase; color: var(--t3);
+}
 
 .back-btn {
-  color: var(--text-2); font-size: 13px; font-weight: 500; background: none; border: none;
-  cursor: pointer; padding: 7px 10px; border-radius: var(--radius); transition: all 0.18s;
-  display: flex; align-items: center; gap: 6px; font-family: var(--font);
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 600; color: var(--t2);
+  background: none; border: none; cursor: pointer; padding: 6px 10px;
+  border-radius: var(--r); transition: color .15s, background .15s; font-family: var(--sans);
 }
-.back-btn:hover { color: var(--cyan); background: var(--cyan-dim); }
-.back-btn i { font-size: 12px; }
+.back-btn:hover { color: var(--t1); background: var(--s3); }
+.back-btn i { font-size: 11px; }
 
 .icon-btn {
-  background: none; border: none; cursor: pointer; color: var(--text-3);
-  font-size: 16px; padding: 7px; border-radius: var(--radius); transition: all 0.18s;
   width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer; color: var(--t3);
+  border-radius: var(--r); font-size: 16px; transition: color .15s, background .15s;
 }
-.icon-btn:hover { background: var(--cyan-dim); color: var(--cyan); }
+.icon-btn:hover { color: var(--t1); background: var(--s3); }
 
-/* ─── SCROLL ─── */
-.scroll-content {
-  flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+/* ──────────────────────────────────────────
+   SCROLL AREA
+────────────────────────────────────────── */
+.scroll-area {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
-.scroll-content::-webkit-scrollbar { width: 3px; }
-.scroll-content::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+.scroll-area::-webkit-scrollbar { width: 3px; }
+.scroll-area::-webkit-scrollbar-thumb { background: var(--s4); border-radius: 2px; }
 
-.padded { padding: 20px; }
+.scroll-inner { width: 100%; }
+.screen-pad { padding: 20px 18px; }
 
-/* ─── LOGIN ─── */
-#screen-login { justify-content: center; align-items: center; }
+/* ──────────────────────────────────────────
+   LOGIN
+────────────────────────────────────────── */
+#screen-login { background: var(--bg); justify-content: center; align-items: center; }
 
-.login-bg {
-  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+.login-card {
+  background: var(--s1); border: 1px solid var(--bd);
+  border-radius: var(--r3); padding: 40px 36px;
+  width: 100%; max-width: 400px; margin: 16px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.5);
 }
-.login-bg::before {
-  content: '';
-  position: absolute; inset: 0;
-  background:
-    linear-gradient(135deg, rgba(0,212,255,0.04) 0%, transparent 50%),
-    linear-gradient(225deg, rgba(0,230,118,0.03) 0%, transparent 50%);
+.login-logo {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 28px;
 }
-.login-bg-grid {
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(var(--border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border) 1px, transparent 1px);
-  background-size: 40px 40px;
-  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 100%);
-}
-
-.login-wrap {
-  padding: 48px 32px; display: flex; flex-direction: column; width: 100%; max-width: 420px;
-  position: relative; z-index: 10;
-}
-
-.login-logo-row { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; }
 .login-logo-icon {
-  width: 52px; height: 52px; background: var(--cyan-dim); border: 1px solid var(--cyan-border);
-  border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--cyan-glow);
+  width: 44px; height: 44px; border-radius: var(--r2);
+  background: var(--green-bg); border: 1px solid var(--green-bd);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
-.login-logo-icon i { font-size: 22px; color: var(--cyan); }
-.login-logo-text {}
-.login-logo-text .title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
-.login-logo-text .sub { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+.login-logo-icon i { font-size: 18px; color: var(--green); }
+.login-logo h1 { font-size: 20px; font-weight: 800; letter-spacing: -.4px; }
+.login-logo p { font-size: 12px; color: var(--t2); margin-top: 2px; }
 
-.tab-bar {
-  display: flex; gap: 2px; background: var(--bg-panel); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 4px; margin-bottom: 28px;
+.tab-row {
+  display: flex; background: var(--bg); border-radius: var(--r); padding: 3px;
+  margin-bottom: 24px; border: 1px solid var(--bd);
 }
 .tab-btn {
-  flex: 1; padding: 9px 12px; border-radius: var(--radius); font-size: 12px; font-weight: 600;
-  background: none; border: none; color: var(--text-2); cursor: pointer;
-  font-family: var(--font); transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
-  letter-spacing: 0.3px;
+  flex: 1; padding: 9px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  background: none; border: none; color: var(--t2); cursor: pointer;
+  font-family: var(--sans); transition: all .18s;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
 }
-.tab-btn.active { background: var(--cyan-dim); color: var(--cyan); box-shadow: inset 0 0 0 1px var(--cyan-border); }
-.tab-btn:hover:not(.active) { color: var(--text); }
+.tab-btn.active { background: var(--s2); color: var(--t1); }
 
+/* ──────────────────────────────────────────
+   FORM FIELDS
+────────────────────────────────────────── */
 .field { margin-bottom: 14px; }
-.field label {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 10px; font-weight: 600; color: var(--text-3);
-  margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;
+.field-label {
+  display: block; font-size: 11px; font-weight: 600; color: var(--t3);
+  text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px;
 }
-.field label i { font-size: 9px; color: var(--cyan); opacity: 0.7; }
-.field input {
-  width: 100%; background: var(--bg-input); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 11px 14px; font-size: 13px; color: var(--text);
-  font-family: var(--font); outline: none; transition: all 0.2s;
+.field-input {
+  width: 100%; background: var(--bg); border: 1px solid var(--bd);
+  border-radius: var(--r); padding: 11px 13px; font-size: 13px; color: var(--t1);
+  font-family: var(--sans); outline: none; transition: border-color .18s;
 }
-.field input:focus { border-color: var(--cyan-border); box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.06); }
-.field input::placeholder { color: var(--text-3); }
+.field-input:focus { border-color: var(--green); }
+.field-input::placeholder { color: var(--t3); }
 
+/* ──────────────────────────────────────────
+   BUTTONS
+────────────────────────────────────────── */
 .btn {
-  width: 100%; padding: 12px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 600;
-  border: none; cursor: pointer; font-family: var(--font); display: flex; align-items: center;
-  justify-content: center; gap: 7px; transition: all 0.2s; position: relative; overflow: hidden;
-  letter-spacing: 0.2px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 11px 18px; border-radius: var(--r); font-size: 13px; font-weight: 600;
+  border: none; cursor: pointer; font-family: var(--sans); transition: all .18s;
+  white-space: nowrap;
 }
-.btn:active { transform: scale(0.985); }
-.btn-primary {
-  background: var(--cyan); color: var(--bg-base);
-}
-.btn-primary:hover { background: #1ae0ff; box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
-.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
-.btn-outline { background: transparent; border: 1px solid var(--border-2); color: var(--text); }
-.btn-outline:hover { border-color: var(--cyan-border); color: var(--cyan); background: var(--cyan-dim); }
-.btn-danger { background: var(--red-dim); border: 1px solid var(--red-border); color: var(--red); }
-.btn-danger:hover { background: rgba(255, 59, 92, 0.18); }
+.btn:active { transform: scale(.97); }
+.btn-full { width: 100%; }
+.btn-primary { background: var(--green); color: #fff; }
+.btn-primary:hover { background: #0ea572; }
+.btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+.btn-ghost { background: transparent; border: 1px solid var(--bd2); color: var(--t1); }
+.btn-ghost:hover { background: var(--s3); border-color: var(--bd2); }
+.btn-danger { background: var(--red-bg); border: 1px solid var(--red-bd); color: var(--red); }
+.btn-danger:hover { background: rgba(239,68,68,.18); }
 
-/* ─── GROUPS / SIDEBAR ─── */
-.group-card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 16px 18px; margin-bottom: 8px;
+/* ──────────────────────────────────────────
+   SIDEBAR (GROUPS)
+────────────────────────────────────────── */
+.sidebar-header {
+  display: none; /* shown only on desktop via media query */
+  align-items: center; justify-content: space-between;
+  padding: 0 20px; height: var(--nav-h);
+  border-bottom: 1px solid var(--bd); flex-shrink: 0;
+}
+.sidebar-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 15px; font-weight: 800; letter-spacing: -.3px;
+}
+.sidebar-brand-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--green-bg); border: 1px solid var(--green-bd);
+  display: flex; align-items: center; justify-content: center;
+}
+.sidebar-brand-icon i { font-size: 13px; color: var(--green); }
+.sidebar-actions { display: flex; gap: 4px; }
+
+.group-item {
   display: flex; align-items: center; justify-content: space-between;
-  cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+  padding: 13px 16px; border-radius: var(--r2); margin-bottom: 4px;
+  cursor: pointer; transition: background .15s; position: relative;
 }
-.group-card::before {
-  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
-  width: 3px; background: var(--cyan); opacity: 0;
-  transition: opacity 0.2s; border-radius: 0 2px 2px 0;
+.group-item:hover { background: var(--s2); }
+.group-item:active { background: var(--s3); }
+.group-item-left { display: flex; align-items: center; gap: 10px; }
+.group-item-icon {
+  width: 34px; height: 34px; border-radius: var(--r); background: var(--s3);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  font-size: 14px; color: var(--t2); transition: background .15s;
 }
-.group-card:hover { border-color: var(--cyan-border); background: var(--bg-card-2); }
-.group-card:hover::before { opacity: 1; }
-.group-card:active { transform: scale(0.99); }
-.group-name { font-size: 14px; font-weight: 600; margin-bottom: 3px; color: var(--text); }
-.group-sub { font-size: 11px; color: var(--text-2); }
-.chevron { color: var(--text-3); font-size: 12px; transition: color 0.2s; }
-.group-card:hover .chevron { color: var(--cyan); }
+.group-item:hover .group-item-icon { background: var(--green-bg); color: var(--green); }
+.group-item-name { font-size: 14px; font-weight: 600; }
+.group-item-sub { font-size: 11px; color: var(--t2); margin-top: 1px; }
+.group-item-arrow { color: var(--t3); font-size: 11px; }
 
-/* ─── STATS BAR ─── */
-.stats-bar {
+/* ──────────────────────────────────────────
+   DASHBOARD STATS
+────────────────────────────────────────── */
+.stats-row {
   display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 12px; padding: 20px 20px 0;
-  margin-bottom: 20px;
+  gap: 12px; padding: 20px 18px 16px;
 }
-.stat-card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 18px 16px;
-  position: relative; overflow: hidden;
+.stat-box {
+  background: var(--s1); border: 1px solid var(--bd);
+  border-radius: var(--r2); padding: 18px 16px;
 }
-.stat-card::after {
-  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
-  height: 2px; background: var(--stat-color, var(--cyan)); opacity: 0.4;
+.stat-val {
+  font-size: 32px; font-weight: 800; font-family: var(--mono);
+  line-height: 1; letter-spacing: -1.5px;
 }
-.stat-num {
-  font-size: 28px; font-weight: 700; font-family: var(--mono);
-  line-height: 1; letter-spacing: -1px;
-  color: var(--stat-color, var(--text));
-}
-.stat-label {
-  font-size: 9px; color: var(--text-2); margin-top: 6px;
-  text-transform: uppercase; letter-spacing: 1.2px; font-weight: 600;
+.stat-key {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--t3); margin-top: 6px;
 }
 
-/* ─── PC GRID ─── */
-.pc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 20px 20px; }
-
-.pc-tile {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 16px; cursor: pointer; transition: all 0.22s;
-  position: relative; overflow: hidden;
+/* ──────────────────────────────────────────
+   PC GRID
+────────────────────────────────────────── */
+.pc-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 10px; padding: 0 18px 18px;
 }
-.pc-tile::before {
+.pc-card {
+  background: var(--s1); border: 1px solid var(--bd);
+  border-radius: var(--r2); padding: 16px; cursor: pointer;
+  transition: border-color .18s, background .18s; overflow: hidden;
+  position: relative;
+}
+.pc-card::after {
   content: ''; position: absolute; top: 0; left: 0; right: 0;
-  height: 2px; background: var(--tile-color, var(--border-2));
-  opacity: 0.6; transition: opacity 0.2s;
+  height: 3px; background: var(--pc-color, var(--s4));
 }
-.pc-tile:hover { border-color: var(--tile-color-border, var(--border-2)); background: var(--bg-card-2); }
-.pc-tile:active { transform: scale(0.98); }
-
-.pc-tile-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.pc-tile-name { font-size: 13px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; }
-.pc-tile-name i { font-size: 11px; color: var(--text-2); }
-.pc-dot {
-  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-  box-shadow: 0 0 6px currentColor;
+.pc-card:hover { border-color: var(--bd2); background: var(--s2); }
+.pc-card:active { transform: scale(.98); }
+.pc-card-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
 }
+.pc-card-name {
+  font-size: 13px; font-weight: 700; color: var(--t1);
+  display: flex; align-items: center; gap: 7px;
+}
+.pc-card-name i { color: var(--t3); font-size: 11px; }
+.pc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pc-color, var(--t3)); }
 .pc-timer {
   font-family: var(--mono); font-size: 22px; font-weight: 700;
-  line-height: 1; margin-bottom: 12px; letter-spacing: -0.5px;
+  line-height: 1; margin-bottom: 10px; color: var(--pc-color, var(--t3));
 }
 .pc-footer { display: flex; align-items: center; justify-content: space-between; }
-.pc-status-badge {
-  font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
-  text-transform: uppercase; letter-spacing: 0.6px;
-  border: 1px solid currentColor; opacity: 0.8;
+.pc-badge {
+  font-size: 9px; font-weight: 700; padding: 3px 7px;
+  border-radius: 5px; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--pc-color, var(--t3)); background: var(--pc-bg, var(--s3));
+  border: 1px solid var(--pc-bd, var(--bd));
 }
 .pay-badge {
-  font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
-  text-transform: uppercase; letter-spacing: 0.4px;
+  font-size: 9px; font-weight: 700; padding: 3px 7px;
+  border-radius: 5px; text-transform: uppercase;
 }
 
-/* ─── PC CONTROL ─── */
-.section-label {
-  font-size: 9px; color: var(--text-3); letter-spacing: 1.8px;
-  text-transform: uppercase; margin: 0 20px 10px;
-  font-weight: 700; display: flex; align-items: center; gap: 8px;
+/* ──────────────────────────────────────────
+   PC CONTROL
+────────────────────────────────────────── */
+.section-head {
+  font-size: 10px; font-weight: 700; color: var(--t3);
+  text-transform: uppercase; letter-spacing: 1.4px;
+  padding: 0 18px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
 }
-.section-label::after {
-  content: ''; flex: 1; height: 1px;
-  background: linear-gradient(to right, var(--border), transparent);
+.section-head::after {
+  content: ''; flex: 1; height: 1px; background: var(--bd);
 }
 
-.action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 20px; margin-bottom: 16px; }
-.action-grid.three { grid-template-columns: repeat(3, 1fr); }
-
-.action-tile {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 20px 12px; text-align: center;
-  cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+.action-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 10px; padding: 0 18px; margin-bottom: 18px;
 }
-.action-tile:hover { background: var(--bg-card-2); border-color: var(--border-2); }
-.action-tile:active { transform: scale(0.96); }
-.action-tile.full { grid-column: span 2; }
-.action-icon { font-size: 22px; margin-bottom: 9px; }
-.action-label { font-size: 12px; font-weight: 600; color: var(--text); }
-.action-sub { font-size: 10px; color: var(--text-2); margin-top: 3px; }
+.action-grid.cols3 { grid-template-columns: repeat(3, 1fr); }
+.action-grid.cols1 .action-card { grid-column: span 2; }
 
-.timer-row {
+.action-card {
+  background: var(--s1); border: 1px solid var(--bd);
+  border-radius: var(--r2); padding: 18px 12px; text-align: center;
+  cursor: pointer; transition: background .15s, border-color .15s;
+}
+.action-card:hover { background: var(--s2); border-color: var(--bd2); }
+.action-card:active { transform: scale(.96); }
+.action-card-icon { font-size: 20px; margin-bottom: 8px; }
+.action-card-label { font-size: 12px; font-weight: 600; color: var(--t1); }
+.action-card-sub { font-size: 10px; color: var(--t2); margin-top: 2px; }
+
+.timer-card {
+  background: var(--s1); border: 1px solid var(--bd);
+  border-radius: var(--r2); padding: 20px;
+  margin: 0 18px 18px;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 20px; margin-bottom: 8px;
-  background: var(--bg-card); margin: 0 20px 20px;
-  border-radius: var(--radius-lg); border: 1px solid var(--border);
 }
-.timer-inline {
+.timer-big {
   font-family: var(--mono); font-size: 52px; font-weight: 700;
   line-height: 1; letter-spacing: -3px;
 }
-.pay-btns { display: flex; flex-direction: column; gap: 6px; }
+.pay-col { display: flex; flex-direction: column; gap: 6px; }
 .pay-btn {
-  padding: 8px 14px; border-radius: var(--radius); font-size: 10px; font-weight: 700;
-  cursor: pointer; font-family: var(--font); border: 1px solid var(--border);
-  background: var(--bg-base); color: var(--text-2); transition: all 0.2s;
-  min-width: 86px; text-align: center; text-transform: uppercase; letter-spacing: 0.6px;
+  padding: 8px 14px; border-radius: var(--r); font-size: 10px; font-weight: 700;
+  cursor: pointer; font-family: var(--sans); transition: all .18s;
+  border: 1px solid var(--bd2); background: var(--s2); color: var(--t2);
+  text-transform: uppercase; letter-spacing: .6px; min-width: 84px; text-align: center;
 }
-.pay-btn:hover { border-color: var(--border-2); color: var(--text); }
-.pay-btn.active-paid { border-color: var(--green-border); color: var(--green); background: var(--green-dim); }
-.pay-btn.active-unpaid { border-color: var(--red-border); color: var(--red); background: var(--red-dim); }
+.pay-btn.paid { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }
+.pay-btn.unpaid { background: var(--red-bg); border-color: var(--red-bd); color: var(--red); }
 
-.online-pill {
-  display: inline-flex; align-items: center; gap: 6px; font-size: 9px; font-weight: 700;
-  padding: 5px 10px; border-radius: 20px; background: var(--bg-base);
-  border: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.8px;
+.status-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px;
+  padding: 4px 10px; border-radius: 99px;
+  border: 1px solid var(--bd); background: var(--s2); color: var(--t2);
 }
-.online-pill .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.status-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
 
-/* ─── SHEETS ─── */
-.sheet-overlay {
-  position: fixed; inset: 0; background: rgba(5, 13, 26, 0.85);
-  backdrop-filter: blur(8px); z-index: 100; opacity: 0;
-  pointer-events: none; transition: opacity 0.22s;
+/* ──────────────────────────────────────────
+   SETTINGS
+────────────────────────────────────────── */
+.settings-card {
+  background: var(--s1); border: 1px solid var(--bd);
+  border-radius: var(--r2); overflow: hidden; margin-bottom: 16px;
 }
-.sheet-overlay.open { opacity: 1; pointer-events: all; }
-
-.sheet {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: var(--bg-panel);
-  border-top: 1px solid var(--border-2);
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  padding: 0 24px;
-  padding-bottom: max(24px, env(safe-area-inset-bottom));
-  z-index: 101;
-  transform: translateY(100%);
-  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
-  max-height: 88dvh; overflow-y: auto;
+.settings-row {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 15px 18px; border-bottom: 1px solid var(--bd);
 }
-.sheet.open { transform: translateY(0); }
-.sheet-handle {
-  width: 40px; height: 3px;
-  background: var(--border-2); border-radius: 2px;
-  margin: 14px auto 20px;
-}
-.sheet-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; letter-spacing: -0.3px; }
-.sheet-sub { font-size: 12px; color: var(--text-2); margin-bottom: 22px; }
-
-.time-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-.time-chip {
-  padding: 9px 15px; background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius); font-size: 12px; font-weight: 600; color: var(--text);
-  cursor: pointer; font-family: var(--font); transition: all 0.18s;
-  display: flex; align-items: center; gap: 6px;
-}
-.time-chip:hover { border-color: var(--border-2); background: var(--bg-card-2); }
-.time-chip:active { transform: scale(0.95); }
-.time-chip.primary { border-color: var(--cyan-border); color: var(--cyan); background: var(--cyan-dim); }
-.time-chip.danger { border-color: var(--red-border); color: var(--red); background: var(--red-dim); }
-
-.custom-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
-.custom-row input {
-  flex: 1; background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 11px 13px; font-size: 13px; color: var(--text);
-  font-family: var(--font); outline: none; transition: border-color 0.2s;
-}
-.custom-row input:focus { border-color: var(--cyan-border); }
-.custom-sep { color: var(--text-3); font-size: 16px; font-weight: 500; flex-shrink: 0; }
-.modal-btns { display: flex; gap: 8px; margin-top: 20px; }
-
-.app-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
-.app-item:last-child { border-bottom: none; }
-.app-item-name { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: var(--text); }
-.app-item-name i { color: var(--text-2); }
-.launch-btn {
-  background: var(--cyan-dim); border: 1px solid var(--cyan-border); color: var(--cyan);
-  font-size: 10px; font-weight: 700; padding: 6px 13px; border-radius: var(--radius);
-  cursor: pointer; font-family: var(--font); flex-shrink: 0; margin-left: 10px;
-  transition: all 0.18s; text-transform: uppercase; letter-spacing: 0.4px;
-}
-.launch-btn:hover { background: rgba(0, 212, 255, 0.2); }
-
-.card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px;
-}
-.settings-row { display: flex; align-items: flex-start; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
 .settings-row:last-child { border-bottom: none; }
-.settings-label { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-.settings-value { font-size: 11px; color: var(--text-2); }
-.mono {
-  font-family: var(--mono); font-size: 10px; color: var(--cyan);
-  background: var(--cyan-dim); padding: 8px 12px; border-radius: var(--radius);
-  word-break: break-all; border: 1px solid var(--cyan-border); margin-top: 6px;
-  letter-spacing: 0.5px;
+.settings-key { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.settings-val { font-size: 11px; color: var(--t2); }
+.mono-block {
+  font-family: var(--mono); font-size: 10px; color: var(--green);
+  background: var(--green-bg); padding: 8px 12px; border-radius: var(--r);
+  border: 1px solid var(--green-bd); word-break: break-all; margin-top: 6px;
 }
-.admin-item { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
-.admin-item:last-child { border-bottom: none; }
-.admin-avatar {
-  width: 34px; height: 34px; border-radius: var(--radius); background: var(--cyan-dim);
-  border: 1px solid var(--cyan-border); display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700; color: var(--cyan); flex-shrink: 0;
+
+.admin-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--bd); }
+.admin-row:last-child { border-bottom: none; }
+.admin-av {
+  width: 32px; height: 32px; border-radius: var(--r); background: var(--s3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: var(--t1); flex-shrink: 0;
 }
 .admin-name { font-size: 13px; font-weight: 500; flex: 1; }
 .remove-btn {
-  color: var(--red); font-size: 10px; font-weight: 700; cursor: pointer;
-  background: var(--red-dim); border: 1px solid var(--red-border);
-  padding: 5px 10px; border-radius: var(--radius); font-family: var(--font);
-  text-transform: uppercase; letter-spacing: 0.4px; transition: all 0.18s;
+  font-size: 10px; font-weight: 700; color: var(--red); background: var(--red-bg);
+  border: 1px solid var(--red-bd); padding: 5px 10px; border-radius: var(--r);
+  cursor: pointer; font-family: var(--sans); text-transform: uppercase; letter-spacing: .4px;
 }
-.remove-btn:hover { background: rgba(255, 59, 92, 0.2); }
 
-.pc-delete-item { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid var(--border); }
-.pc-delete-item:last-child { border-bottom: none; }
-.pc-delete-name { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: var(--text); }
-.pc-delete-name i { color: var(--text-2); }
-.pc-delete-btn {
-  background: var(--red-dim); border: 1px solid var(--red-border); color: var(--red);
-  font-size: 10px; font-weight: 700; padding: 6px 12px; border-radius: var(--radius);
-  cursor: pointer; font-family: var(--font); transition: all 0.18s;
-  text-transform: uppercase; letter-spacing: 0.4px;
+.pc-del-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid var(--bd); }
+.pc-del-row:last-child { border-bottom: none; }
+.pc-del-name { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+.pc-del-btn {
+  font-size: 10px; font-weight: 700; color: var(--red); background: var(--red-bg);
+  border: 1px solid var(--red-bd); padding: 5px 10px; border-radius: var(--r);
+  cursor: pointer; font-family: var(--sans); text-transform: uppercase; letter-spacing: .4px;
 }
-.pc-delete-btn:hover { background: rgba(255, 59, 92, 0.2); }
 
-/* ─── FAB ─── */
+/* ──────────────────────────────────────────
+   FAB
+────────────────────────────────────────── */
 .fab {
-  margin: 0 20px 20px; padding: 13px 16px;
-  background: var(--cyan); color: var(--bg-base);
-  border: none; border-radius: var(--radius-lg); font-size: 13px; font-weight: 700;
-  cursor: pointer; font-family: var(--font); display: flex; align-items: center;
-  justify-content: center; gap: 7px; transition: all 0.2s; letter-spacing: 0.2px;
-  margin-bottom: max(20px, calc(env(safe-area-inset-bottom) + 10px));
-  box-shadow: 0 4px 16px rgba(0, 212, 255, 0.2);
+  margin: 0 18px;
+  margin-bottom: max(18px, calc(env(safe-area-inset-bottom) + 10px));
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px; border-radius: var(--r2);
+  background: var(--green); color: #fff;
+  font-size: 13px; font-weight: 700; font-family: var(--sans);
+  border: none; cursor: pointer; transition: all .18s;
+  box-shadow: 0 4px 14px rgba(16,185,129,.3);
 }
-.fab:hover { background: #1ae0ff; box-shadow: 0 6px 24px rgba(0, 212, 255, 0.35); }
-.fab:active { transform: scale(0.97); }
+.fab:hover { background: #0ea572; }
+.fab:active { transform: scale(.97); }
 
-/* ─── TOAST ─── */
+/* ──────────────────────────────────────────
+   SHEETS
+────────────────────────────────────────── */
+.sheet-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,.75);
+  backdrop-filter: blur(6px); z-index: 100;
+  opacity: 0; pointer-events: none; transition: opacity .22s;
+}
+.sheet-bg.open { opacity: 1; pointer-events: all; }
+
+.sheet {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--s1); border-top: 1px solid var(--bd2);
+  border-radius: var(--r3) var(--r3) 0 0;
+  padding: 0 22px;
+  padding-bottom: max(22px, env(safe-area-inset-bottom));
+  z-index: 101; max-height: 88dvh; overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.16,1,.3,1);
+}
+.sheet.open { transform: translateY(0); }
+.sheet-handle { width: 38px; height: 3px; background: var(--s4); border-radius: 2px; margin: 14px auto 20px; }
+.sheet-title { font-size: 18px; font-weight: 800; letter-spacing: -.3px; margin-bottom: 4px; }
+.sheet-sub { font-size: 12px; color: var(--t2); margin-bottom: 22px; }
+
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.chip {
+  padding: 9px 14px; background: var(--s2); border: 1px solid var(--bd);
+  border-radius: var(--r); font-size: 12px; font-weight: 600; color: var(--t1);
+  cursor: pointer; font-family: var(--sans); transition: all .15s;
+  display: flex; align-items: center; gap: 5px;
+}
+.chip:hover { background: var(--s3); border-color: var(--bd2); }
+.chip:active { transform: scale(.95); }
+.chip.green { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }
+.chip.red { background: var(--red-bg); border-color: var(--red-bd); color: var(--red); }
+
+.input-row { display: flex; gap: 8px; align-items: center; }
+.input-row input {
+  flex: 1; background: var(--bg); border: 1px solid var(--bd);
+  border-radius: var(--r); padding: 11px 13px; font-size: 13px;
+  color: var(--t1); font-family: var(--sans); outline: none;
+  transition: border-color .18s;
+}
+.input-row input:focus { border-color: var(--green); }
+.input-row-sep { color: var(--t3); font-weight: 600; font-size: 14px; }
+
+.sheet-btns { display: flex; gap: 8px; margin-top: 20px; }
+.sheet-btns .btn { flex: 1; }
+
+.app-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid var(--bd); }
+.app-row:last-child { border-bottom: none; }
+.app-name { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: var(--t1); }
+.app-name i { color: var(--t3); }
+.launch-btn {
+  background: var(--green-bg); border: 1px solid var(--green-bd); color: var(--green);
+  font-size: 10px; font-weight: 700; padding: 6px 12px; border-radius: var(--r);
+  cursor: pointer; font-family: var(--sans); text-transform: uppercase; letter-spacing: .4px;
+  transition: background .15s;
+}
+.launch-btn:hover { background: rgba(16,185,129,.18); }
+
+/* ──────────────────────────────────────────
+   EMPTY STATE
+────────────────────────────────────────── */
+.empty { text-align: center; padding: 56px 20px; }
+.empty-ico { font-size: 32px; color: var(--t3); margin-bottom: 14px; }
+.empty-h { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.empty-p { font-size: 12px; color: var(--t2); }
+
+/* ──────────────────────────────────────────
+   TOAST
+────────────────────────────────────────── */
 .toast {
-  position: fixed; bottom: max(24px, env(safe-area-inset-bottom)); left: 50%;
-  transform: translateX(-50%) translateY(80px);
-  background: var(--bg-panel); border: 1px solid var(--border-2);
-  border-radius: var(--radius-lg); padding: 12px 20px;
-  font-size: 12px; font-weight: 600; z-index: 200; white-space: nowrap;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  display: flex; align-items: center; gap: 8px; letter-spacing: 0.2px;
+  position: fixed; bottom: max(22px, env(safe-area-inset-bottom)); left: 50%;
+  transform: translateX(-50%) translateY(70px);
+  background: var(--s2); border: 1px solid var(--bd2); border-radius: var(--r2);
+  padding: 11px 18px; font-size: 12px; font-weight: 600; z-index: 300;
+  white-space: nowrap; box-shadow: 0 8px 28px rgba(0,0,0,.5);
+  transition: transform .28s cubic-bezier(.16,1,.3,1);
+  display: flex; align-items: center; gap: 8px;
 }
 .toast.show { transform: translateX(-50%) translateY(0); }
-.toast.success { border-color: var(--green-border); color: var(--green); }
-.toast.error { border-color: var(--red-border); color: var(--red); }
+.toast.ok { border-color: var(--green-bd); color: var(--green); }
+.toast.err { border-color: var(--red-bd); color: var(--red); }
 
-/* ─── SPINNER ─── */
-.spinner {
-  width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.1);
-  border-top-color: var(--cyan); border-radius: 50%;
-  animation: spin 0.6s linear infinite; display: inline-block;
+/* ──────────────────────────────────────────
+   SPINNER / MISC
+────────────────────────────────────────── */
+.spin {
+  width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.1);
+  border-top-color: #fff; border-radius: 50%;
+  animation: _spin .6s linear infinite; display: inline-block;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ─── EMPTY STATE ─── */
-.empty-state { text-align: center; padding: 60px 20px; }
-.empty-icon { font-size: 36px; margin-bottom: 16px; color: var(--text-3); }
-.empty-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; color: var(--text); }
-.empty-sub { color: var(--text-2); font-size: 12px; }
-
-/* ─── ANIMATIONS ─── */
-@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-@keyframes bounce-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-.icon-pulse i { animation: pulse-dot 2s infinite; display: inline-block; }
-.icon-bounce i { animation: bounce-y 2s infinite; display: inline-block; }
-
-/* ─── SECTION SPACER ─── */
-.section-spacer { height: 20px; }
-.section-spacer-sm { height: 12px; }
+@keyframes _spin { to { transform: rotate(360deg); } }
+@keyframes _pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes _bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+.anim-pulse i { animation: _pulse 2s infinite; display: inline-block; }
+.anim-bounce i { animation: _bounce 2s infinite; display: inline-block; }
 </style>
 </head>
 <body>
 <div id="app">
 
-<!-- ════════════════════════════════
-     LOGIN
-════════════════════════════════ -->
+<!-- ════════════════════ LOGIN ════════════════════ -->
 <div class="screen active" id="screen-login">
-  <div class="login-bg"><div class="login-bg-grid"></div></div>
-  <div class="login-wrap">
-    <div class="login-logo-row">
+  <div class="login-card">
+    <div class="login-logo">
       <div class="login-logo-icon"><i class="fa-solid fa-gamepad"></i></div>
-      <div class="login-logo-text">
-        <div class="title">GameZone</div>
-        <div class="sub">PC Management System</div>
+      <div>
+        <h1>GameZone</h1>
+        <p>PC Management System</p>
       </div>
     </div>
-    <div class="tab-bar">
+    <div class="tab-row">
       <button class="tab-btn active" id="tab-login" onclick="switchTab('login')"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
       <button class="tab-btn" id="tab-register" onclick="switchTab('register')"><i class="fa-solid fa-user-plus"></i> Register</button>
     </div>
     <div id="login-form">
-      <div class="field"><label><i class="fa-solid fa-server"></i> Server URL</label><input type="url" id="login-server" placeholder="https://..." autocomplete="off"></div>
-      <div class="field"><label><i class="fa-solid fa-user"></i> Username</label><input type="text" id="login-user" placeholder="Username" autocomplete="username"></div>
-      <div class="field"><label><i class="fa-solid fa-lock"></i> Password</label><input type="password" id="login-pass" placeholder="Password" autocomplete="current-password"></div>
-      <div style="height:6px"></div>
-      <button class="btn btn-primary" id="login-btn" onclick="doLogin()"><span id="login-btn-text">Login</span></button>
+      <div class="field"><label class="field-label">Server URL</label><input class="field-input" type="url" id="login-server" placeholder="https://..." autocomplete="off"></div>
+      <div class="field"><label class="field-label">Username</label><input class="field-input" type="text" id="login-user" placeholder="Username" autocomplete="username"></div>
+      <div class="field"><label class="field-label">Password</label><input class="field-input" type="password" id="login-pass" placeholder="Password" autocomplete="current-password"></div>
+      <div style="height:8px"></div>
+      <button class="btn btn-primary btn-full" id="login-btn" onclick="doLogin()"><span id="login-btn-text">Sign In</span></button>
     </div>
     <div id="register-form" style="display:none">
-      <div class="field"><label><i class="fa-solid fa-server"></i> Server URL</label><input type="url" id="reg-server" placeholder="https://..." autocomplete="off"></div>
-      <div class="field"><label><i class="fa-solid fa-user"></i> Username</label><input type="text" id="reg-user" placeholder="Username" autocomplete="username"></div>
-      <div class="field"><label><i class="fa-solid fa-lock"></i> Password</label><input type="password" id="reg-pass" placeholder="Password" autocomplete="new-password"></div>
-      <div style="height:6px"></div>
-      <button class="btn btn-primary" id="reg-btn" onclick="doRegister()"><span id="reg-btn-text">Create Account</span></button>
+      <div class="field"><label class="field-label">Server URL</label><input class="field-input" type="url" id="reg-server" placeholder="https://..." autocomplete="off"></div>
+      <div class="field"><label class="field-label">Username</label><input class="field-input" type="text" id="reg-user" placeholder="Username" autocomplete="username"></div>
+      <div class="field"><label class="field-label">Password</label><input class="field-input" type="password" id="reg-pass" placeholder="Password" autocomplete="new-password"></div>
+      <div style="height:8px"></div>
+      <button class="btn btn-primary btn-full" id="reg-btn" onclick="doRegister()"><span id="reg-btn-text">Create Account</span></button>
     </div>
   </div>
 </div>
 
-<!-- ════════════════════════════════
-     GROUPS / SIDEBAR
-════════════════════════════════ -->
+<!-- ════════════════════ GROUPS / SIDEBAR ════════════════════ -->
 <div class="screen" id="screen-groups">
+  <!-- Desktop sidebar header -->
   <div class="sidebar-header">
-    <div class="sidebar-logo">
-      <div class="logo-icon"><i class="fa-solid fa-gamepad"></i></div>
-      <span>GameZone</span>
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon"><i class="fa-solid fa-gamepad"></i></div>
+      GameZone
     </div>
-    <button class="icon-btn" onclick="doLogout()" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
+    <div class="sidebar-actions">
+      <button class="icon-btn" onclick="openSheet('sheet-newgroup')" title="New Group"><i class="fa-solid fa-plus"></i></button>
+      <button class="icon-btn" onclick="doLogout()" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </div>
   </div>
-  <div class="scroll-content">
-    <div class="padded" id="groups-list"></div>
+  <!-- Mobile topbar -->
+  <div class="topbar mobile-topbar">
+    <div class="topbar-title">Groups</div>
+    <button class="icon-btn" onclick="doLogout()"><i class="fa-solid fa-right-from-bracket"></i></button>
+  </div>
+  <div class="scroll-area">
+    <div class="screen-pad" id="groups-list"></div>
   </div>
   <button class="fab" onclick="openSheet('sheet-newgroup')"><i class="fa-solid fa-plus"></i> New Group</button>
 </div>
 
-<!-- ════════════════════════════════
-     DASHBOARD
-════════════════════════════════ -->
+<!-- ════════════════════ DASHBOARD ════════════════════ -->
 <div class="screen" id="screen-dashboard">
   <div class="topbar">
-    <button class="back-btn" onclick="goBack('groups')"><i class="fa-solid fa-chevron-left"></i> Groups</button>
+    <button class="back-btn" onclick="goBack('groups')"><i class="fa-solid fa-chevron-left"></i> Back</button>
     <div class="topbar-title" id="dash-title">Dashboard</div>
-    <button class="icon-btn" onclick="showScreen('settings')" title="Settings"><i class="fa-solid fa-gear"></i></button>
+    <button class="icon-btn" onclick="showScreen('settings')"><i class="fa-solid fa-gear"></i></button>
   </div>
-  <div class="scroll-content">
-    <div class="stats-bar">
-      <div class="stat-card" style="--stat-color:var(--text)">
-        <div class="stat-num" id="stat-total">0</div>
-        <div class="stat-label">Total</div>
+  <div class="scroll-area">
+    <div class="scroll-inner">
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-val" id="stat-total">0</div><div class="stat-key">Total</div></div>
+        <div class="stat-box"><div class="stat-val" id="stat-online" style="color:var(--green)">0</div><div class="stat-key">Online</div></div>
+        <div class="stat-box"><div class="stat-val" id="stat-active" style="color:var(--amber)">0</div><div class="stat-key">Active</div></div>
       </div>
-      <div class="stat-card" style="--stat-color:var(--green)">
-        <div class="stat-num" id="stat-online">0</div>
-        <div class="stat-label">Online</div>
-      </div>
-      <div class="stat-card" style="--stat-color:var(--yellow)">
-        <div class="stat-num" id="stat-active">0</div>
-        <div class="stat-label">Active</div>
-      </div>
+      <div class="pc-grid" id="pc-grid"></div>
     </div>
-    <div class="pc-grid" id="pc-grid"></div>
   </div>
   <button class="fab" onclick="openSheet('sheet-addpc')"><i class="fa-solid fa-plus"></i> Add PC</button>
 </div>
 
-<!-- ════════════════════════════════
-     PC CONTROL
-════════════════════════════════ -->
+<!-- ════════════════════ PC CONTROL ════════════════════ -->
 <div class="screen" id="screen-pccontrol">
   <div class="topbar">
     <button class="back-btn" onclick="goBack('dashboard')"><i class="fa-solid fa-chevron-left"></i></button>
-    <div class="topbar-title" id="pc-control-name">PC</div>
-    <div id="pc-online-pill" class="online-pill"></div>
+    <div class="topbar-title" id="pc-title">PC</div>
+    <div id="pc-pill" class="status-pill"></div>
   </div>
-  <div class="scroll-content">
-    <div style="height:16px"></div>
-    <div id="pc-timer-section"></div>
-    <div class="section-label">Screen Control</div>
-    <div class="action-grid" style="margin-bottom:20px">
-      <div class="action-tile" onclick="pcCmd('lock')">
-        <div class="action-icon"><i class="fa-solid fa-lock icon-pulse" style="color:var(--orange)"></i></div>
-        <div class="action-label">Lock Screen</div>
+  <div class="scroll-area">
+    <div class="scroll-inner">
+      <div style="height:16px"></div>
+      <div id="pc-timer-area"></div>
+      <div class="section-head">Screen Control</div>
+      <div class="action-grid" style="margin-bottom:20px">
+        <div class="action-card" onclick="pcCmd('lock')">
+          <div class="action-card-icon anim-pulse"><i class="fa-solid fa-lock" style="color:var(--amber)"></i></div>
+          <div class="action-card-label">Lock</div>
+        </div>
+        <div class="action-card" onclick="pcCmd('unlock')">
+          <div class="action-card-icon"><i class="fa-solid fa-lock-open" style="color:var(--green)"></i></div>
+          <div class="action-card-label">Unlock</div>
+        </div>
       </div>
-      <div class="action-tile" onclick="pcCmd('unlock')">
-        <div class="action-icon"><i class="fa-solid fa-lock-open" style="color:var(--green)"></i></div>
-        <div class="action-label">Unlock</div>
+      <div class="section-head">Applications</div>
+      <div class="action-grid cols1" style="margin-bottom:20px">
+        <div class="action-card" onclick="openApps()">
+          <div class="action-card-icon anim-bounce"><i class="fa-solid fa-rocket" style="color:var(--blue)"></i></div>
+          <div class="action-card-label">Launch App</div>
+          <div class="action-card-sub">Open remotely on this PC</div>
+        </div>
       </div>
+      <div id="pc-session-area"></div>
+      <div style="height:16px"></div>
     </div>
-    <div class="section-label">Applications</div>
-    <div class="action-grid" style="margin-bottom:20px">
-      <div class="action-tile full" onclick="openApps()">
-        <div class="action-icon"><i class="fa-solid fa-rocket icon-bounce" style="color:var(--cyan)"></i></div>
-        <div class="action-label">Launch App</div>
-        <div class="action-sub">Open remotely on this PC</div>
-      </div>
-    </div>
-    <div id="pc-session-section"></div>
-    <div style="height:16px"></div>
   </div>
 </div>
 
-<!-- ════════════════════════════════
-     SETTINGS
-════════════════════════════════ -->
+<!-- ════════════════════ SETTINGS ════════════════════ -->
 <div class="screen" id="screen-settings">
   <div class="topbar">
     <button class="back-btn" onclick="goBack('dashboard')"><i class="fa-solid fa-chevron-left"></i></button>
     <div class="topbar-title">Settings</div>
-    <div style="width:36px"></div>
+    <div style="width:34px"></div>
   </div>
-  <div class="scroll-content padded">
-    <div class="card">
-      <div class="settings-row" style="padding-top:2px">
-        <div>
-          <div class="settings-label">Group Name</div>
-          <div id="setting-name" class="settings-value"></div>
+  <div class="scroll-area">
+    <div class="screen-pad">
+
+      <div class="settings-card">
+        <div class="settings-row">
+          <div><div class="settings-key">Group Name</div><div id="s-name" class="settings-val"></div></div>
+        </div>
+        <div class="settings-row">
+          <div style="width:100%">
+            <div class="settings-key">Group ID</div>
+            <div id="s-id" class="mono-block"></div>
+            <div style="font-size:10px;color:var(--t3);margin-top:5px">Copy into each PC's config.json</div>
+          </div>
         </div>
       </div>
-      <div class="settings-row">
-        <div style="width:100%">
-          <div class="settings-label">Group ID</div>
-          <div id="setting-id" class="mono"></div>
-          <div style="font-size:10px;color:var(--text-2);margin-top:5px">Copy into each PC's config.json</div>
-        </div>
+
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:12px">Administrators</div>
+      <div id="admins-list"></div>
+      <button class="btn btn-ghost" style="margin-top:12px" onclick="openSheet('sheet-addadmin')">
+        <i class="fa-solid fa-user-plus"></i> Add Admin
+      </button>
+
+      <div style="height:20px"></div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:12px">Danger Zone</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-ghost" onclick="openSheet('sheet-deletepc')">
+          <i class="fa-solid fa-trash"></i> Delete a PC
+        </button>
+        <button class="btn btn-danger btn-full" onclick="confirmDeleteGroup()">
+          <i class="fa-solid fa-trash-can"></i> Delete Group
+        </button>
+        <button class="btn btn-danger btn-full" onclick="doLogout()">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
       </div>
+      <div style="height:24px"></div>
+
     </div>
-
-    <div class="section-label" style="margin:4px 0 14px;padding:0">Administrators</div>
-    <div id="admins-list"></div>
-    <button class="btn btn-outline" style="margin-top:12px" onclick="openSheet('sheet-addadmin')">
-      <i class="fa-solid fa-user-plus"></i> Add Admin
-    </button>
-
-    <div class="section-spacer"></div>
-    <div class="section-label" style="margin:0 0 14px;padding:0">Management</div>
-    <button class="btn btn-outline" onclick="openSheet('sheet-deletepc')">
-      <i class="fa-solid fa-trash"></i> Delete PC
-    </button>
-    <div style="height:10px"></div>
-    <button class="btn btn-danger" onclick="confirmDeleteGroup()">
-      <i class="fa-solid fa-trash-can"></i> Delete Group
-    </button>
-    <div style="height:10px"></div>
-    <button class="btn btn-danger" onclick="doLogout()">
-      <i class="fa-solid fa-right-from-bracket"></i> Logout
-    </button>
-    <div style="height:24px"></div>
   </div>
 </div>
 
-<!-- ════════════════════════════════
-     SHEETS
-════════════════════════════════ -->
-<div class="sheet-overlay" id="overlay-newgroup" onclick="closeSheet('sheet-newgroup')"></div>
+<!-- ════════════════════ SHEETS ════════════════════ -->
+<div class="sheet-bg" id="bg-newgroup" onclick="closeSheet('sheet-newgroup')"></div>
 <div class="sheet" id="sheet-newgroup">
   <div class="sheet-handle"></div>
   <div class="sheet-title">New Group</div>
-  <div class="sheet-sub">Create a management group for your PCs</div>
-  <div class="field"><label>Group Name</label><input type="text" id="newgroup-name" placeholder="e.g. Main Cafe"></div>
-  <div class="modal-btns">
-    <button class="btn btn-outline" onclick="closeSheet('sheet-newgroup')">Cancel</button>
+  <div class="sheet-sub">Create a management group</div>
+  <div class="field"><label class="field-label">Name</label><input class="field-input" type="text" id="newgroup-name" placeholder="e.g. Main Cafe"></div>
+  <div class="sheet-btns">
+    <button class="btn btn-ghost" onclick="closeSheet('sheet-newgroup')">Cancel</button>
     <button class="btn btn-primary" onclick="createGroup()"><span id="newgroup-btn-text">Create</span></button>
   </div>
 </div>
 
-<div class="sheet-overlay" id="overlay-addpc" onclick="closeSheet('sheet-addpc')"></div>
+<div class="sheet-bg" id="bg-addpc" onclick="closeSheet('sheet-addpc')"></div>
 <div class="sheet" id="sheet-addpc">
   <div class="sheet-handle"></div>
   <div class="sheet-title">Add PC</div>
   <div class="sheet-sub">Register a new computer to this group</div>
-  <div class="field"><label>PC Name</label><input type="text" id="addpc-name" placeholder="e.g. PC-01"></div>
-  <div class="field"><label>Password</label><input type="password" id="addpc-pass" placeholder="Set access password"></div>
-  <div class="field"><label>Price / Hour (Optional)</label><input type="number" id="addpc-price" placeholder="0.00" step="0.01"></div>
-  <div class="modal-btns">
-    <button class="btn btn-outline" onclick="closeSheet('sheet-addpc')">Cancel</button>
+  <div class="field"><label class="field-label">PC Name</label><input class="field-input" type="text" id="addpc-name" placeholder="e.g. PC-01"></div>
+  <div class="field"><label class="field-label">Password</label><input class="field-input" type="password" id="addpc-pass" placeholder="Set access password"></div>
+  <div class="field"><label class="field-label">Price / Hour (optional)</label><input class="field-input" type="number" id="addpc-price" placeholder="0.00" step="0.01"></div>
+  <div class="sheet-btns">
+    <button class="btn btn-ghost" onclick="closeSheet('sheet-addpc')">Cancel</button>
     <button class="btn btn-primary" onclick="addPC()"><span id="addpc-btn-text">Add PC</span></button>
   </div>
 </div>
 
-<div class="sheet-overlay" id="overlay-startsession" onclick="closeSheet('sheet-startsession')"></div>
+<div class="sheet-bg" id="bg-startsession" onclick="closeSheet('sheet-startsession')"></div>
 <div class="sheet" id="sheet-startsession">
   <div class="sheet-handle"></div>
   <div class="sheet-title">Start Session</div>
-  <div class="sheet-sub">Choose a duration or start a free timer</div>
-  <div class="time-chips">
-    <div class="time-chip" onclick="startSession(30)"><i class="fa-regular fa-clock"></i> 30m</div>
-    <div class="time-chip" onclick="startSession(60)"><i class="fa-regular fa-clock"></i> 1h</div>
-    <div class="time-chip" onclick="startSession(90)"><i class="fa-regular fa-clock"></i> 1.5h</div>
-    <div class="time-chip" onclick="startSession(120)"><i class="fa-regular fa-clock"></i> 2h</div>
-    <div class="time-chip" onclick="startSession(180)"><i class="fa-regular fa-clock"></i> 3h</div>
+  <div class="sheet-sub">Choose a duration or use the free timer</div>
+  <div class="chip-row">
+    <div class="chip" onclick="startSession(30)"><i class="fa-regular fa-clock"></i> 30m</div>
+    <div class="chip" onclick="startSession(60)"><i class="fa-regular fa-clock"></i> 1h</div>
+    <div class="chip" onclick="startSession(90)"><i class="fa-regular fa-clock"></i> 1.5h</div>
+    <div class="chip" onclick="startSession(120)"><i class="fa-regular fa-clock"></i> 2h</div>
+    <div class="chip" onclick="startSession(180)"><i class="fa-regular fa-clock"></i> 3h</div>
   </div>
-  <div style="font-size:9px;color:var(--text-3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;font-weight:700">Custom Duration</div>
-  <div class="custom-row" style="margin-bottom:16px">
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
+  <div class="input-row" style="margin-bottom:16px">
     <input type="number" id="custom-hrs" placeholder="hrs" min="0" max="24">
-    <span class="custom-sep">:</span>
+    <span class="input-row-sep">:</span>
     <input type="number" id="custom-mins" placeholder="min" min="0" max="59">
-    <button class="btn btn-primary" style="width:auto;padding:11px 18px;flex-shrink:0" onclick="startCustomSession()">Start</button>
+    <button class="btn btn-primary" onclick="startCustomSession()">Start</button>
   </div>
-  <button onclick="startStopwatch()" style="background:var(--yellow-dim);border:1px solid rgba(255,214,10,0.25);color:var(--yellow);width:100%;text-align:center;border-radius:var(--radius-lg);padding:14px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);letter-spacing:0.2px;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px">
+  <button onclick="startStopwatch()" style="width:100%;padding:13px;border-radius:var(--r2);background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px">
     <i class="fa-solid fa-stopwatch"></i> Free Timer (Count Up)
   </button>
 </div>
 
-<div class="sheet-overlay" id="overlay-addtime" onclick="closeSheet('sheet-addtime')"></div>
+<div class="sheet-bg" id="bg-addtime" onclick="closeSheet('sheet-addtime')"></div>
 <div class="sheet" id="sheet-addtime">
   <div class="sheet-handle"></div>
   <div class="sheet-title">Add Time</div>
   <div class="sheet-sub">Extend the current session</div>
-  <div class="time-chips">
-    <div class="time-chip primary" onclick="addTime(30)"><i class="fa-solid fa-plus"></i> 30m</div>
-    <div class="time-chip primary" onclick="addTime(60)"><i class="fa-solid fa-plus"></i> 1h</div>
-    <div class="time-chip primary" onclick="addTime(90)"><i class="fa-solid fa-plus"></i> 1.5h</div>
-    <div class="time-chip primary" onclick="addTime(120)"><i class="fa-solid fa-plus"></i> 2h</div>
-    <div class="time-chip primary" onclick="addTime(180)"><i class="fa-solid fa-plus"></i> 3h</div>
+  <div class="chip-row">
+    <div class="chip green" onclick="addTime(30)"><i class="fa-solid fa-plus"></i> 30m</div>
+    <div class="chip green" onclick="addTime(60)"><i class="fa-solid fa-plus"></i> 1h</div>
+    <div class="chip green" onclick="addTime(90)"><i class="fa-solid fa-plus"></i> 1.5h</div>
+    <div class="chip green" onclick="addTime(120)"><i class="fa-solid fa-plus"></i> 2h</div>
+    <div class="chip green" onclick="addTime(180)"><i class="fa-solid fa-plus"></i> 3h</div>
   </div>
-  <div style="font-size:9px;color:var(--text-3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;font-weight:700">Custom Amount</div>
-  <div class="custom-row" style="margin-bottom:20px">
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
+  <div class="input-row" style="margin-bottom:20px">
     <input type="number" id="add-hrs" placeholder="hrs" min="0" max="24">
-    <span class="custom-sep">:</span>
+    <span class="input-row-sep">:</span>
     <input type="number" id="add-mins" placeholder="min" min="0" max="59">
-    <button class="btn btn-primary" style="width:auto;padding:11px 18px;flex-shrink:0" onclick="addCustomTime()">Add</button>
+    <button class="btn btn-primary" onclick="addCustomTime()">Add</button>
   </div>
 </div>
 
-<div class="sheet-overlay" id="overlay-removetime" onclick="closeSheet('sheet-removetime')"></div>
+<div class="sheet-bg" id="bg-removetime" onclick="closeSheet('sheet-removetime')"></div>
 <div class="sheet" id="sheet-removetime">
   <div class="sheet-handle"></div>
   <div class="sheet-title" style="color:var(--red)">Remove Time</div>
-  <div class="sheet-sub">Reduce the remaining session time</div>
-  <div class="time-chips">
-    <div class="time-chip danger" onclick="removeTime(15)"><i class="fa-solid fa-minus"></i> 15m</div>
-    <div class="time-chip danger" onclick="removeTime(30)"><i class="fa-solid fa-minus"></i> 30m</div>
-    <div class="time-chip danger" onclick="removeTime(60)"><i class="fa-solid fa-minus"></i> 1h</div>
-    <div class="time-chip danger" onclick="removeTime(120)"><i class="fa-solid fa-minus"></i> 2h</div>
+  <div class="sheet-sub">Reduce remaining session time</div>
+  <div class="chip-row">
+    <div class="chip red" onclick="removeTime(15)">-15m</div>
+    <div class="chip red" onclick="removeTime(30)">-30m</div>
+    <div class="chip red" onclick="removeTime(60)">-1h</div>
+    <div class="chip red" onclick="removeTime(120)">-2h</div>
   </div>
-  <div style="font-size:9px;color:var(--text-3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;font-weight:700">Custom Amount</div>
-  <div class="custom-row" style="margin-bottom:20px">
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
+  <div class="input-row" style="margin-bottom:20px">
     <input type="number" id="rem-hrs" placeholder="hrs" min="0" max="24">
-    <span class="custom-sep">:</span>
+    <span class="input-row-sep">:</span>
     <input type="number" id="rem-mins" placeholder="min" min="0" max="59">
-    <button style="flex-shrink:0;background:var(--red);color:#fff;border:none;border-radius:var(--radius);padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)" onclick="removeCustomTime()">Remove</button>
+    <button class="btn btn-danger" onclick="removeCustomTime()">Remove</button>
   </div>
 </div>
 
-<div class="sheet-overlay" id="overlay-apps" onclick="closeSheet('sheet-apps')"></div>
+<div class="sheet-bg" id="bg-apps" onclick="closeSheet('sheet-apps')"></div>
 <div class="sheet" id="sheet-apps">
   <div class="sheet-handle"></div>
   <div class="sheet-title">Launch App</div>
   <div class="sheet-sub" id="apps-pc-name"></div>
-  <div id="apps-list"><div style="text-align:center;padding:30px"><span class="spinner"></span></div></div>
+  <div id="apps-list"><div style="text-align:center;padding:28px"><span class="spin"></span></div></div>
 </div>
 
-<div class="sheet-overlay" id="overlay-addadmin" onclick="closeSheet('sheet-addadmin')"></div>
+<div class="sheet-bg" id="bg-addadmin" onclick="closeSheet('sheet-addadmin')"></div>
 <div class="sheet" id="sheet-addadmin">
   <div class="sheet-handle"></div>
   <div class="sheet-title">Add Admin</div>
-  <div class="sheet-sub">Grant another user access to this group</div>
-  <div class="field"><label>Username</label><input type="text" id="addadmin-user" placeholder="Username" autocapitalize="none"></div>
-  <div class="modal-btns">
-    <button class="btn btn-outline" onclick="closeSheet('sheet-addadmin')">Cancel</button>
+  <div class="sheet-sub">Grant access to another user</div>
+  <div class="field"><label class="field-label">Username</label><input class="field-input" type="text" id="addadmin-user" placeholder="Username" autocapitalize="none"></div>
+  <div class="sheet-btns">
+    <button class="btn btn-ghost" onclick="closeSheet('sheet-addadmin')">Cancel</button>
     <button class="btn btn-primary" onclick="addAdmin()"><span id="addadmin-btn-text">Add Admin</span></button>
   </div>
 </div>
 
-<div class="sheet-overlay" id="overlay-deletepc" onclick="closeSheet('sheet-deletepc')"></div>
+<div class="sheet-bg" id="bg-deletepc" onclick="closeSheet('sheet-deletepc')"></div>
 <div class="sheet" id="sheet-deletepc">
   <div class="sheet-handle"></div>
   <div class="sheet-title">Delete PC</div>
-  <div class="sheet-sub">Select a PC to permanently remove</div>
-  <div id="delete-pc-list"><div style="text-align:center;padding:20px"><span class="spinner"></span></div></div>
+  <div class="sheet-sub">Select a computer to remove permanently</div>
+  <div id="delete-pc-list"><div style="text-align:center;padding:20px"><span class="spin"></span></div></div>
 </div>
 
 <div class="toast" id="toast"></div>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════════
-const state = { token: null, user: null, serverUrl: null, groups: [], activeGroup: null, pcs: [], activePc: null, socket: null };
+const state = { token:null, user:null, serverUrl:null, groups:[], activeGroup:null, pcs:[], activePc:null, socket:null };
 const _pay = {};
 let currentScreen = 'login';
-let _toastTimer;
+let _toastT;
 
-// ═══════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════
+// ── INIT ─────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
-    state.token = localStorage.getItem('gz_token');
-    state.user = JSON.parse(localStorage.getItem('gz_user') || 'null');
-    state.serverUrl = localStorage.getItem('gz_server') || '';
-    if (state.token && state.user) { showScreen('groups'); loadGroups(); }
-    else { const s = localStorage.getItem('gz_server') || ''; if (s) document.getElementById('login-server').value = s; }
-    setInterval(() => { if (currentScreen === 'dashboard') renderPCs(); if (currentScreen === 'pccontrol') renderPCActions(); }, 1000);
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  state.token = localStorage.getItem('gz_token');
+  state.user = JSON.parse(localStorage.getItem('gz_user') || 'null');
+  state.serverUrl = localStorage.getItem('gz_server') || '';
+  if (state.token && state.user) { showScreen('groups'); loadGroups(); }
+  else { const s = localStorage.getItem('gz_server')||''; if(s) document.getElementById('login-server').value=s; }
+  setInterval(() => {
+    if (currentScreen==='dashboard') renderPCs();
+    if (currentScreen==='pccontrol') renderPCActions();
+  }, 1000);
 });
 
-// ═══════════════════════════════════════════════════════
-// ROUTING
-// ═══════════════════════════════════════════════════════
+// ── ROUTING ──────────────────────────────────────────────────
+const MAIN_SCREENS = ['screen-dashboard','screen-pccontrol','screen-settings'];
+
 function showScreen(name) {
+  const isDesktop = window.innerWidth >= 1024;
+
+  if (isDesktop) {
+    if (name === 'login') {
+      // Hide everything, show login overlay
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-login').classList.add('active');
+    } else if (name === 'groups') {
+      // On desktop, "going back to groups" just clears the main panel
+      MAIN_SCREENS.forEach(id => document.getElementById(id).classList.remove('active'));
+    } else {
+      // Activate sidebar + target main screen
+      MAIN_SCREENS.forEach(id => document.getElementById(id).classList.remove('active'));
+      document.getElementById('screen-login').classList.remove('active');
+      const el = document.getElementById('screen-' + name);
+      if (el) el.classList.add('active');
+    }
+  } else {
+    // Mobile: one screen at a time
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const el = document.getElementById('screen-' + name);
     if (el) el.classList.add('active');
-    currentScreen = name;
-    if (name === 'settings') { loadAdmins(); loadDeletePCList(); }
+  }
+
+  currentScreen = name;
+  if (name === 'settings') { loadAdmins(); loadDeletePCList(); }
 }
+
 function goBack(to) { showScreen(to); }
 
-// ═══════════════════════════════════════════════════════
-// SHEETS
-// ═══════════════════════════════════════════════════════
+// ── SHEETS ───────────────────────────────────────────────────
 function openSheet(id) {
-    const name = id.replace('sheet-', '');
-    const sheet = document.getElementById(id);
-    const overlay = document.getElementById('overlay-' + name);
-    if (sheet) sheet.classList.add('open');
-    if (overlay) overlay.classList.add('open');
+  document.getElementById(id).classList.add('open');
+  document.getElementById('bg-' + id.replace('sheet-','')).classList.add('open');
 }
 function closeSheet(id) {
-    const name = id.replace('sheet-', '');
-    const sheet = document.getElementById(id);
-    const overlay = document.getElementById('overlay-' + name);
-    if (sheet) sheet.classList.remove('open');
-    if (overlay) overlay.classList.remove('open');
+  document.getElementById(id).classList.remove('open');
+  document.getElementById('bg-' + id.replace('sheet-','')).classList.remove('open');
 }
 
-// ═══════════════════════════════════════════════════════
-// API
-// ═══════════════════════════════════════════════════════
+// ── API ──────────────────────────────────────────────────────
 async function api(method, path, body) {
-    const res = await fetch(state.serverUrl + '/api' + path, {
-        method, headers: { 'Content-Type': 'application/json', ...(state.token ? { Authorization: 'Bearer ' + state.token } : {}) },
-        body: body ? JSON.stringify(body) : undefined
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Request failed');
-    return data;
+  const res = await fetch(state.serverUrl+'/api'+path, {
+    method,
+    headers:{'Content-Type':'application/json',...(state.token?{Authorization:'Bearer '+state.token}:{})},
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error||'Request failed');
+  return data;
 }
 
-// ═══════════════════════════════════════════════════════
-// AUTH
-// ═══════════════════════════════════════════════════════
+// ── AUTH ─────────────────────────────────────────────────────
 function switchTab(tab) {
-    const loginTab = document.getElementById('tab-login');
-    const registerTab = document.getElementById('tab-register');
-    const loginForm = document.getElementById('login-form');
-    const registerForm = document.getElementById('register-form');
-    if (loginTab && registerTab && loginForm && registerForm) {
-        loginTab.classList.toggle('active', tab === 'login');
-        registerTab.classList.toggle('active', tab === 'register');
-        loginForm.style.display = tab === 'login' ? 'block' : 'none';
-        registerForm.style.display = tab === 'register' ? 'block' : 'none';
-    }
+  document.getElementById('tab-login').classList.toggle('active', tab==='login');
+  document.getElementById('tab-register').classList.toggle('active', tab==='register');
+  document.getElementById('login-form').style.display = tab==='login'?'block':'none';
+  document.getElementById('register-form').style.display = tab==='register'?'block':'none';
 }
 
 async function doLogin() {
-    const server = document.getElementById('login-server').value.trim().replace(/\/$/, '');
-    const username = document.getElementById('login-user').value.trim();
-    const password = document.getElementById('login-pass').value;
-    if (!server || !username || !password) { toast('Fill all fields', 'error'); return; }
-    state.serverUrl = server;
-    const btn = document.getElementById('login-btn');
-    btn.disabled = true;
-    document.getElementById('login-btn-text').innerHTML = '<span class="spinner"></span>';
-    try {
-        const d = await fetch(server + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) }).then(r => r.json());
-        if (d.error) throw new Error(d.error);
-        saveAuth(server, d.token, d.user);
-        showScreen('groups');
-        loadGroups();
-        toast('Login successful', 'success');
-    } catch (e) { toast(e.message || 'Login failed - Check server', 'error'); }
-    finally { btn.disabled = false; document.getElementById('login-btn-text').textContent = 'Login'; }
+  const server = document.getElementById('login-server').value.trim().replace(/\/$/,'');
+  const username = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value;
+  if (!server||!username||!password) { toast('Fill all fields','err'); return; }
+  state.serverUrl = server;
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true;
+  document.getElementById('login-btn-text').innerHTML = '<span class="spin"></span>';
+  try {
+    const d = await fetch(server+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})}).then(r=>r.json());
+    if (d.error) throw new Error(d.error);
+    saveAuth(server,d.token,d.user); showScreen('groups'); loadGroups(); toast('Signed in','ok');
+  } catch(e) { toast(e.message||'Login failed','err'); }
+  finally { btn.disabled=false; document.getElementById('login-btn-text').textContent='Sign In'; }
 }
 
 async function doRegister() {
-    const server = document.getElementById('reg-server').value.trim().replace(/\/$/, '');
-    const username = document.getElementById('reg-user').value.trim();
-    const password = document.getElementById('reg-pass').value;
-    if (!server || !username || !password) { toast('Fill all fields', 'error'); return; }
-    state.serverUrl = server;
-    const btn = document.getElementById('reg-btn');
-    btn.disabled = true;
-    document.getElementById('reg-btn-text').innerHTML = '<span class="spinner"></span>';
-    try {
-        const d = await fetch(server + '/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) }).then(r => r.json());
-        if (d.error) throw new Error(d.error);
-        saveAuth(server, d.token, d.user);
-        showScreen('groups');
-        loadGroups();
-        toast('Registration successful', 'success');
-    } catch (e) { toast(e.message || 'Registration failed - Check server', 'error'); }
-    finally { btn.disabled = false; document.getElementById('reg-btn-text').textContent = 'Create Account'; }
+  const server = document.getElementById('reg-server').value.trim().replace(/\/$/,'');
+  const username = document.getElementById('reg-user').value.trim();
+  const password = document.getElementById('reg-pass').value;
+  if (!server||!username||!password) { toast('Fill all fields','err'); return; }
+  state.serverUrl = server;
+  const btn = document.getElementById('reg-btn');
+  btn.disabled = true;
+  document.getElementById('reg-btn-text').innerHTML = '<span class="spin"></span>';
+  try {
+    const d = await fetch(server+'/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})}).then(r=>r.json());
+    if (d.error) throw new Error(d.error);
+    saveAuth(server,d.token,d.user); showScreen('groups'); loadGroups(); toast('Account created','ok');
+  } catch(e) { toast(e.message||'Registration failed','err'); }
+  finally { btn.disabled=false; document.getElementById('reg-btn-text').textContent='Create Account'; }
 }
 
-function saveAuth(server, token, user) {
-    state.token = token; state.user = user; state.serverUrl = server;
-    localStorage.setItem('gz_token', token);
-    localStorage.setItem('gz_user', JSON.stringify(user));
-    localStorage.setItem('gz_server', server);
+function saveAuth(server,token,user) {
+  state.token=token; state.user=user; state.serverUrl=server;
+  localStorage.setItem('gz_token',token);
+  localStorage.setItem('gz_user',JSON.stringify(user));
+  localStorage.setItem('gz_server',server);
 }
 
-function doLogout() { if (!confirm('Logout?')) return; state.token = null; state.user = null; localStorage.removeItem('gz_token'); localStorage.removeItem('gz_user'); if (state.socket) state.socket.disconnect(); showScreen('login'); }
+function doLogout() {
+  if (!confirm('Logout?')) return;
+  state.token=null; state.user=null;
+  localStorage.removeItem('gz_token'); localStorage.removeItem('gz_user');
+  if (state.socket) state.socket.disconnect();
+  showScreen('login');
+}
 
-// ═══════════════════════════════════════════════════════
-// GROUPS
-// ═══════════════════════════════════════════════════════
-async function loadGroups() { try { state.groups = await api('GET', '/groups'); renderGroups(); } catch (e) { toast('Failed to load groups', 'error'); } }
+// ── GROUPS ───────────────────────────────────────────────────
+async function loadGroups() {
+  try { state.groups = await api('GET','/groups'); renderGroups(); }
+  catch(e) { toast('Failed to load groups','err'); }
+}
+
 function renderGroups() {
-    const el = document.getElementById('groups-list');
-    if (!state.groups.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon"><i class="fa-solid fa-store"></i></div><div class="empty-title">No groups yet</div><div class="empty-sub">Create your first group below</div></div>'; return; }
-    el.innerHTML = state.groups.map(g => `<div class="group-card" onclick="openGroup('${g.id}')"><div><div class="group-name">${g.name}</div><div class="group-sub">Tap to manage PCs</div></div><span class="chevron"><i class="fa-solid fa-chevron-right"></i></span></div>`).join('');
+  const el = document.getElementById('groups-list');
+  if (!state.groups.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-ico"><i class="fa-solid fa-store"></i></div><div class="empty-h">No groups yet</div><div class="empty-p">Create your first group to get started</div></div>';
+    return;
+  }
+  el.innerHTML = state.groups.map(g =>
+    `<div class="group-item" onclick="openGroup('${g.id}')">
+      <div class="group-item-left">
+        <div class="group-item-icon"><i class="fa-solid fa-network-wired"></i></div>
+        <div><div class="group-item-name">${g.name}</div><div class="group-item-sub">Tap to manage</div></div>
+      </div>
+      <span class="group-item-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+    </div>`
+  ).join('');
 }
+
 async function createGroup() {
-    const name = document.getElementById('newgroup-name').value.trim();
-    if (!name) { toast('Enter a name', 'error'); return; }
-    document.getElementById('newgroup-btn-text').innerHTML = '<span class="spinner"></span>';
-    try { const g = await api('POST', '/groups', { name }); state.groups.push(g); renderGroups(); closeSheet('sheet-newgroup'); document.getElementById('newgroup-name').value = ''; toast('Group created', 'success'); }
-    catch (e) { toast(e.message, 'error'); }
-    finally { document.getElementById('newgroup-btn-text').textContent = 'Create'; }
+  const name = document.getElementById('newgroup-name').value.trim();
+  if (!name) { toast('Enter a name','err'); return; }
+  document.getElementById('newgroup-btn-text').innerHTML = '<span class="spin"></span>';
+  try {
+    const g = await api('POST','/groups',{name});
+    state.groups.push(g); renderGroups();
+    closeSheet('sheet-newgroup');
+    document.getElementById('newgroup-name').value = '';
+    toast('Group created','ok');
+  } catch(e) { toast(e.message,'err'); }
+  finally { document.getElementById('newgroup-btn-text').textContent='Create'; }
 }
+
 function openGroup(id) {
-    state.activeGroup = state.groups.find(g => g.id === id);
-    document.getElementById('dash-title').textContent = state.activeGroup.name;
-    document.getElementById('setting-name').textContent = state.activeGroup.name;
-    document.getElementById('setting-id').textContent = state.activeGroup.id;
-    showScreen('dashboard'); loadPCs(); connectSocket();
+  state.activeGroup = state.groups.find(g=>g.id===id);
+  document.getElementById('dash-title').textContent = state.activeGroup.name;
+  document.getElementById('s-name').textContent = state.activeGroup.name;
+  document.getElementById('s-id').textContent = state.activeGroup.id;
+  showScreen('dashboard'); loadPCs(); connectSocket();
 }
 
-// ═══════════════════════════════════════════════════════
-// PCs
-// ═══════════════════════════════════════════════════════
-async function loadPCs() { try { state.pcs = await api('GET', '/groups/' + state.activeGroup.id + '/pcs'); renderPCs(); } catch (e) { toast('Failed to load PCs', 'error'); } }
+// ── PCs ──────────────────────────────────────────────────────
+async function loadPCs() {
+  try { state.pcs = await api('GET','/groups/'+state.activeGroup.id+'/pcs'); renderPCs(); }
+  catch(e) { toast('Failed to load PCs','err'); }
+}
+
 function renderPCs() {
-    const now = Math.floor(Date.now() / 1000);
-    const online = state.pcs.filter(p => p.is_online).length;
-    const active = state.pcs.filter(p => p.session_end > now || p.stopwatch_start > 0).length;
-    document.getElementById('stat-total').textContent = state.pcs.length;
-    document.getElementById('stat-online').textContent = online;
-    document.getElementById('stat-active').textContent = active;
-    const grid = document.getElementById('pc-grid');
-    if (!state.pcs.length) { grid.innerHTML = '<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon"><i class="fa-solid fa-desktop"></i></div><div class="empty-title">No PCs yet</div><div class="empty-sub">Tap "+ Add PC" to register one</div></div></div>'; return; }
-    grid.innerHTML = state.pcs.map(pc => {
-        const left = pc.session_end > now ? pc.session_end - now : 0;
-        const isWatch = pc.stopwatch_start > 0;
-        const isActive = left > 0 || isWatch;
-        const colorVar = !pc.is_online ? 'var(--text-3)' : isWatch ? 'var(--cyan)' : left > 300 ? 'var(--green)' : left > 0 ? 'var(--yellow)' : 'var(--red)';
-        const status = !pc.is_online ? 'Offline' : isWatch ? 'Free' : left > 0 ? 'Active' : 'Idle';
-        const elapsed = isWatch ? Math.floor(Date.now() / 1000) - pc.stopwatch_start : 0;
-        const timer = !pc.is_online ? '- - -' : isWatch ? fmtTime(elapsed) : left > 0 ? fmtTime(left) : '--:--';
-        const pay = _pay[pc.id];
-        const payBadge = pay === 'paid'
-            ? `<span class="pay-badge" style="background:var(--green-dim);color:var(--green);border:1px solid var(--green-border)"><i class="fa-solid fa-check"></i> Paid</span>`
-            : pay === 'unpaid'
-            ? `<span class="pay-badge" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red-border)"><i class="fa-solid fa-xmark"></i> Unpaid</span>`
-            : '';
-        return `<div class="pc-tile" onclick="openPC('${pc.id}')" style="--tile-color:${colorVar};--tile-color-border:${colorVar}55"><div class="pc-tile-top"><div class="pc-tile-name"><i class="fa-solid fa-computer"></i> ${pc.name}</div><div class="pc-dot" style="color:${colorVar};background:${colorVar}"></div></div><div class="pc-timer" style="color:${colorVar}">${timer}</div><div class="pc-footer"><span class="pc-status-badge" style="color:${colorVar};border-color:${colorVar}66">${status}</span>${payBadge}</div></div>`;
-    }).join('');
+  const now = Math.floor(Date.now()/1000);
+  const online = state.pcs.filter(p=>p.is_online).length;
+  const active = state.pcs.filter(p=>p.session_end>now||p.stopwatch_start>0).length;
+  document.getElementById('stat-total').textContent = state.pcs.length;
+  document.getElementById('stat-online').textContent = online;
+  document.getElementById('stat-active').textContent = active;
+
+  const grid = document.getElementById('pc-grid');
+  if (!state.pcs.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1"><div class="empty"><div class="empty-ico"><i class="fa-solid fa-desktop"></i></div><div class="empty-h">No PCs yet</div><div class="empty-p">Tap "+ Add PC" to register one</div></div></div>';
+    return;
+  }
+
+  grid.innerHTML = state.pcs.map(pc => {
+    const left = pc.session_end>now ? pc.session_end-now : 0;
+    const isWatch = pc.stopwatch_start>0;
+    const col  = !pc.is_online ? 'var(--t3)' : isWatch ? 'var(--blue)' : left>300 ? 'var(--green)' : left>0 ? 'var(--amber)' : 'var(--red)';
+    const bg   = !pc.is_online ? 'var(--s3)' : isWatch ? 'var(--blue-bg)' : left>300 ? 'var(--green-bg)' : left>0 ? 'var(--amber-bg)' : 'var(--red-bg)';
+    const bd   = !pc.is_online ? 'var(--bd)' : isWatch ? 'var(--blue-bd)' : left>300 ? 'var(--green-bd)' : left>0 ? 'var(--amber-bd)' : 'var(--red-bd)';
+    const status = !pc.is_online ? 'Offline' : isWatch ? 'Free' : left>0 ? 'Active' : 'Idle';
+    const elapsed = isWatch ? Math.floor(Date.now()/1000)-pc.stopwatch_start : 0;
+    const timer = !pc.is_online ? '- - -' : isWatch ? fmtTime(elapsed) : left>0 ? fmtTime(left) : '--:--';
+    const pay = _pay[pc.id];
+    const payBadge = pay==='paid'
+      ? `<span class="pay-badge" style="background:var(--green-bg);color:var(--green)"><i class="fa-solid fa-check"></i> Paid</span>`
+      : pay==='unpaid'
+      ? `<span class="pay-badge" style="background:var(--red-bg);color:var(--red)"><i class="fa-solid fa-xmark"></i> Unpaid</span>`
+      : '';
+    return `<div class="pc-card" onclick="openPC('${pc.id}')" style="--pc-color:${col};--pc-bg:${bg};--pc-bd:${bd}">
+      <div class="pc-card-top">
+        <div class="pc-card-name"><i class="fa-solid fa-computer"></i>${pc.name}</div>
+        <div class="pc-dot"></div>
+      </div>
+      <div class="pc-timer">${timer}</div>
+      <div class="pc-footer"><span class="pc-badge">${status}</span>${payBadge}</div>
+    </div>`;
+  }).join('');
 }
+
 async function addPC() {
-    const name = document.getElementById('addpc-name').value.trim();
-    const password = document.getElementById('addpc-pass').value;
-    const price = parseFloat(document.getElementById('addpc-price').value) || 0;
-    if (!name || !password) { toast('Name and password required', 'error'); return; }
-    document.getElementById('addpc-btn-text').innerHTML = '<span class="spinner"></span>';
-    try { const pc = await api('POST', '/groups/' + state.activeGroup.id + '/pcs', { name, password, price_per_hour: price }); state.pcs.push(pc); renderPCs(); closeSheet('sheet-addpc'); document.getElementById('addpc-name').value = ''; document.getElementById('addpc-pass').value = ''; document.getElementById('addpc-price').value = ''; toast('PC added', 'success'); }
-    catch (e) { toast(e.message, 'error'); }
-    finally { document.getElementById('addpc-btn-text').textContent = 'Add PC'; }
+  const name = document.getElementById('addpc-name').value.trim();
+  const password = document.getElementById('addpc-pass').value;
+  const price = parseFloat(document.getElementById('addpc-price').value)||0;
+  if (!name||!password) { toast('Name and password required','err'); return; }
+  document.getElementById('addpc-btn-text').innerHTML='<span class="spin"></span>';
+  try {
+    const pc = await api('POST','/groups/'+state.activeGroup.id+'/pcs',{name,password,price_per_hour:price});
+    state.pcs.push(pc); renderPCs();
+    closeSheet('sheet-addpc');
+    ['addpc-name','addpc-pass','addpc-price'].forEach(id=>document.getElementById(id).value='');
+    toast('PC added','ok');
+  } catch(e) { toast(e.message,'err'); }
+  finally { document.getElementById('addpc-btn-text').textContent='Add PC'; }
 }
 
-// ═══════════════════════════════════════════════════════
-// PC CONTROL
-// ═══════════════════════════════════════════════════════
-function openPC(id) { state.activePc = state.pcs.find(p => p.id === id); document.getElementById('pc-control-name').textContent = state.activePc.name; updateOnlinePill(); renderPCActions(); showScreen('pccontrol'); }
+// ── PC CONTROL ───────────────────────────────────────────────
+function openPC(id) {
+  state.activePc = state.pcs.find(p=>p.id===id);
+  document.getElementById('pc-title').textContent = state.activePc.name;
+  updateOnlinePill(); renderPCActions(); showScreen('pccontrol');
+}
+
 function updateOnlinePill() {
-    const pc = state.activePc; if (!pc) return;
-    const pill = document.getElementById('pc-online-pill');
-    if (pc.is_online) {
-        pill.innerHTML = '<span class="dot" style="background:var(--green);box-shadow:0 0 6px var(--green)"></span> Online';
-        pill.style.cssText = 'color:var(--green);border-color:var(--green-border);background:var(--green-dim)';
-    } else {
-        pill.innerHTML = '<span class="dot" style="background:var(--text-3)"></span> Offline';
-        pill.style.cssText = 'color:var(--text-2);border-color:var(--border);background:var(--bg-card)';
-    }
+  const pc = state.activePc; if(!pc) return;
+  const pill = document.getElementById('pc-pill');
+  if (pc.is_online) {
+    pill.innerHTML = '<span class="dot" style="background:var(--green)"></span> Online';
+    pill.style.cssText = 'color:var(--green);border-color:var(--green-bd);background:var(--green-bg)';
+  } else {
+    pill.innerHTML = '<span class="dot" style="background:var(--t3)"></span> Offline';
+    pill.style.cssText = '';
+  }
 }
+
 function renderPCActions() {
-    const pc = state.activePc; if (!pc) return;
-    const now = Math.floor(Date.now() / 1000);
-    const left = pc.session_end > now ? pc.session_end - now : 0;
-    const isWatch = pc.stopwatch_start > 0;
-    const isActive = left > 0 || isWatch;
-    const pay = _pay[pc.id] || null;
-    const timerSection = document.getElementById('pc-timer-section');
-    if (isActive) {
-        const timerColor = isWatch ? 'var(--cyan)' : left < 300 ? 'var(--orange)' : left < 60 ? 'var(--red)' : 'var(--green)';
-        const timerVal = isWatch ? fmtTime(Math.floor(Date.now() / 1000) - pc.stopwatch_start) : fmtTime(left);
-        timerSection.innerHTML = `<div class="timer-row"><div class="timer-inline" style="color:${timerColor}">${timerVal}</div><div class="pay-btns"><button class="pay-btn ${pay === 'paid' ? 'active-paid' : ''}" onclick="togglePay('paid')"><i class="fa-solid fa-check"></i>&nbsp; Paid</button><button class="pay-btn ${pay === 'unpaid' ? 'active-unpaid' : ''}" onclick="togglePay('unpaid')"><i class="fa-solid fa-xmark"></i>&nbsp; Unpaid</button></div></div><div style="height:20px"></div>`;
-    } else { timerSection.innerHTML = ''; }
-    const sessionSection = document.getElementById('pc-session-section');
-    if (isActive) {
-        sessionSection.innerHTML = `<div class="section-label">Session Control</div><div class="action-grid three" style="margin-bottom:20px"><div class="action-tile" onclick="openSheet('sheet-addtime')"><div class="action-icon"><i class="fa-solid fa-clock-plus" style="color:var(--cyan)"></i></div><div class="action-label">Add Time</div></div><div class="action-tile" onclick="openSheet('sheet-removetime')"><div class="action-icon"><i class="fa-solid fa-clock-minus" style="color:var(--orange)"></i></div><div class="action-label">Remove</div></div><div class="action-tile" onclick="confirmEndSession()"><div class="action-icon"><i class="fa-solid fa-stop" style="color:var(--red)"></i></div><div class="action-label">End Session</div></div></div>`;
-    } else {
-        sessionSection.innerHTML = `<div class="section-label">Session Control</div><div class="action-grid" style="margin-bottom:20px"><div class="action-tile full" onclick="openSheet('sheet-startsession')"><div class="action-icon"><i class="fa-solid fa-play" style="color:var(--green)"></i></div><div class="action-label">Start Session</div><div class="action-sub">Timed or free timer</div></div></div>`;
-    }
+  const pc = state.activePc; if(!pc) return;
+  const now = Math.floor(Date.now()/1000);
+  const left = pc.session_end>now ? pc.session_end-now : 0;
+  const isWatch = pc.stopwatch_start>0;
+  const isActive = left>0||isWatch;
+  const pay = _pay[pc.id]||null;
+
+  const timerArea = document.getElementById('pc-timer-area');
+  if (isActive) {
+    const col = isWatch ? 'var(--blue)' : left<300 ? 'var(--amber)' : left<60 ? 'var(--red)' : 'var(--green)';
+    const val = isWatch ? fmtTime(Math.floor(Date.now()/1000)-pc.stopwatch_start) : fmtTime(left);
+    timerArea.innerHTML = `<div class="timer-card">
+      <div class="timer-big" style="color:${col}">${val}</div>
+      <div class="pay-col">
+        <button class="pay-btn ${pay==='paid'?'paid':''}" onclick="togglePay('paid')"><i class="fa-solid fa-check"></i> Paid</button>
+        <button class="pay-btn ${pay==='unpaid'?'unpaid':''}" onclick="togglePay('unpaid')"><i class="fa-solid fa-xmark"></i> Unpaid</button>
+      </div>
+    </div>`;
+  } else {
+    timerArea.innerHTML='';
+  }
+
+  const sessionArea = document.getElementById('pc-session-area');
+  if (isActive) {
+    sessionArea.innerHTML = `<div class="section-head">Session Control</div>
+      <div class="action-grid cols3" style="margin-bottom:20px">
+        <div class="action-card" onclick="openSheet('sheet-addtime')"><div class="action-card-icon"><i class="fa-solid fa-clock-plus" style="color:var(--green)"></i></div><div class="action-card-label">Add Time</div></div>
+        <div class="action-card" onclick="openSheet('sheet-removetime')"><div class="action-card-icon"><i class="fa-solid fa-clock-minus" style="color:var(--amber)"></i></div><div class="action-card-label">Remove</div></div>
+        <div class="action-card" onclick="confirmEndSession()"><div class="action-card-icon"><i class="fa-solid fa-stop" style="color:var(--red)"></i></div><div class="action-card-label">End</div></div>
+      </div>`;
+  } else {
+    sessionArea.innerHTML = `<div class="section-head">Session Control</div>
+      <div class="action-grid cols1" style="margin-bottom:20px">
+        <div class="action-card" onclick="openSheet('sheet-startsession')">
+          <div class="action-card-icon"><i class="fa-solid fa-play" style="color:var(--green)"></i></div>
+          <div class="action-card-label">Start Session</div>
+          <div class="action-card-sub">Timed or free timer</div>
+        </div>
+      </div>`;
+  }
 }
-function togglePay(status) { if (!state.activePc) return; const id = state.activePc.id; _pay[id] = _pay[id] === status ? null : status; renderPCActions(); renderPCs(); toast(_pay[id] ? `Marked ${_pay[id]}` : 'Payment cleared', 'success'); }
 
-// ═══════════════════════════════════════════════════════
-// SESSION ACTIONS
-// ═══════════════════════════════════════════════════════
-async function startSession(mins) { closeSheet('sheet-startsession'); try { const r = await api('POST', '/pcs/' + state.activePc.id + '/session/start', { duration_minutes: mins, group_id: state.activeGroup.id }); updatePcField(state.activePc.id, 'session_end', r.session_end); updatePcField(state.activePc.id, 'stopwatch_start', 0); toast('Session started', 'success'); } catch (e) { toast(e.message, 'error'); } }
-function startCustomSession() { const hrs = parseInt(document.getElementById('custom-hrs').value) || 0; const mins = parseInt(document.getElementById('custom-mins').value) || 0; const total = hrs * 60 + mins; if (total < 1) { toast('Enter duration', 'error'); return; } document.getElementById('custom-hrs').value = ''; document.getElementById('custom-mins').value = ''; startSession(total); }
-async function startStopwatch() { closeSheet('sheet-startsession'); try { const r = await api('POST', '/pcs/' + state.activePc.id + '/session/stopwatch', { group_id: state.activeGroup.id }); updatePcField(state.activePc.id, 'stopwatch_start', r.started_at); updatePcField(state.activePc.id, 'session_end', 0); toast('Free timer started', 'success'); } catch (e) { toast(e.message, 'error'); } }
-async function addTime(mins) { closeSheet('sheet-addtime'); try { if (state.activePc.stopwatch_start > 0) { const r = await api('POST', '/pcs/' + state.activePc.id + '/session/start', { duration_minutes: mins, group_id: state.activeGroup.id }); updatePcField(state.activePc.id, 'session_end', r.session_end); updatePcField(state.activePc.id, 'stopwatch_start', 0); toast(`Free timer \u2192 ${mins}m`, 'success'); return; } const r = await api('POST', '/pcs/' + state.activePc.id + '/session/add-time', { minutes: mins, group_id: state.activeGroup.id }); updatePcField(state.activePc.id, 'session_end', r.session_end); toast(`+${mins}m added`, 'success'); } catch (e) { toast(e.message, 'error'); } }
-function addCustomTime() { const hrs = parseInt(document.getElementById('add-hrs').value) || 0; const mins = parseInt(document.getElementById('add-mins').value) || 0; const total = hrs * 60 + mins; if (total < 1) { toast('Enter duration', 'error'); return; } document.getElementById('add-hrs').value = ''; document.getElementById('add-mins').value = ''; addTime(total); }
-async function removeTime(mins) { closeSheet('sheet-removetime'); try { const r = await api('POST', '/pcs/' + state.activePc.id + '/session/add-time', { minutes: -mins, group_id: state.activeGroup.id }); updatePcField(state.activePc.id, 'session_end', r.session_end); toast(`-${mins}m removed`, 'success'); } catch (e) { toast(e.message, 'error'); } }
-function removeCustomTime() { const hrs = parseInt(document.getElementById('rem-hrs').value) || 0; const mins = parseInt(document.getElementById('rem-mins').value) || 0; const total = hrs * 60 + mins; if (total < 1) { toast('Enter duration', 'error'); return; } document.getElementById('rem-hrs').value = ''; document.getElementById('rem-mins').value = ''; removeTime(total); }
-function confirmEndSession() { if (!confirm('End session on ' + state.activePc.name + '?\nScreen will lock immediately.')) return; api('POST', '/pcs/' + state.activePc.id + '/session/end', { group_id: state.activeGroup.id }).then(() => { updatePcField(state.activePc.id, 'session_end', 0); updatePcField(state.activePc.id, 'stopwatch_start', 0); toast('Session ended', 'success'); }).catch(e => toast(e.message, 'error')); }
-async function pcCmd(action) { try { await api('POST', '/pcs/' + state.activePc.id + '/' + action, { group_id: state.activeGroup.id }); toast(action === 'lock' ? 'Screen locked' : 'Screen unlocked', 'success'); } catch (e) { toast(e.message, 'error'); } }
-function updatePcField(pcId, field, value) { const pc = state.pcs.find(p => p.id === pcId); if (pc) pc[field] = value; if (state.activePc?.id === pcId) { state.activePc[field] = value; renderPCActions(); } renderPCs(); }
+function togglePay(status) {
+  if (!state.activePc) return;
+  const id = state.activePc.id;
+  _pay[id] = _pay[id]===status ? null : status;
+  renderPCActions(); renderPCs();
+  toast(_pay[id] ? `Marked ${_pay[id]}` : 'Payment cleared','ok');
+}
 
-// ═══════════════════════════════════════════════════════
-// APPS
-// ═══════════════════════════════════════════════════════
-async function openApps() { document.getElementById('apps-pc-name').textContent = 'on ' + state.activePc.name; document.getElementById('apps-list').innerHTML = '<div style="text-align:center;padding:30px"><span class="spinner"></span></div>'; openSheet('sheet-apps'); try { const apps = await api('GET', '/pcs/' + state.activePc.id + '/apps'); window._apps = apps; if (!apps.length) { document.getElementById('apps-list').innerHTML = '<div style="color:var(--text-2);text-align:center;padding:28px;font-size:12px">No shortcuts found.<br>Add .lnk files to the shortcuts folder.</div>'; return; } document.getElementById('apps-list').innerHTML = apps.map((a, i) => `<div class="app-item"><div class="app-item-name"><i class="fa-solid fa-file"></i> ${a.name}</div><button class="launch-btn" onclick="launchApp(${i})"><i class="fa-solid fa-play"></i> Launch</button></div>`).join(''); } catch (e) { document.getElementById('apps-list').innerHTML = '<div style="color:var(--red);text-align:center;padding:20px">Failed to load apps</div>'; } }
-async function launchApp(i) { const app = window._apps?.[i]; if (!app) return; closeSheet('sheet-apps'); try { await api('POST', '/pcs/' + state.activePc.id + '/launch', { app_path: app.path, group_id: state.activeGroup.id }); toast(app.name + ' launched', 'success'); } catch (e) { toast(e.message, 'error'); } }
+// ── SESSION ACTIONS ──────────────────────────────────────────
+async function startSession(mins) {
+  closeSheet('sheet-startsession');
+  try {
+    const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
+    updatePcField(state.activePc.id,'session_end',r.session_end);
+    updatePcField(state.activePc.id,'stopwatch_start',0);
+    toast('Session started','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
 
-// ═══════════════════════════════════════════════════════
-// SETTINGS
-// ═══════════════════════════════════════════════════════
-async function loadAdmins() { try { const admins = await api('GET', '/groups/' + state.activeGroup.id + '/admins'); document.getElementById('admins-list').innerHTML = admins.length ? admins.map(a => `<div class="admin-item"><div class="admin-avatar">${a.username[0].toUpperCase()}</div><div class="admin-name">${a.username}</div><button class="remove-btn" onclick="removeAdmin('${a.id}','${a.username}')"><i class="fa-solid fa-trash"></i> Remove</button></div>`).join('') : '<div style="color:var(--text-2);padding:8px 0;font-size:12px">No additional admins</div>'; } catch (e) {} }
-async function addAdmin() { const username = document.getElementById('addadmin-user').value.trim(); if (!username) { toast('Enter a username', 'error'); return; } document.getElementById('addadmin-btn-text').innerHTML = '<span class="spinner"></span>'; try { await api('POST', '/groups/' + state.activeGroup.id + '/admins', { username }); closeSheet('sheet-addadmin'); document.getElementById('addadmin-user').value = ''; toast(username + ' added', 'success'); loadAdmins(); } catch (e) { toast(e.message, 'error'); } finally { document.getElementById('addadmin-btn-text').textContent = 'Add Admin'; } }
-async function removeAdmin(id, username) { if (!confirm('Remove ' + username + ' as admin?')) return; try { await api('DELETE', '/groups/' + state.activeGroup.id + '/admins/' + id); toast(username + ' removed', 'success'); loadAdmins(); } catch (e) { toast(e.message, 'error'); } }
-function loadDeletePCList() { const el = document.getElementById('delete-pc-list'); if (!state.pcs || !state.pcs.length) { el.innerHTML = '<div style="color:var(--text-2);padding:8px 0;font-size:12px">No PCs in this group</div>'; return; } el.innerHTML = state.pcs.map(pc => `<div class="pc-delete-item"><div class="pc-delete-name"><i class="fa-solid fa-computer"></i> ${pc.name}</div><button class="pc-delete-btn" onclick="deletePC('${pc.id}','${pc.name}')"><i class="fa-solid fa-trash"></i> Delete</button></div>`).join(''); }
-async function deletePC(pcId, name) { if (!confirm('Delete "' + name + '"?\nThis cannot be undone.')) return; try { await api('DELETE', '/groups/' + state.activeGroup.id + '/pcs/' + pcId); state.pcs = state.pcs.filter(p => p.id !== pcId); renderPCs(); loadDeletePCList(); toast(name + ' deleted', 'success'); } catch (e) { toast(e.message, 'error'); } }
-async function confirmDeleteGroup() { if (!confirm('Delete "' + state.activeGroup.name + '"?\nThis removes ALL PCs in this group. Cannot be undone.')) return; try { await api('DELETE', '/groups/' + state.activeGroup.id); state.groups = state.groups.filter(g => g.id !== state.activeGroup.id); renderGroups(); showScreen('groups'); toast('Group deleted', 'success'); } catch (e) { toast(e.message, 'error'); } }
+function startCustomSession() {
+  const hrs=parseInt(document.getElementById('custom-hrs').value)||0;
+  const mins=parseInt(document.getElementById('custom-mins').value)||0;
+  const total=hrs*60+mins;
+  if (total<1) { toast('Enter duration','err'); return; }
+  document.getElementById('custom-hrs').value='';
+  document.getElementById('custom-mins').value='';
+  startSession(total);
+}
 
-// ═══════════════════════════════════════════════════════
-// SOCKET
-// ═══════════════════════════════════════════════════════
-function connectSocket() { if (state.socket) state.socket.disconnect(); state.socket = io(state.serverUrl, { transports: ['websocket'] }); state.socket.on('connect', () => { state.socket.emit('admin:subscribe', { group_id: state.activeGroup.id, token: state.token }); }); state.socket.on('group:' + state.activeGroup.id + ':pc-status', ({ pc_id, is_online }) => { const pc = state.pcs.find(p => p.id === pc_id); if (pc) { pc.is_online = is_online ? 1 : 0; renderPCs(); if (state.activePc?.id === pc_id) { state.activePc.is_online = pc.is_online; updateOnlinePill(); } } }); }
+async function startStopwatch() {
+  closeSheet('sheet-startsession');
+  try {
+    const r = await api('POST','/pcs/'+state.activePc.id+'/session/stopwatch',{group_id:state.activeGroup.id});
+    updatePcField(state.activePc.id,'stopwatch_start',r.started_at);
+    updatePcField(state.activePc.id,'session_end',0);
+    toast('Free timer started','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
 
-// ═══════════════════════════════════════════════════════
-// UTILS
-// ═══════════════════════════════════════════════════════
-function fmtTime(secs) { if (secs <= 0) return '00:00'; const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = secs % 60; if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`; return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`; }
-function toast(msg, type = 'success') { const el = document.getElementById('toast'); el.textContent = msg; el.className = 'toast ' + type + ' show'; clearTimeout(_toastTimer); _toastTimer = setTimeout(() => el.classList.remove('show'), 2600); }
+async function addTime(mins) {
+  closeSheet('sheet-addtime');
+  try {
+    if (state.activePc.stopwatch_start>0) {
+      const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
+      updatePcField(state.activePc.id,'session_end',r.session_end);
+      updatePcField(state.activePc.id,'stopwatch_start',0);
+      toast('Free timer \u2192 '+mins+'m','ok'); return;
+    }
+    const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
+    updatePcField(state.activePc.id,'session_end',r.session_end);
+    toast('+'+mins+'m added','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+function addCustomTime() {
+  const hrs=parseInt(document.getElementById('add-hrs').value)||0;
+  const mins=parseInt(document.getElementById('add-mins').value)||0;
+  const total=hrs*60+mins;
+  if (total<1) { toast('Enter duration','err'); return; }
+  document.getElementById('add-hrs').value='';
+  document.getElementById('add-mins').value='';
+  addTime(total);
+}
+
+async function removeTime(mins) {
+  closeSheet('sheet-removetime');
+  try {
+    const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:-mins,group_id:state.activeGroup.id});
+    updatePcField(state.activePc.id,'session_end',r.session_end);
+    toast('-'+mins+'m removed','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+function removeCustomTime() {
+  const hrs=parseInt(document.getElementById('rem-hrs').value)||0;
+  const mins=parseInt(document.getElementById('rem-mins').value)||0;
+  const total=hrs*60+mins;
+  if (total<1) { toast('Enter duration','err'); return; }
+  document.getElementById('rem-hrs').value='';
+  document.getElementById('rem-mins').value='';
+  removeTime(total);
+}
+
+function confirmEndSession() {
+  if (!confirm('End session on '+state.activePc.name+'?\nScreen will lock immediately.')) return;
+  api('POST','/pcs/'+state.activePc.id+'/session/end',{group_id:state.activeGroup.id})
+    .then(()=>{ updatePcField(state.activePc.id,'session_end',0); updatePcField(state.activePc.id,'stopwatch_start',0); toast('Session ended','ok'); })
+    .catch(e=>toast(e.message,'err'));
+}
+
+async function pcCmd(action) {
+  try {
+    await api('POST','/pcs/'+state.activePc.id+'/'+action,{group_id:state.activeGroup.id});
+    toast(action==='lock'?'Screen locked':'Screen unlocked','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+function updatePcField(pcId,field,value) {
+  const pc = state.pcs.find(p=>p.id===pcId);
+  if (pc) pc[field]=value;
+  if (state.activePc?.id===pcId) { state.activePc[field]=value; renderPCActions(); }
+  renderPCs();
+}
+
+// ── APPS ─────────────────────────────────────────────────────
+async function openApps() {
+  document.getElementById('apps-pc-name').textContent = 'on '+state.activePc.name;
+  document.getElementById('apps-list').innerHTML = '<div style="text-align:center;padding:28px"><span class="spin"></span></div>';
+  openSheet('sheet-apps');
+  try {
+    const apps = await api('GET','/pcs/'+state.activePc.id+'/apps');
+    window._apps = apps;
+    if (!apps.length) { document.getElementById('apps-list').innerHTML='<div style="color:var(--t2);text-align:center;padding:28px;font-size:12px">No shortcuts found.<br>Add .lnk files to the shortcuts folder.</div>'; return; }
+    document.getElementById('apps-list').innerHTML = apps.map((a,i)=>`<div class="app-row"><div class="app-name"><i class="fa-solid fa-file"></i>${a.name}</div><button class="launch-btn" onclick="launchApp(${i})"><i class="fa-solid fa-play"></i> Launch</button></div>`).join('');
+  } catch(e) { document.getElementById('apps-list').innerHTML='<div style="color:var(--red);text-align:center;padding:20px">Failed to load apps</div>'; }
+}
+
+async function launchApp(i) {
+  const app = window._apps?.[i]; if(!app) return;
+  closeSheet('sheet-apps');
+  try { await api('POST','/pcs/'+state.activePc.id+'/launch',{app_path:app.path,group_id:state.activeGroup.id}); toast(app.name+' launched','ok'); }
+  catch(e) { toast(e.message,'err'); }
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────
+async function loadAdmins() {
+  try {
+    const admins = await api('GET','/groups/'+state.activeGroup.id+'/admins');
+    document.getElementById('admins-list').innerHTML = admins.length
+      ? admins.map(a=>`<div class="admin-row"><div class="admin-av">${a.username[0].toUpperCase()}</div><div class="admin-name">${a.username}</div><button class="remove-btn" onclick="removeAdmin('${a.id}','${a.username}')">Remove</button></div>`).join('')
+      : '<div style="color:var(--t2);padding:8px 0;font-size:12px">No additional admins</div>';
+  } catch(e) {}
+}
+
+async function addAdmin() {
+  const username = document.getElementById('addadmin-user').value.trim();
+  if (!username) { toast('Enter a username','err'); return; }
+  document.getElementById('addadmin-btn-text').innerHTML='<span class="spin"></span>';
+  try {
+    await api('POST','/groups/'+state.activeGroup.id+'/admins',{username});
+    closeSheet('sheet-addadmin');
+    document.getElementById('addadmin-user').value='';
+    toast(username+' added','ok'); loadAdmins();
+  } catch(e) { toast(e.message,'err'); }
+  finally { document.getElementById('addadmin-btn-text').textContent='Add Admin'; }
+}
+
+async function removeAdmin(id,username) {
+  if (!confirm('Remove '+username+' as admin?')) return;
+  try { await api('DELETE','/groups/'+state.activeGroup.id+'/admins/'+id); toast(username+' removed','ok'); loadAdmins(); }
+  catch(e) { toast(e.message,'err'); }
+}
+
+function loadDeletePCList() {
+  const el = document.getElementById('delete-pc-list');
+  if (!state.pcs?.length) { el.innerHTML='<div style="color:var(--t2);padding:8px 0;font-size:12px">No PCs in this group</div>'; return; }
+  el.innerHTML = state.pcs.map(pc=>`<div class="pc-del-row"><div class="pc-del-name"><i class="fa-solid fa-computer" style="color:var(--t3)"></i>${pc.name}</div><button class="pc-del-btn" onclick="deletePC('${pc.id}','${pc.name}')">Delete</button></div>`).join('');
+}
+
+async function deletePC(pcId,name) {
+  if (!confirm('Delete "'+name+'"?\nThis cannot be undone.')) return;
+  try {
+    await api('DELETE','/groups/'+state.activeGroup.id+'/pcs/'+pcId);
+    state.pcs = state.pcs.filter(p=>p.id!==pcId);
+    renderPCs(); loadDeletePCList(); toast(name+' deleted','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+async function confirmDeleteGroup() {
+  if (!confirm('Delete "'+state.activeGroup.name+'"?\nAll PCs in this group will be removed.')) return;
+  try {
+    await api('DELETE','/groups/'+state.activeGroup.id);
+    state.groups = state.groups.filter(g=>g.id!==state.activeGroup.id);
+    renderGroups(); showScreen('groups'); toast('Group deleted','ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+// ── SOCKET ───────────────────────────────────────────────────
+function connectSocket() {
+  if (state.socket) state.socket.disconnect();
+  state.socket = io(state.serverUrl,{transports:['websocket']});
+  state.socket.on('connect',()=>{ state.socket.emit('admin:subscribe',{group_id:state.activeGroup.id,token:state.token}); });
+  state.socket.on('group:'+state.activeGroup.id+':pc-status',({pc_id,is_online})=>{
+    const pc = state.pcs.find(p=>p.id===pc_id);
+    if (pc) {
+      pc.is_online = is_online?1:0; renderPCs();
+      if (state.activePc?.id===pc_id) { state.activePc.is_online=pc.is_online; updateOnlinePill(); }
+    }
+  });
+}
+
+// ── UTILS ────────────────────────────────────────────────────
+function fmtTime(secs) {
+  if (secs<=0) return '00:00';
+  const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
+  if (h>0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function toast(msg,type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast '+type+' show';
+  clearTimeout(_toastT);
+  _toastT = setTimeout(()=>el.classList.remove('show'),2600);
+}
 </script>
 </body>
 </html>
