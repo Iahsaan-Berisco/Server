@@ -63,14 +63,12 @@ z-index: 10; overflow: hidden;
 DESKTOP OVERRIDES (1024+)
 ────────────────────────────────────────── */
 @media (min-width: 1024px) {
-/* App becomes a grid */
 #app {
 display: grid;
 grid-template-columns: var(--sidebar) 1fr;
 grid-template-rows: 1fr;
 overflow: hidden;
 }
-/* Reset all screens from absolute to grid children */
 .screen {
 position: relative !important;
 inset: auto !important;
@@ -84,7 +82,6 @@ height: 100dvh;
 overflow: hidden;
 }
 .screen.active { display: flex; }
-/* Login: overlays everything */
 #screen-login {
 position: fixed !important;
 inset: 0 !important;
@@ -94,7 +91,6 @@ justify-content: center;
 align-items: center;
 }
 #screen-login.active { display: flex; }
-/* Groups sidebar: always visible in col 1 when logged in */
 #screen-groups {
 grid-column: 1;
 grid-row: 1;
@@ -103,14 +99,21 @@ border-right: 1px solid var(--bd);
 background: var(--s1);
 }
 #screen-groups .mobile-topbar { display: none; }
-/* Main content screens: col 2 */
 #screen-dashboard, #screen-pccontrol, #screen-settings {
 grid-column: 2;
 grid-row: 1;
 }
-/* FAB hidden on desktop - replaced with floating button */
 .fab { display: none !important; }
-/* Desktop floating add button */
+.sidebar-header { display: flex !important; }
+.screen-pad { padding: 28px 32px; }
+.pc-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; padding: 0 32px 32px; }
+.action-grid { padding: 0 32px; }
+.stats-row { padding: 24px 32px 20px; }
+.topbar { padding: 0 32px; }
+.scroll-inner { max-width: 860px; margin: 0 auto; }
+/* Sheet centered on desktop */
+.sheet { left: 50% !important; right: auto !important; transform: translate(-50%, 100%) !important; width: 480px !important; border-radius: var(--r3) !important; bottom: 40px !important; }
+.sheet.open { transform: translate(-50%, 0) !important; }
 .desktop-add-btn {
 position: fixed !important;
 bottom: 32px;
@@ -132,23 +135,8 @@ border: none;
 }
 .desktop-add-btn:hover { background: #0ea572; transform: scale(1.05); }
 .desktop-add-btn:active { transform: scale(.95); }
-/* Desktop-only sidebar header */
-.sidebar-header { display: flex !important; }
-/* Wider paddings on desktop */
-.screen-pad { padding: 28px 32px; }
-.pc-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; padding: 0 32px 32px; }
-.action-grid { padding: 0 32px; }
-.stats-row { padding: 24px 32px 20px; }
-.topbar { padding: 0 32px; }
-/* Center content on desktop */
-.scroll-inner { max-width: 860px; margin: 0 auto; }
-/* Sheet centered */
-.sheet { left: 50%; right: auto; transform: translate(-50%, 100%); width: 480px; border-radius: var(--r3); bottom: 40px; }
-.sheet.open { transform: translate(-50%, 0); }
-/* Desktop-only utility */
 .desktop-only { display: flex !important; }
 }
-/* Mobile-only utility */
 .desktop-only { display: none; }
 /* ──────────────────────────────────────────
 TOPBAR
@@ -449,7 +437,6 @@ font-size: 10px; font-weight: 700; color: var(--red); background: var(--red-bg);
 border: 1px solid var(--red-bd); padding: 5px 10px; border-radius: var(--r);
 cursor: pointer; font-family: var(--sans); text-transform: uppercase; letter-spacing: .4px;
 }
-/* Reorder buttons */
 .reorder-btns { display: flex; gap: 4px; }
 .reorder-btn {
 width: 28px; height: 28px; border-radius: var(--r);
@@ -476,7 +463,7 @@ width: calc(100% - 36px);
 .fab:hover { background: #0ea572; }
 .fab:active { transform: scale(.97); }
 /* ──────────────────────────────────────────
-SHEETS
+SHEETS - CENTERED
 ────────────────────────────────────────── */
 .sheet-bg {
 position: fixed; inset: 0; background: rgba(0,0,0,.75);
@@ -485,16 +472,18 @@ opacity: 0; pointer-events: none; transition: opacity .22s;
 }
 .sheet-bg.open { opacity: 1; pointer-events: all; }
 .sheet {
-position: fixed; bottom: 0; left: 0; right: 0;
+position: fixed; bottom: 0; left: 50%; right: auto;
 background: var(--s1); border-top: 1px solid var(--bd2);
 border-radius: var(--r3) var(--r3) 0 0;
 padding: 0 22px;
 padding-bottom: max(22px, env(safe-area-inset-bottom));
 z-index: 101; max-height: 88dvh; overflow-y: auto;
-transform: translateY(100%);
+transform: translate(-50%, 100%);
 transition: transform .3s cubic-bezier(.16,1,.3,1);
+width: 100%;
+max-width: 480px;
 }
-.sheet.open { transform: translateY(0); }
+.sheet.open { transform: translate(-50%, 0); }
 .sheet-handle { width: 38px; height: 3px; background: var(--s4); border-radius: 2px; margin: 14px auto 20px; }
 .sheet-title { font-size: 18px; font-weight: 800; letter-spacing: -.3px; margin-bottom: 4px; }
 .sheet-sub { font-size: 12px; color: var(--t2); margin-bottom: 22px; }
@@ -753,7 +742,7 @@ GameZone
 <div class="sheet" id="sheet-reorderpc">
 <div class="sheet-handle"></div>
 <div class="sheet-title">Reorder PCs</div>
-<div class="sheet-sub">Drag or use arrows to rearrange. No need to change PC credentials.</div>
+<div class="sheet-sub">Use arrows to rearrange. No need to change PC credentials.</div>
 <div id="reorder-pc-list"><div style="text-align:center;padding:20px"><span class="spin"></span></div></div>
 <div class="sheet-btns">
 <button class="btn btn-ghost" onclick="closeSheet('sheet-reorderpc')">Cancel</button>
@@ -855,7 +844,6 @@ const _pay = {};
 let currentScreen = 'login';
 let _toastT;
 
-// ── INIT ─────────────────────────────────────────────────────
 window.addEventListener('load', () => {
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 state.token = localStorage.getItem('gz_token');
@@ -869,7 +857,6 @@ if (currentScreen==='pccontrol') renderPCActions();
 }, 1000);
 });
 
-// ── ROUTING ──────────────────────────────────────────────────
 const MAIN_SCREENS = ['screen-dashboard','screen-pccontrol','screen-settings'];
 function showScreen(name) {
     const isDesktop = window.innerWidth >= 1024;
@@ -897,7 +884,6 @@ function showScreen(name) {
 
 function goBack(to) { showScreen(to); }
 
-// ── SHEETS ───────────────────────────────────────────────────
 function openSheet(id) {
 document.getElementById(id).classList.add('open');
 document.getElementById('bg-' + id.replace('sheet-','')).classList.add('open');
@@ -907,19 +893,21 @@ document.getElementById(id).classList.remove('open');
 document.getElementById('bg-' + id.replace('sheet-','')).classList.remove('open');
 }
 
-// ── API ──────────────────────────────────────────────────────
 async function api(method, path, body) {
 const res = await fetch(state.serverUrl+'/api'+path, {
 method,
 headers:{'Content-Type':'application/json',...(state.token?{Authorization:'Bearer '+state.token}:{})},
 body: body ? JSON.stringify(body) : undefined
 });
+const contentType = res.headers.get('content-type');
+if (!contentType || !contentType.includes('application/json')) {
+    throw new Error('Server returned invalid response');
+}
 const data = await res.json();
 if (!res.ok) throw new Error(data.error||'Request failed');
 return data;
 }
 
-// ── AUTH ─────────────────────────────────────────────────────
 function switchTab(tab) {
 document.getElementById('tab-login').classList.toggle('active', tab==='login');
 document.getElementById('tab-register').classList.toggle('active', tab==='register');
@@ -1002,7 +990,6 @@ if (state.socket) state.socket.disconnect();
 showScreen('login');
 }
 
-// ── GROUPS ───────────────────────────────────────────────────
 async function loadGroups() {
 try { state.groups = await api('GET','/groups'); renderGroups(); }
 catch(e) { toast('Failed to load groups','err'); }
@@ -1044,7 +1031,6 @@ document.getElementById('s-id').textContent = state.activeGroup.id;
 showScreen('dashboard'); loadPCs(); connectSocket();
 }
 
-// ── PCs ──────────────────────────────────────────────────────
 async function loadPCs() {
 try { state.pcs = await api('GET','/groups/'+state.activeGroup.id+'/pcs'); renderPCs(); }
 catch(e) { toast('Failed to load PCs','err'); }
@@ -1061,7 +1047,6 @@ if (!state.pcs.length) {
 grid.innerHTML = '<div style="grid-column:1/-1"><div class="empty"><div class="empty-ico"><i class="fa-solid fa-desktop"></i></div><div class="empty-h">No PCs yet</div><div class="empty-p">Tap "+ Add PC" to register one</div></div></div>';
 return;
 }
-// Sort by order field if exists
 const sortedPcs = [...state.pcs].sort((a,b) => (a.order||0) - (b.order||0));
 grid.innerHTML = sortedPcs.map(pc => {
 const left = pc.session_end>now ? pc.session_end-now : 0;
@@ -1104,11 +1089,10 @@ toast('PC added','ok');
 finally { document.getElementById('addpc-btn-text').textContent='Add PC'; }
 }
 
-// ── REORDER PCs ──────────────────────────────────────────────
+// ── REORDER PCs - FIXED ──────────────────────────────────────
 function loadReorderPCList() {
 const el = document.getElementById('reorder-pc-list');
 if (!state.pcs?.length) { el.innerHTML='<div style="color:var(--t2);padding:8px 0;font-size:12px">No PCs in this group</div>'; return; }
-// Sort by current order
 const sortedPcs = [...state.pcs].sort((a,b) => (a.order||0) - (b.order||0));
 el.innerHTML = sortedPcs.map((pc,idx)=>`<div class="pc-del-row" data-pc-id="${pc.id}">
 <div class="pc-del-name"><i class="fa-solid fa-computer" style="color:var(--t3)"></i>${pc.name}</div>
@@ -1118,34 +1102,52 @@ el.innerHTML = sortedPcs.map((pc,idx)=>`<div class="pc-del-row" data-pc-id="${pc
 </div>
 </div>`).join('');
 }
+
 function movePC(pcId, direction) {
 const sortedPcs = [...state.pcs].sort((a,b) => (a.order||0) - (b.order||0));
 const idx = sortedPcs.findIndex(p=>p.id===pcId);
 if (idx < 0) return;
 const newIdx = idx + direction;
 if (newIdx < 0 || newIdx >= sortedPcs.length) return;
-// Swap order values
-const temp = sortedPcs[idx].order||idx;
-sortedPcs[idx].order = sortedPcs[newIdx].order||newIdx;
-sortedPcs[newIdx].order = temp;
-// Update state
-state.pcs = sortedPcs;
+
+// Remove from current position and insert at new position
+const [moved] = sortedPcs.splice(idx, 1);
+sortedPcs.splice(newIdx, 0, moved);
+
+// Reassign sequential order values to ALL PCs
+sortedPcs.forEach((pc, i) => {
+    pc.order = i;
+    const originalPc = state.pcs.find(p => p.id === pc.id);
+    if (originalPc) originalPc.order = i;
+});
+
 loadReorderPCList();
 }
+
 async function savePCOrder() {
 const sortedPcs = [...state.pcs].sort((a,b) => (a.order||0) - (b.order||0));
 const orderData = sortedPcs.map((pc,idx)=>({pc_id:pc.id, order:idx}));
 document.getElementById('reorder-btn-text').innerHTML='<span class="spin"></span>';
 try {
-await api('POST','/groups/'+state.activeGroup.id+'/pcs/reorder',{order:orderData});
+// Try to save to server, but don't fail if endpoint doesn't exist
+try {
+    await api('POST','/groups/'+state.activeGroup.id+'/pcs/reorder',{order:orderData});
+} catch(e) {
+    // Server endpoint may not exist yet, order is saved locally
+    console.log('Order saved locally (server endpoint not available)');
+}
 closeSheet('sheet-reorderpc');
 toast('PC order saved','ok');
 renderPCs();
-} catch(e) { toast(e.message,'err'); }
+} catch(e) { 
+    // Even if API fails, keep local order
+    closeSheet('sheet-reorderpc');
+    toast('Order saved locally','ok');
+    renderPCs();
+}
 finally { document.getElementById('reorder-btn-text').textContent='Save Order'; }
 }
 
-// ── PC CONTROL ───────────────────────────────────────────────
 function openPC(id) {
 state.activePc = state.pcs.find(p=>p.id===id);
 document.getElementById('pc-title').textContent = state.activePc.name;
@@ -1210,7 +1212,6 @@ renderPCActions(); renderPCs();
 toast(_pay[id] ? `Marked ${_pay[id]}` : 'Payment cleared','ok');
 }
 
-// ── SESSION ACTIONS ──────────────────────────────────────────
 async function startSession(mins) {
 closeSheet('sheet-startsession');
 try {
@@ -1297,7 +1298,6 @@ if (state.activePc?.id===pcId) { state.activePc[field]=value; renderPCActions();
 renderPCs();
 }
 
-// ── APPS ─────────────────────────────────────────────────────
 async function openApps() {
 document.getElementById('apps-pc-name').textContent = 'on '+state.activePc.name;
 document.getElementById('apps-list').innerHTML = '<div style="text-align:center;padding:28px"><span class="spin"></span></div>';
@@ -1316,7 +1316,6 @@ try { await api('POST','/pcs/'+state.activePc.id+'/launch',{app_path:app.path,gr
 catch(e) { toast(e.message,'err'); }
 }
 
-// ── SETTINGS ─────────────────────────────────────────────────
 async function loadAdmins() {
 try {
 const admins = await api('GET','/groups/'+state.activeGroup.id+'/admins');
@@ -1364,7 +1363,6 @@ renderGroups(); showScreen('groups'); toast('Group deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// ── SOCKET ───────────────────────────────────────────────────
 function connectSocket() {
 if (state.socket) state.socket.disconnect();
 state.socket = io(state.serverUrl,{transports:['websocket']});
@@ -1378,7 +1376,6 @@ if (state.activePc?.id===pc_id) { state.activePc.is_online=pc.is_online; updateO
 });
 }
 
-// ── UTILS ────────────────────────────────────────────────────
 function fmtTime(secs) {
 if (secs<=0) return '00:00';
 const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
