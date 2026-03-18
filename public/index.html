@@ -43,6 +43,29 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; background: var(--bg); color: var(--t1); font-family: var(--sans); overflow: hidden; }
 /* ──────────────────────────────────────────
+GLOBAL TEXT SELECTION (DISABLED BY DEFAULT)
+────────────────────────────────────────── */
+* {
+-webkit-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+}
+/* Enable selection only for group ID */
+.mono-block, #s-id {
+-webkit-user-select: text !important;
+-moz-user-select: text !important;
+-ms-user-select: text !important;
+user-select: text !important;
+}
+/* Also enable for form inputs */
+input, textarea {
+-webkit-user-select: text !important;
+-moz-user-select: text !important;
+-ms-user-select: text !important;
+user-select: text !important;
+}
+/* ──────────────────────────────────────────
 APP SHELL
 ────────────────────────────────────────── */
 #app { height: 100dvh; position: relative; overflow: hidden; }
@@ -111,7 +134,7 @@ grid-row: 1;
 .stats-row { padding: 24px 32px 20px; }
 .topbar { padding: 0 32px; }
 .scroll-inner { max-width: 860px; margin: 0 auto; }
-/* Desktop floating add button */
+/* Desktop floating add button - ONLY visible on desktop */
 .desktop-add-btn {
 position: fixed !important;
 bottom: 32px;
@@ -135,7 +158,8 @@ border: none;
 .desktop-add-btn:active { transform: scale(.95); }
 .desktop-only { display: flex !important; }
 }
-.desktop-only { display: none; }
+/* Mobile: hide desktop-only elements */
+.desktop-only { display: none !important; }
 /* ──────────────────────────────────────────
 TOPBAR
 ────────────────────────────────────────── */
