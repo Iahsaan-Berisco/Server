@@ -32,9 +32,9 @@
 --t3: #525252;
 --bd: rgba(255,255,255,.07);
 --bd2: rgba(255,255,255,.12);
---r: 8px;
---r2: 12px;
---r3: 16px;
+--r: 10px;
+--r2: 14px;
+--r3: 20px;
 --sans: 'Inter', sans-serif;
 --mono: 'JetBrains Mono', monospace;
 --sidebar: 300px;
@@ -42,75 +42,20 @@
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; background: var(--bg); color: var(--t1); font-family: var(--sans); overflow: hidden; }
-* {
--webkit-user-select: none;
--moz-user-select: none;
--ms-user-select: none;
-user-select: none;
-}
-.mono-block, #s-id, input, textarea {
--webkit-user-select: text !important;
--moz-user-select: text !important;
--ms-user-select: text !important;
-user-select: text !important;
-}
+* { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+.mono-block, #s-id, input, textarea { -webkit-user-select: text !important; -moz-user-select: text !important; -ms-user-select: text !important; user-select: text !important; }
 #app { height: 100dvh; position: relative; overflow: hidden; }
-.screen {
-position: absolute; inset: 0;
-display: flex; flex-direction: column;
-background: var(--bg);
-opacity: 0; pointer-events: none;
-transform: translateY(10px);
-transition: opacity .22s ease, transform .22s ease;
-z-index: 10; overflow: hidden;
-}
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--bg); opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity .22s ease, transform .22s ease; z-index: 10; overflow: hidden; }
 .screen.active { opacity: 1; pointer-events: all; transform: none; z-index: 20; }
 @media (min-width: 1024px) {
-:root {
---r: 12px;
---r2: 16px;
---r3: 20px;
-}
-#app {
-display: grid;
-grid-template-columns: var(--sidebar) 1fr;
-grid-template-rows: 1fr;
-overflow: hidden;
-}
-.screen {
-position: relative !important;
-inset: auto !important;
-opacity: 1 !important;
-transform: none !important;
-pointer-events: all !important;
-transition: none !important;
-z-index: auto !important;
-display: none;
-height: 100dvh;
-overflow: hidden;
-}
+#app { display: grid; grid-template-columns: var(--sidebar) 1fr; grid-template-rows: 1fr; overflow: hidden; }
+.screen { position: relative !important; inset: auto !important; opacity: 1 !important; transform: none !important; pointer-events: all !important; transition: none !important; z-index: auto !important; display: none; height: 100dvh; overflow: hidden; }
 .screen.active { display: flex; }
-#screen-login {
-position: fixed !important;
-inset: 0 !important;
-z-index: 200 !important;
-display: none;
-justify-content: center;
-align-items: center;
-}
+#screen-login { position: fixed !important; inset: 0 !important; z-index: 200 !important; display: none; justify-content: center; align-items: center; }
 #screen-login.active { display: flex; }
-#screen-groups {
-grid-column: 1;
-grid-row: 1;
-display: flex !important;
-border-right: 1px solid var(--bd);
-background: var(--s1);
-}
+#screen-groups { grid-column: 1; grid-row: 1; display: flex !important; border-right: 1px solid var(--bd); background: var(--s1); }
 #screen-groups .mobile-topbar { display: none; }
-#screen-dashboard, #screen-pccontrol, #screen-settings {
-grid-column: 2;
-grid-row: 1;
-}
+#screen-dashboard, #screen-pccontrol, #screen-settings { grid-column: 2; grid-row: 1; }
 .sidebar-header { display: flex !important; }
 .screen-pad { padding: 28px 32px; }
 .pc-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; padding: 0 32px 32px; }
@@ -118,99 +63,38 @@ grid-row: 1;
 .stats-row { padding: 24px 32px 20px; }
 .topbar { padding: 0 32px; }
 .scroll-inner { max-width: 860px; margin: 0 auto; }
-.fab {
-position: fixed !important;
-bottom: 32px;
-right: 32px;
-width: auto !important;
-min-width: 140px;
-margin: 0 !important;
-padding: 13px 20px !important;
-}
+.fab { position: fixed !important; bottom: 32px; right: 32px; width: auto !important; min-width: 140px; margin: 0 !important; padding: 13px 20px !important; }
 .desktop-only { display: flex !important; }
 }
 .desktop-only { display: none !important; }
-.topbar {
-height: var(--nav-h);
-padding: 0 18px;
-display: flex; align-items: center; justify-content: space-between;
-background: var(--s1); border-bottom: 1px solid var(--bd);
-flex-shrink: 0; position: sticky; top: 0; z-index: 50;
-}
-.topbar-title {
-font-size: 12px; font-weight: 700;
-letter-spacing: 1.5px; text-transform: uppercase; color: var(--t3);
-}
-.back-btn {
-display: flex; align-items: center; gap: 6px;
-font-size: 13px; font-weight: 600; color: var(--t2);
-background: none; border: none; cursor: pointer; padding: 6px 10px;
-border-radius: var(--r); transition: color .15s, background .15s; font-family: var(--sans);
-}
+.topbar { height: var(--nav-h); padding: 0 18px; display: flex; align-items: center; justify-content: space-between; background: var(--s1); border-bottom: 1px solid var(--bd); flex-shrink: 0; position: sticky; top: 0; z-index: 50; }
+.topbar-title { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--t3); }
+.back-btn { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--t2); background: none; border: none; cursor: pointer; padding: 6px 10px; border-radius: var(--r); transition: color .15s, background .15s; font-family: var(--sans); }
 .back-btn:hover { color: var(--t1); background: var(--s3); }
 .back-btn i { font-size: 11px; }
-.icon-btn {
-width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
-background: none; border: none; cursor: pointer; color: var(--t3);
-border-radius: var(--r); font-size: 16px; transition: color .15s, background .15s;
-}
+.icon-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; color: var(--t3); border-radius: var(--r); font-size: 16px; transition: color .15s, background .15s; }
 .icon-btn:hover { color: var(--t1); background: var(--s3); }
-.scroll-area {
-flex: 1; overflow-y: auto; overflow-x: hidden;
--webkit-overflow-scrolling: touch;
-}
+.scroll-area { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 .scroll-area::-webkit-scrollbar { width: 3px; }
 .scroll-area::-webkit-scrollbar-thumb { background: var(--s4); border-radius: 2px; }
 .scroll-inner { width: 100%; }
 .screen-pad { padding: 20px 18px; }
 #screen-login { background: var(--bg); justify-content: center; align-items: center; }
-.login-card {
-background: var(--s1); border: 1px solid var(--bd);
-border-radius: var(--r3); padding: 40px 36px;
-width: 100%; max-width: 400px; margin: 16px;
-box-shadow: 0 24px 64px rgba(0,0,0,.5);
-}
-.login-logo {
-display: flex; align-items: center; gap: 12px; margin-bottom: 28px;
-}
-.login-logo-icon {
-width: 44px; height: 44px; border-radius: var(--r2);
-background: var(--green-bg); border: 1px solid var(--green-bd);
-display: flex; align-items: center; justify-content: center;
-flex-shrink: 0;
-}
+.login-card { background: var(--s1); border: 1px solid var(--bd); border-radius: var(--r3); padding: 40px 36px; width: 100%; max-width: 400px; margin: 16px; box-shadow: 0 24px 64px rgba(0,0,0,.5); }
+.login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+.login-logo-icon { width: 44px; height: 44px; border-radius: var(--r2); background: var(--green-bg); border: 1px solid var(--green-bd); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .login-logo-icon i { font-size: 18px; color: var(--green); }
 .login-logo h1 { font-size: 20px; font-weight: 800; letter-spacing: -.4px; }
 .login-logo p { font-size: 12px; color: var(--t2); margin-top: 2px; }
-.tab-row {
-display: flex; background: var(--bg); border-radius: var(--r); padding: 3px;
-margin-bottom: 24px; border: 1px solid var(--bd);
-}
-.tab-btn {
-flex: 1; padding: 9px; border-radius: 8px; font-size: 12px; font-weight: 600;
-background: none; border: none; color: var(--t2); cursor: pointer;
-font-family: var(--sans); transition: all .18s;
-display: flex; align-items: center; justify-content: center; gap: 5px;
-}
+.tab-row { display: flex; background: var(--bg); border-radius: var(--r); padding: 3px; margin-bottom: 24px; border: 1px solid var(--bd); }
+.tab-btn { flex: 1; padding: 9px; border-radius: 8px; font-size: 12px; font-weight: 600; background: none; border: none; color: var(--t2); cursor: pointer; font-family: var(--sans); transition: all .18s; display: flex; align-items: center; justify-content: center; gap: 5px; }
 .tab-btn.active { background: var(--s2); color: var(--t1); }
 .field { margin-bottom: 14px; }
-.field-label {
-display: block; font-size: 11px; font-weight: 600; color: var(--t3);
-text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px;
-}
-.field-input {
-width: 100%; background: var(--bg); border: 1px solid var(--bd);
-border-radius: var(--r); padding: 11px 13px; font-size: 13px; color: var(--t1);
-font-family: var(--sans); outline: none; transition: border-color .18s;
-}
+.field-label { display: block; font-size: 11px; font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+.field-input { width: 100%; background: var(--bg); border: 1px solid var(--bd); border-radius: var(--r); padding: 11px 13px; font-size: 13px; color: var(--t1); font-family: var(--sans); outline: none; transition: border-color .18s; }
 .field-input:focus { border-color: var(--green); }
 .field-input::placeholder { color: var(--t3); }
-.btn {
-display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-padding: 11px 18px; border-radius: var(--r); font-size: 13px; font-weight: 600;
-border: none; cursor: pointer; font-family: var(--sans); transition: all .18s;
-white-space: nowrap;
-}
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 11px 18px; border-radius: var(--r); font-size: 13px; font-weight: 600; border: none; cursor: pointer; font-family: var(--sans); transition: all .18s; white-space: nowrap; }
 .btn:active { transform: scale(.97); }
 .btn-full { width: 100%; }
 .btn-primary { background: var(--green); color: #fff; }
@@ -220,254 +104,93 @@ white-space: nowrap;
 .btn-ghost:hover { background: var(--s3); border-color: var(--bd2); }
 .btn-danger { background: var(--red-bg); border: 1px solid var(--red-bd); color: var(--red); }
 .btn-danger:hover { background: rgba(239,68,68,.18); }
-.sidebar-header {
-display: none;
-align-items: center; justify-content: space-between;
-padding: 0 20px; height: var(--nav-h);
-border-bottom: 1px solid var(--bd); flex-shrink: 0;
-}
-.sidebar-brand {
-display: flex; align-items: center; gap: 10px;
-font-size: 15px; font-weight: 800; letter-spacing: -.3px;
-}
-.sidebar-brand-icon {
-width: 30px; height: 30px; border-radius: 8px;
-background: var(--green-bg); border: 1px solid var(--green-bd);
-display: flex; align-items: center; justify-content: center;
-}
+.sidebar-header { display: none; align-items: center; justify-content: space-between; padding: 0 20px; height: var(--nav-h); border-bottom: 1px solid var(--bd); flex-shrink: 0; }
+.sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 800; letter-spacing: -.3px; }
+.sidebar-brand-icon { width: 30px; height: 30px; border-radius: 8px; background: var(--green-bg); border: 1px solid var(--green-bd); display: flex; align-items: center; justify-content: center; }
 .sidebar-brand-icon i { font-size: 13px; color: var(--green); }
 .sidebar-actions { display: flex; gap: 4px; }
-.group-item {
-display: flex; align-items: center; justify-content: space-between;
-padding: 13px 16px; border-radius: var(--r2); margin-bottom: 4px;
-cursor: pointer; transition: background .15s; position: relative;
-}
+.group-item { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-radius: var(--r2); margin-bottom: 4px; cursor: pointer; transition: background .15s; position: relative; }
 .group-item:hover { background: var(--s2); }
 .group-item:active { background: var(--s3); }
 .group-item-left { display: flex; align-items: center; gap: 10px; }
-.group-item-icon {
-width: 34px; height: 34px; border-radius: var(--r); background: var(--s3);
-display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-font-size: 14px; color: var(--t2); transition: background .15s;
-}
+.group-item-icon { width: 34px; height: 34px; border-radius: var(--r); background: var(--s3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; color: var(--t2); transition: background .15s; }
 .group-item:hover .group-item-icon { background: var(--green-bg); color: var(--green); }
 .group-item-name { font-size: 14px; font-weight: 600; }
 .group-item-sub { font-size: 11px; color: var(--t2); margin-top: 1px; }
 .group-item-arrow { color: var(--t3); font-size: 11px; }
-.stats-row {
-display: grid; grid-template-columns: repeat(3, 1fr);
-gap: 12px; padding: 20px 18px 16px;
-}
-.stat-box {
-background: var(--s1); border: 1px solid var(--bd);
-border-radius: var(--r2); padding: 18px 16px;
-}
-.stat-val {
-font-size: 32px; font-weight: 800; font-family: var(--mono);
-line-height: 1; letter-spacing: -1.5px;
-}
-.stat-key {
-font-size: 10px; font-weight: 700; letter-spacing: 1px;
-text-transform: uppercase; color: var(--t3); margin-top: 6px;
-}
-.pc-grid {
-display: grid; grid-template-columns: repeat(2, 1fr);
-gap: 10px; padding: 0 18px 18px;
-}
-.pc-card {
-background: var(--s1); border: 1px solid var(--bd);
-border-radius: var(--r2); padding: 16px; cursor: pointer;
-transition: border-color .18s, background .18s; overflow: hidden;
-position: relative;
-}
-.pc-card::after {
-content: ''; position: absolute; top: 0; left: 0; right: 0;
-height: 3px; background: var(--pc-color, var(--s4));
-}
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 20px 18px 16px; }
+.stat-box { background: var(--s1); border: 1px solid var(--bd); border-radius: var(--r2); padding: 18px 16px; }
+.stat-val { font-size: 32px; font-weight: 800; font-family: var(--mono); line-height: 1; letter-spacing: -1.5px; }
+.stat-key { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--t3); margin-top: 6px; }
+.pc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 18px 18px; }
+.pc-card { background: var(--s1); border: 1px solid var(--bd); border-radius: var(--r2); padding: 16px; cursor: pointer; transition: border-color .18s, background .18s; overflow: hidden; position: relative; }
+.pc-card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--pc-color, var(--s4)); }
 .pc-card:hover { border-color: var(--bd2); background: var(--s2); }
 .pc-card:active { transform: scale(.98); }
-.pc-card-top {
-display: flex; align-items: center; justify-content: space-between;
-margin-bottom: 10px;
-}
-.pc-card-name {
-font-size: 13px; font-weight: 700; color: var(--t1);
-display: flex; align-items: center; gap: 7px;
-}
+.pc-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.pc-card-name { font-size: 13px; font-weight: 700; color: var(--t1); display: flex; align-items: center; gap: 7px; }
 .pc-card-name i { color: var(--t3); font-size: 11px; }
 .pc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pc-color, var(--t3)); }
-/* FIX #3: Reduced timer font size by 15% (22px → 19px for mobile) */
-.pc-timer {
-font-family: var(--mono); font-size: 17px; font-weight: 700;
-line-height: 1; margin-bottom: 10px; color: var(--pc-color, var(--t3));
-}
+.pc-timer { font-family: var(--mono); font-size: 22px; font-weight: 700; line-height: 1; margin-bottom: 10px; color: var(--pc-color, var(--t3)); }
 .pc-footer { display: flex; align-items: center; justify-content: space-between; }
-.pc-badge {
-font-size: 9px; font-weight: 700; padding: 3px 7px;
-border-radius: 5px; text-transform: uppercase; letter-spacing: .5px;
-color: var(--pc-color, var(--t3)); background: var(--pc-bg, var(--s3));
-border: 1px solid var(--pc-bd, var(--bd));
-}
-.pay-badge {
-font-size: 9px; font-weight: 700; padding: 3px 7px;
-border-radius: 5px; text-transform: uppercase;
-}
-.section-head {
-font-size: 10px; font-weight: 700; color: var(--t3);
-text-transform: uppercase; letter-spacing: 1.4px;
-padding: 0 18px; margin-bottom: 10px;
-display: flex; align-items: center; gap: 8px;
-}
-.section-head::after {
-content: ''; flex: 1; height: 1px; background: var(--bd);
-}
-.action-grid {
-display: grid; grid-template-columns: repeat(2, 1fr);
-gap: 10px; padding: 0 18px; margin-bottom: 18px;
-}
+.pc-badge { font-size: 9px; font-weight: 700; padding: 3px 7px; border-radius: 5px; text-transform: uppercase; letter-spacing: .5px; color: var(--pc-color, var(--t3)); background: var(--pc-bg, var(--s3)); border: 1px solid var(--pc-bd, var(--bd)); }
+.pay-badge { font-size: 9px; font-weight: 700; padding: 3px 7px; border-radius: 5px; text-transform: uppercase; }
+.section-head { font-size: 10px; font-weight: 700; color: var(--t3); text-transform: uppercase; letter-spacing: 1.4px; padding: 0 18px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.section-head::after { content: ''; flex: 1; height: 1px; background: var(--bd); }
+.action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 18px; margin-bottom: 18px; }
 .action-grid.cols3 { grid-template-columns: repeat(3, 1fr); }
 .action-grid.cols1 .action-card { grid-column: span 2; }
-.action-card {
-background: var(--s1); border: 1px solid var(--bd);
-border-radius: var(--r2); padding: 18px 12px; text-align: center;
-cursor: pointer; transition: background .15s, border-color .15s;
-}
+.action-card { background: var(--s1); border: 1px solid var(--bd); border-radius: var(--r2); padding: 18px 12px; text-align: center; cursor: pointer; transition: background .15s, border-color .15s; }
 .action-card:hover { background: var(--s2); border-color: var(--bd2); }
 .action-card:active { transform: scale(.96); }
 .action-card-icon { font-size: 20px; margin-bottom: 8px; }
 .action-card-label { font-size: 12px; font-weight: 600; color: var(--t1); }
 .action-card-sub { font-size: 10px; color: var(--t2); margin-top: 2px; }
-.timer-card {
-background: var(--s1); border: 1px solid var(--bd);
-border-radius: var(--r2); padding: 20px;
-margin: 0 18px 18px;
-display: flex; align-items: center; justify-content: space-between;
-}
-.timer-big {
-font-family: var(--mono); font-size: 52px; font-weight: 700;
-line-height: 1; letter-spacing: -3px;
-}
+.timer-card { background: var(--s1); border: 1px solid var(--bd); border-radius: var(--r2); padding: 20px; margin: 0 18px 18px; display: flex; align-items: center; justify-content: space-between; }
+.timer-big { font-family: var(--mono); font-size: 52px; font-weight: 700; line-height: 1; letter-spacing: -3px; }
 .pay-col { display: flex; flex-direction: column; gap: 6px; }
-.pay-btn {
-padding: 8px 14px; border-radius: var(--r); font-size: 10px; font-weight: 700;
-cursor: pointer; font-family: var(--sans); transition: all .18s;
-border: 1px solid var(--bd2); background: var(--s2); color: var(--t2);
-text-transform: uppercase; letter-spacing: .6px; min-width: 84px; text-align: center;
-}
+.pay-btn { padding: 8px 14px; border-radius: var(--r); font-size: 10px; font-weight: 700; cursor: pointer; font-family: var(--sans); transition: all .18s; border: 1px solid var(--bd2); background: var(--s2); color: var(--t2); text-transform: uppercase; letter-spacing: .6px; min-width: 84px; text-align: center; }
 .pay-btn.paid { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }
 .pay-btn.unpaid { background: var(--red-bg); border-color: var(--red-bd); color: var(--red); }
-.status-pill {
-display: inline-flex; align-items: center; gap: 5px;
-font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px;
-padding: 4px 10px; border-radius: 99px;
-border: 1px solid var(--bd); background: var(--s2); color: var(--t2);
-}
+.status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--bd); background: var(--s2); color: var(--t2); }
 .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
-.settings-card {
-background: var(--s1); border: 1px solid var(--bd);
-border-radius: var(--r2); overflow: hidden; margin-bottom: 16px;
-}
-.settings-row {
-display: flex; align-items: flex-start; justify-content: space-between;
-padding: 15px 18px; border-bottom: 1px solid var(--bd);
-}
+.settings-card { background: var(--s1); border: 1px solid var(--bd); border-radius: var(--r2); overflow: hidden; margin-bottom: 16px; }
+.settings-row { display: flex; align-items: flex-start; justify-content: space-between; padding: 15px 18px; border-bottom: 1px solid var(--bd); }
 .settings-row:last-child { border-bottom: none; }
 .settings-key { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
 .settings-val { font-size: 11px; color: var(--t2); }
-.mono-block {
-font-family: var(--mono); font-size: 10px; color: var(--green);
-background: var(--green-bg); padding: 8px 12px; border-radius: var(--r);
-border: 1px solid var(--green-bd); word-break: break-all; margin-top: 6px;
-}
+.mono-block { font-family: var(--mono); font-size: 10px; color: var(--green); background: var(--green-bg); padding: 8px 12px; border-radius: var(--r); border: 1px solid var(--green-bd); word-break: break-all; margin-top: 6px; }
 .admin-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--bd); }
 .admin-row:last-child { border-bottom: none; }
-.admin-av {
-width: 32px; height: 32px; border-radius: var(--r); background: var(--s3);
-display: flex; align-items: center; justify-content: center;
-font-size: 13px; font-weight: 800; color: var(--t1); flex-shrink: 0;
-}
+.admin-av { width: 32px; height: 32px; border-radius: var(--r); background: var(--s3); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--t1); flex-shrink: 0; }
 .admin-name { font-size: 13px; font-weight: 500; flex: 1; }
-.remove-btn {
-font-size: 10px; font-weight: 700; color: var(--red); background: var(--red-bg);
-border: 1px solid var(--red-bd); padding: 5px 10px; border-radius: var(--r);
-cursor: pointer; font-family: var(--sans); text-transform: uppercase; letter-spacing: .4px;
-}
+.remove-btn { font-size: 10px; font-weight: 700; color: var(--red); background: var(--red-bg); border: 1px solid var(--red-bd); padding: 5px 10px; border-radius: var(--r); cursor: pointer; font-family: var(--sans); text-transform: uppercase; letter-spacing: .4px; }
 .pc-del-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid var(--bd); }
 .pc-del-row:last-child { border-bottom: none; }
 .pc-del-name { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
-.pc-del-btn {
-font-size: 10px; font-weight: 700; color: var(--red); background: var(--red-bg);
-border: 1px solid var(--red-bd); padding: 5px 10px; border-radius: var(--r);
-cursor: pointer; font-family: var(--sans); text-transform: uppercase; letter-spacing: .4px;
-}
+.pc-del-btn { font-size: 10px; font-weight: 700; color: var(--red); background: var(--red-bg); border: 1px solid var(--red-bd); padding: 5px 10px; border-radius: var(--r); cursor: pointer; font-family: var(--sans); text-transform: uppercase; letter-spacing: .4px; }
 .reorder-btns { display: flex; gap: 4px; }
-.reorder-btn {
-width: 28px; height: 28px; border-radius: var(--r);
-background: var(--s3); border: none; color: var(--t2);
-cursor: pointer; font-size: 11px; transition: all .15s;
-display: flex; align-items: center; justify-content: center;
-}
+.reorder-btn { width: 28px; height: 28px; border-radius: var(--r); background: var(--s3); border: none; color: var(--t2); cursor: pointer; font-size: 11px; transition: all .15s; display: flex; align-items: center; justify-content: center; }
 .reorder-btn:hover { background: var(--green-bg); color: var(--green); }
 .reorder-btn:disabled { opacity: .3; cursor: not-allowed; }
-.fab {
-margin: 0 18px;
-margin-bottom: max(18px, calc(env(safe-area-inset-bottom) + 10px));
-display: flex; align-items: center; justify-content: center; gap: 8px;
-padding: 13px; border-radius: var(--r2);
-background: var(--green); color: #fff;
-font-size: 13px; font-weight: 700; font-family: var(--sans);
-border: none; cursor: pointer; transition: all .18s;
-box-shadow: 0 4px 14px rgba(16,185,129,.3);
-width: calc(100% - 36px);
-}
+.fab { margin: 0 18px; margin-bottom: max(18px, calc(env(safe-area-inset-bottom) + 10px)); display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px; border-radius: var(--r2); background: var(--green); color: #fff; font-size: 13px; font-weight: 700; font-family: var(--sans); border: none; cursor: pointer; transition: all .18s; box-shadow: 0 4px 14px rgba(16,185,129,.3); width: calc(100% - 36px); }
 .fab:hover { background: #0ea572; }
 .fab:active { transform: scale(.97); }
-.sheet-bg {
-position: fixed; inset: 0; background: rgba(0,0,0,.75);
-backdrop-filter: blur(6px); z-index: 100;
-opacity: 0; pointer-events: none; transition: opacity .22s;
-}
+.sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(6px); z-index: 100; opacity: 0; pointer-events: none; transition: opacity .22s; }
 .sheet-bg.open { opacity: 1; pointer-events: all; }
-.sheet {
-position: fixed;
-bottom: 20px;
-left: 50%;
-right: auto;
-background: var(--s1);
-border: 1px solid var(--bd2);
-border-radius: var(--r3);
-padding: 0 22px;
-padding-bottom: max(22px, env(safe-area-inset-bottom));
-z-index: 101;
-max-height: calc(88dvh - 20px);
-overflow-y: auto;
-transform: translate(-50%, calc(100% + 20px));
-transition: transform .3s cubic-bezier(.16,1,.3,1);
-width: calc(100% - 36px);
-max-width: 480px;
-}
+.sheet { position: fixed; bottom: 20px; left: 50%; right: auto; background: var(--s1); border: 1px solid var(--bd2); border-radius: var(--r3); padding: 0 22px; padding-bottom: max(22px, env(safe-area-inset-bottom)); z-index: 101; max-height: calc(88dvh - 20px); overflow-y: auto; transform: translate(-50%, calc(100% + 20px)); transition: transform .3s cubic-bezier(.16,1,.3,1); width: calc(100% - 36px); max-width: 480px; }
 .sheet.open { transform: translate(-50%, 0); }
 .sheet-handle { width: 38px; height: 3px; background: var(--s4); border-radius: 2px; margin: 14px auto 20px; }
 .sheet-title { font-size: 18px; font-weight: 800; letter-spacing: -.3px; margin-bottom: 4px; }
 .sheet-sub { font-size: 12px; color: var(--t2); margin-bottom: 22px; }
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
-.chip {
-padding: 9px 14px; background: var(--s2); border: 1px solid var(--bd);
-border-radius: var(--r); font-size: 12px; font-weight: 600; color: var(--t1);
-cursor: pointer; font-family: var(--sans); transition: all .15s;
-display: flex; align-items: center; gap: 5px;
-}
+.chip { padding: 9px 14px; background: var(--s2); border: 1px solid var(--bd); border-radius: var(--r); font-size: 12px; font-weight: 600; color: var(--t1); cursor: pointer; font-family: var(--sans); transition: all .15s; display: flex; align-items: center; gap: 5px; }
 .chip:hover { background: var(--s3); border-color: var(--bd2); }
 .chip:active { transform: scale(.95); }
 .chip.green { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); }
 .chip.red { background: var(--red-bg); border-color: var(--red-bd); color: var(--red); }
 .input-row { display: flex; gap: 8px; align-items: center; }
-.input-row input {
-flex: 1; background: var(--bg); border: 1px solid var(--bd);
-border-radius: var(--r); padding: 11px 13px; font-size: 13px;
-color: var(--t1); font-family: var(--sans); outline: none;
-transition: border-color .18s;
-}
+.input-row input { flex: 1; background: var(--bg); border: 1px solid var(--bd); border-radius: var(--r); padding: 11px 13px; font-size: 13px; color: var(--t1); font-family: var(--sans); outline: none; transition: border-color .18s; }
 .input-row input:focus { border-color: var(--green); }
 .input-row-sep { color: var(--t3); font-weight: 600; font-size: 14px; }
 .sheet-btns { display: flex; gap: 8px; margin-top: 20px; }
@@ -476,34 +199,17 @@ transition: border-color .18s;
 .app-row:last-child { border-bottom: none; }
 .app-name { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: var(--t1); }
 .app-name i { color: var(--t3); }
-.launch-btn {
-background: var(--green-bg); border: 1px solid var(--green-bd); color: var(--green);
-font-size: 10px; font-weight: 700; padding: 6px 12px; border-radius: var(--r);
-cursor: pointer; font-family: var(--sans); text-transform: uppercase; letter-spacing: .4px;
-transition: background .15s;
-}
+.launch-btn { background: var(--green-bg); border: 1px solid var(--green-bd); color: var(--green); font-size: 10px; font-weight: 700; padding: 6px 12px; border-radius: var(--r); cursor: pointer; font-family: var(--sans); text-transform: uppercase; letter-spacing: .4px; transition: background .15s; }
 .launch-btn:hover { background: rgba(16,185,129,.18); }
 .empty { text-align: center; padding: 56px 20px; }
 .empty-ico { font-size: 32px; color: var(--t3); margin-bottom: 14px; }
 .empty-h { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
 .empty-p { font-size: 12px; color: var(--t2); }
-.toast {
-position: fixed; bottom: max(22px, env(safe-area-inset-bottom)); left: 50%;
-transform: translateX(-50%) translateY(70px);
-background: var(--s2); border: 1px solid var(--bd2); border-radius: var(--r2);
-padding: 11px 18px; font-size: 12px; font-weight: 600; z-index: 300;
-white-space: nowrap; box-shadow: 0 8px 28px rgba(0,0,0,.5);
-transition: transform .28s cubic-bezier(.16,1,.3,1);
-display: flex; align-items: center; gap: 8px;
-}
+.toast { position: fixed; bottom: max(22px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%) translateY(70px); background: var(--s2); border: 1px solid var(--bd2); border-radius: var(--r2); padding: 11px 18px; font-size: 12px; font-weight: 600; z-index: 300; white-space: nowrap; box-shadow: 0 8px 28px rgba(0,0,0,.5); transition: transform .28s cubic-bezier(.16,1,.3,1); display: flex; align-items: center; gap: 8px; }
 .toast.show { transform: translateX(-50%) translateY(0); }
 .toast.ok { border-color: var(--green-bd); color: var(--green); }
 .toast.err { border-color: var(--red-bd); color: var(--red); }
-.spin {
-width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.1);
-border-top-color: #fff; border-radius: 50%;
-animation: _spin .6s linear infinite; display: inline-block;
-}
+.spin { width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.1); border-top-color: #fff; border-radius: 50%; animation: _spin .6s linear infinite; display: inline-block; }
 @keyframes _spin { to { transform: rotate(360deg); } }
 </style>
 </head>
@@ -513,10 +219,7 @@ animation: _spin .6s linear infinite; display: inline-block;
 <div class="login-card">
 <div class="login-logo">
 <div class="login-logo-icon"><i class="fa-solid fa-gamepad"></i></div>
-<div>
-<h1>GameZone</h1>
-<p>PC Management System</p>
-</div>
+<div><h1>GameZone</h1><p>PC Management System</p></div>
 </div>
 <div class="tab-row">
 <button class="tab-btn active" id="tab-login" onclick="switchTab('login')"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
@@ -540,21 +243,11 @@ animation: _spin .6s linear infinite; display: inline-block;
 </div>
 <div class="screen" id="screen-groups">
 <div class="sidebar-header">
-<div class="sidebar-brand">
-<div class="sidebar-brand-icon"><i class="fa-solid fa-gamepad"></i></div>
-GameZone
+<div class="sidebar-brand"><div class="sidebar-brand-icon"><i class="fa-solid fa-gamepad"></i></div>GameZone</div>
+<div class="sidebar-actions"><button class="icon-btn" onclick="doLogout()" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></button></div>
 </div>
-<div class="sidebar-actions">
-<button class="icon-btn" onclick="doLogout()" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
-</div>
-</div>
-<div class="topbar mobile-topbar">
-<div class="topbar-title">Groups</div>
-<button class="icon-btn" onclick="doLogout()"><i class="fa-solid fa-right-from-bracket"></i></button>
-</div>
-<div class="scroll-area">
-<div class="screen-pad" id="groups-list"></div>
-</div>
+<div class="topbar mobile-topbar"><div class="topbar-title">Groups</div><button class="icon-btn" onclick="doLogout()"><i class="fa-solid fa-right-from-bracket"></i></button></div>
+<div class="scroll-area"><div class="screen-pad" id="groups-list"></div></div>
 <button class="fab" onclick="openSheet('sheet-newgroup')"><i class="fa-solid fa-plus"></i> New Group</button>
 </div>
 <div class="screen" id="screen-dashboard">
@@ -587,22 +280,12 @@ GameZone
 <div id="pc-timer-area"></div>
 <div class="section-head">Screen Control</div>
 <div class="action-grid" style="margin-bottom:20px">
-<div class="action-card" onclick="pcCmd('lock')">
-<div class="action-card-icon"><i class="fa-solid fa-lock" style="color:var(--amber)"></i></div>
-<div class="action-card-label">Lock</div>
-</div>
-<div class="action-card" onclick="pcCmd('unlock')">
-<div class="action-card-icon"><i class="fa-solid fa-lock-open" style="color:var(--green)"></i></div>
-<div class="action-card-label">Unlock</div>
-</div>
+<div class="action-card" onclick="pcCmd('lock')"><div class="action-card-icon"><i class="fa-solid fa-lock" style="color:var(--amber)"></i></div><div class="action-card-label">Lock</div></div>
+<div class="action-card" onclick="pcCmd('unlock')"><div class="action-card-icon"><i class="fa-solid fa-lock-open" style="color:var(--green)"></i></div><div class="action-card-label">Unlock</div></div>
 </div>
 <div class="section-head">Applications</div>
 <div class="action-grid cols1" style="margin-bottom:20px">
-<div class="action-card" onclick="openApps()">
-<div class="action-card-icon"><i class="fa-solid fa-rocket" style="color:var(--blue)"></i></div>
-<div class="action-card-label">Launch App</div>
-<div class="action-card-sub">Open remotely on this PC</div>
-</div>
+<div class="action-card" onclick="openApps()"><div class="action-card-icon"><i class="fa-solid fa-rocket" style="color:var(--blue)"></i></div><div class="action-card-label">Launch App</div><div class="action-card-sub">Open remotely on this PC</div></div>
 </div>
 <div id="pc-session-area"></div>
 <div style="height:16px"></div>
@@ -618,39 +301,18 @@ GameZone
 <div class="scroll-area">
 <div class="screen-pad">
 <div class="settings-card">
-<div class="settings-row">
-<div><div class="settings-key">Group Name</div><div id="s-name" class="settings-val"></div></div>
-</div>
-<div class="settings-row">
-<div style="width:100%">
-<div class="settings-key">Group ID</div>
-<div id="s-id" class="mono-block"></div>
-<div style="font-size:10px;color:var(--t3);margin-top:5px">Copy into each PC's config.json</div>
-</div>
-</div>
+<div class="settings-row"><div><div class="settings-key">Group Name</div><div id="s-name" class="settings-val"></div></div></div>
+<div class="settings-row"><div style="width:100%"><div class="settings-key">Group ID</div><div id="s-id" class="mono-block"></div><div style="font-size:10px;color:var(--t3);margin-top:5px">Copy into each PC's config.json</div></div></div>
 </div>
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:12px">Administrators</div>
 <div id="admins-list"></div>
-<button class="btn btn-ghost" style="margin-top:12px" onclick="openSheet('sheet-addadmin')">
-<i class="fa-solid fa-user-plus"></i> Add Admin
-</button>
-<div style="height:20px"></div>
-<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:12px">PC Management</div>
-<button class="btn btn-ghost" style="margin-bottom:10px" onclick="openSheet('sheet-reorderpc')">
-<i class="fa-solid fa-arrow-up-arrow-down"></i> Reorder PCs
-</button>
+<button class="btn btn-ghost" style="margin-top:12px" onclick="openSheet('sheet-addadmin')"><i class="fa-solid fa-user-plus"></i> Add Admin</button>
 <div style="height:20px"></div>
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:12px">Danger Zone</div>
 <div style="display:flex;flex-direction:column;gap:10px">
-<button class="btn btn-ghost" onclick="openSheet('sheet-deletepc')">
-<i class="fa-solid fa-trash"></i> Delete a PC
-</button>
-<button class="btn btn-danger btn-full" onclick="confirmDeleteGroup()">
-<i class="fa-solid fa-trash-can"></i> Delete Group
-</button>
-<button class="btn btn-danger btn-full" onclick="doLogout()">
-<i class="fa-solid fa-right-from-bracket"></i> Logout
-</button>
+<button class="btn btn-ghost" onclick="openSheet('sheet-deletepc')"><i class="fa-solid fa-trash"></i> Delete a PC</button>
+<button class="btn btn-danger btn-full" onclick="confirmDeleteGroup()"><i class="fa-solid fa-trash-can"></i> Delete Group</button>
+<button class="btn btn-danger btn-full" onclick="doLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
 </div>
 <div style="height:24px"></div>
 </div>
@@ -680,17 +342,6 @@ GameZone
 <button class="btn btn-primary" onclick="addPC()"><span id="addpc-btn-text">Add PC</span></button>
 </div>
 </div>
-<div class="sheet-bg" id="bg-reorderpc" onclick="closeSheet('sheet-reorderpc')"></div>
-<div class="sheet" id="sheet-reorderpc">
-<div class="sheet-handle"></div>
-<div class="sheet-title">Reorder PCs</div>
-<div class="sheet-sub">Use arrows to rearrange. No need to change PC credentials.</div>
-<div id="reorder-pc-list"><div style="text-align:center;padding:20px"><span class="spin"></span></div></div>
-<div class="sheet-btns">
-<button class="btn btn-ghost" onclick="closeSheet('sheet-reorderpc')">Cancel</button>
-<button class="btn btn-primary" onclick="savePCOrder()"><span id="reorder-btn-text">Save Order</span></button>
-</div>
-</div>
 <div class="sheet-bg" id="bg-startsession" onclick="closeSheet('sheet-startsession')"></div>
 <div class="sheet" id="sheet-startsession">
 <div class="sheet-handle"></div>
@@ -710,9 +361,7 @@ GameZone
 <input type="number" id="custom-mins" placeholder="min" min="0" max="59">
 <button class="btn btn-primary" onclick="startCustomSession()">Start</button>
 </div>
-<button onclick="startStopwatch()" style="width:100%;padding:13px;border-radius:var(--r2);background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px">
-<i class="fa-solid fa-stopwatch"></i> Free Timer (Count Up)
-</button>
+<button onclick="startStopwatch()" style="width:100%;padding:13px;border-radius:var(--r2);background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px"><i class="fa-solid fa-stopwatch"></i> Free Timer (Count Up)</button>
 </div>
 <div class="sheet-bg" id="bg-addtime" onclick="closeSheet('sheet-addtime')"></div>
 <div class="sheet" id="sheet-addtime">
@@ -720,12 +369,11 @@ GameZone
 <div class="sheet-title">Add Time</div>
 <div class="sheet-sub">Extend the current session</div>
 <div class="chip-row">
-<!-- FIX #2: Added icons to add time chips -->
-<div class="chip green" onclick="addTime(31)"><i class="fa-solid fa-circle-plus"></i> 30m</div>
-<div class="chip green" onclick="addTime(61)"><i class="fa-solid fa-circle-plus"></i> 1h</div>
-<div class="chip green" onclick="addTime(91)"><i class="fa-solid fa-circle-plus"></i> 1.5h</div>
-<div class="chip green" onclick="addTime(121)"><i class="fa-solid fa-circle-plus"></i> 2h</div>
-<div class="chip green" onclick="addTime(181)"><i class="fa-solid fa-circle-plus"></i> 3h</div>
+<div class="chip green" onclick="addTime(30)"><i class="fa-solid fa-circle-plus"></i> 30m</div>
+<div class="chip green" onclick="addTime(60)"><i class="fa-solid fa-circle-plus"></i> 1h</div>
+<div class="chip green" onclick="addTime(90)"><i class="fa-solid fa-circle-plus"></i> 1.5h</div>
+<div class="chip green" onclick="addTime(120)"><i class="fa-solid fa-circle-plus"></i> 2h</div>
+<div class="chip green" onclick="addTime(180)"><i class="fa-solid fa-circle-plus"></i> 3h</div>
 </div>
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
 <div class="input-row" style="margin-bottom:20px">
@@ -741,7 +389,6 @@ GameZone
 <div class="sheet-title" style="color:var(--red)">Remove Time</div>
 <div class="sheet-sub">Reduce remaining session time</div>
 <div class="chip-row">
-<!-- FIX #2: Added icons to remove time chips -->
 <div class="chip red" onclick="removeTime(15)"><i class="fa-solid fa-circle-minus"></i> 15m</div>
 <div class="chip red" onclick="removeTime(30)"><i class="fa-solid fa-circle-minus"></i> 30m</div>
 <div class="chip red" onclick="removeTime(60)"><i class="fa-solid fa-circle-minus"></i> 1h</div>
@@ -787,19 +434,27 @@ const state = { token:null, user:null, serverUrl:null, groups:[], activeGroup:nu
 let currentScreen = 'login';
 let _toastT;
 
+// ── INIT ─────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
   state.token = localStorage.getItem('gz_token');
   state.user = JSON.parse(localStorage.getItem('gz_user') || 'null');
   state.serverUrl = localStorage.getItem('gz_server') || '';
-  if (state.token && state.user) { showScreen('groups'); loadGroups(); }
-  else { const s = localStorage.getItem('gz_server')||''; if(s) document.getElementById('login-server').value=s; }
+  
+  if (state.token && state.user) { 
+    showScreen('groups'); 
+    loadGroups(); 
+  } else { 
+    const s = localStorage.getItem('gz_server')||''; 
+    if(s) document.getElementById('login-server').value=s; 
+  }
+  
   setInterval(() => {
     if (currentScreen==='dashboard') renderPCs();
     if (currentScreen==='pccontrol') renderPCActions();
   }, 1000);
 });
 
+// ── ROUTING ──────────────────────────────────────────────────
 const MAIN_SCREENS = ['screen-dashboard','screen-pccontrol','screen-settings'];
 function showScreen(name) {
   const isDesktop = window.innerWidth >= 1024;
@@ -822,7 +477,7 @@ function showScreen(name) {
     if (el) el.classList.add('active');
   }
   currentScreen = name;
-  if (name === 'settings') { loadAdmins(); loadDeletePCList(); loadReorderPCList(); }
+  if (name === 'settings') { loadAdmins(); loadDeletePCList(); }
 }
 
 function goBack(to) { showScreen(to); }
@@ -836,25 +491,53 @@ function closeSheet(id) {
   document.getElementById('bg-' + id.replace('sheet-','')).classList.remove('open');
 }
 
-async function api(method, path, body) {
-  const res = await fetch(state.serverUrl+'/api'+path, {
-    method,
-    headers:{'Content-Type':'application/json',...(state.token?{Authorization:'Bearer '+state.token}:{})},
-    body: body ? JSON.stringify(body) : undefined
-  });
-  if (res.status === 401) {
-    localStorage.removeItem('gz_token');
-    localStorage.removeItem('gz_user');
-    state.token = null;
-    state.user = null;
-    showScreen('login');
-    throw new Error('Session expired. Please login again.');
+// ── API WITH TIMEOUT & ERROR HANDLING ─────────────────────────
+async function fetchWithTimeout(url, options, timeout = 15000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    return res;
+  } finally {
+    clearTimeout(id);
   }
+}
+
+async function api(method, path, body) {
+  const url = state.serverUrl+'/api'+path;
+  
+  // FIX: Validate server URL
+  if (!state.serverUrl || !state.serverUrl.startsWith('http')) {
+    throw new Error('Invalid server URL');
+  }
+  
+  const res = await fetchWithTimeout(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(state.token ? { Authorization: 'Bearer ' + state.token } : {})
+    },
+    body: body ? JSON.stringify(body) : undefined
+  }, 15000);
+  
+  // FIX: Check content type before parsing JSON
+  const contentType = res.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    const text = await res.text();
+    throw new Error('Server returned invalid response: ' + text.substring(0, 100));
+  }
+  
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error||'Request failed');
+  
+  // FIX: Check response status
+  if (!res.ok) {
+    throw new Error(data.error || 'Request failed with status ' + res.status);
+  }
+  
   return data;
 }
 
+// ── AUTH ─────────────────────────────────────────────────────
 function switchTab(tab) {
   document.getElementById('tab-login').classList.toggle('active', tab==='login');
   document.getElementById('tab-register').classList.toggle('active', tab==='register');
@@ -863,57 +546,139 @@ function switchTab(tab) {
 }
 
 async function doLogin() {
-  const server = document.getElementById('login-server').value.trim().replace(/\/$/,'');
+  const server = document.getElementById('login-server').value.trim().replace(/\/+$/, '');
   const username = document.getElementById('login-user').value.trim();
   const password = document.getElementById('login-pass').value;
-  if (!server||!username||!password) { toast('Fill all fields','err'); return; }
-  state.serverUrl = server;
+  
+  if (!server || !username || !password) { 
+    toast('Fill all fields', 'err'); 
+    return; 
+  }
+  
+  // FIX: Ensure server URL has protocol
+  state.serverUrl = server.startsWith('http') ? server : 'https://' + server;
+  
   const btn = document.getElementById('login-btn');
   btn.disabled = true;
   document.getElementById('login-btn-text').innerHTML = '<span class="spin"></span>';
+  
   try {
-    const d = await fetch(server+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})}).then(r=>r.json());
+    const res = await fetchWithTimeout(state.serverUrl + '/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    }, 15000);
+    
+    // FIX: Check content type
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Server returned invalid response');
+    }
+    
+    const d = await res.json();
+    
     if (d.error) throw new Error(d.error);
-    saveAuth(server,d.token,d.user); showScreen('groups'); loadGroups(); toast('Signed in','ok');
-  } catch(e) { toast(e.message||'Login failed','err'); }
-  finally { btn.disabled=false; document.getElementById('login-btn-text').textContent='Sign In'; }
+    
+    saveAuth(state.serverUrl, d.token, d.user); 
+    showScreen('groups'); 
+    loadGroups(); 
+    toast('Signed in', 'ok');
+    
+  } catch(e) {
+    console.error('Login error:', e);
+    if (e.name === 'AbortError') {
+      toast('Connection timed out. Check your internet.', 'err');
+    } else if (e.message.includes('Failed to fetch')) {
+      toast('Cannot connect to server. Check URL.', 'err');
+    } else {
+      toast(e.message || 'Login failed', 'err');
+    }
+  } finally { 
+    btn.disabled = false; 
+    document.getElementById('login-btn-text').textContent = 'Sign In'; 
+  }
 }
 
 async function doRegister() {
-  const server = document.getElementById('reg-server').value.trim().replace(/\/$/,'');
+  const server = document.getElementById('reg-server').value.trim().replace(/\/+$/, '');
   const username = document.getElementById('reg-user').value.trim();
   const password = document.getElementById('reg-pass').value;
-  if (!server||!username||!password) { toast('Fill all fields','err'); return; }
-  state.serverUrl = server;
+  
+  if (!server || !username || !password) { 
+    toast('Fill all fields', 'err'); 
+    return; 
+  }
+  
+  state.serverUrl = server.startsWith('http') ? server : 'https://' + server;
+  
   const btn = document.getElementById('reg-btn');
   btn.disabled = true;
   document.getElementById('reg-btn-text').innerHTML = '<span class="spin"></span>';
+  
   try {
-    const d = await fetch(server+'/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})}).then(r=>r.json());
+    const res = await fetchWithTimeout(state.serverUrl + '/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    }, 15000);
+    
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Server returned invalid response');
+    }
+    
+    const d = await res.json();
+    
     if (d.error) throw new Error(d.error);
-    saveAuth(server,d.token,d.user); showScreen('groups'); loadGroups(); toast('Account created','ok');
-  } catch(e) { toast(e.message||'Registration failed','err'); }
-  finally { btn.disabled=false; document.getElementById('reg-btn-text').textContent='Create Account'; }
+    
+    saveAuth(state.serverUrl, d.token, d.user); 
+    showScreen('groups'); 
+    loadGroups(); 
+    toast('Account created', 'ok');
+    
+  } catch(e) {
+    console.error('Register error:', e);
+    if (e.name === 'AbortError') {
+      toast('Connection timed out', 'err');
+    } else if (e.message.includes('Failed to fetch')) {
+      toast('Cannot connect to server', 'err');
+    } else {
+      toast(e.message || 'Registration failed', 'err');
+    }
+  } finally { 
+    btn.disabled = false; 
+    document.getElementById('reg-btn-text').textContent = 'Create Account'; 
+  }
 }
 
-function saveAuth(server,token,user) {
-  state.token=token; state.user=user; state.serverUrl=server;
-  localStorage.setItem('gz_token',token);
-  localStorage.setItem('gz_user',JSON.stringify(user));
-  localStorage.setItem('gz_server',server);
+function saveAuth(server, token, user) {
+  state.token = token; 
+  state.user = user; 
+  state.serverUrl = server;
+  localStorage.setItem('gz_token', token);
+  localStorage.setItem('gz_user', JSON.stringify(user));
+  localStorage.setItem('gz_server', server);
 }
 
 function doLogout() {
   if (!confirm('Logout?')) return;
-  state.token=null; state.user=null;
-  localStorage.removeItem('gz_token'); localStorage.removeItem('gz_user');
+  state.token = null; 
+  state.user = null;
+  localStorage.removeItem('gz_token'); 
+  localStorage.removeItem('gz_user');
   if (state.socket) state.socket.disconnect();
   showScreen('login');
 }
 
+// ── GROUPS ───────────────────────────────────────────────────
 async function loadGroups() {
-  try { state.groups = await api('GET','/groups'); renderGroups(); }
-  catch(e) { toast('Failed to load groups','err'); }
+  try { 
+    state.groups = await api('GET', '/groups'); 
+    renderGroups(); 
+  } catch(e) { 
+    console.error('Load groups error:', e);
+    toast('Failed to load groups', 'err'); 
+  }
 }
 
 function renderGroups() {
@@ -935,68 +700,76 @@ function renderGroups() {
 
 async function createGroup() {
   const name = document.getElementById('newgroup-name').value.trim();
-  if (!name) { toast('Enter a name','err'); return; }
+  if (!name) { toast('Enter a name', 'err'); return; }
+  
   document.getElementById('newgroup-btn-text').innerHTML = '<span class="spin"></span>';
+  
   try {
-    const g = await api('POST','/groups',{name});
-    state.groups.push(g); renderGroups();
+    const g = await api('POST', '/groups', { name });
+    state.groups.push(g); 
+    renderGroups();
     closeSheet('sheet-newgroup');
     document.getElementById('newgroup-name').value = '';
-    toast('Group created','ok');
-  } catch(e) { toast(e.message,'err'); }
-  finally { document.getElementById('newgroup-btn-text').textContent='Create'; }
+    toast('Group created', 'ok');
+  } catch(e) { 
+    toast(e.message, 'err'); 
+  } finally { 
+    document.getElementById('newgroup-btn-text').textContent = 'Create'; 
+  }
 }
 
 function openGroup(id) {
-  state.activeGroup = state.groups.find(g=>g.id===id);
+  state.activeGroup = state.groups.find(g => g.id === id);
   document.getElementById('dash-title').textContent = state.activeGroup.name;
   document.getElementById('s-name').textContent = state.activeGroup.name;
   document.getElementById('s-id').textContent = state.activeGroup.id;
-  showScreen('dashboard'); loadPCs(); connectSocket();
+  showScreen('dashboard'); 
+  loadPCs(); 
+  connectSocket();
 }
 
+// ── PCs ──────────────────────────────────────────────────────
 async function loadPCs() {
-  try { state.pcs = await api('GET','/groups/'+state.activeGroup.id+'/pcs'); renderPCs(); }
-  catch(e) { toast('Failed to load PCs','err'); }
+  try { 
+    state.pcs = await api('GET', '/groups/' + state.activeGroup.id + '/pcs'); 
+    renderPCs(); 
+  } catch(e) { 
+    toast('Failed to load PCs', 'err'); 
+  }
 }
 
 function renderPCs() {
-  const now = Math.floor(Date.now()/1000);
-  const online = state.pcs.filter(p=>p.is_online).length;
-  const active = state.pcs.filter(p=>p.session_end>now||p.stopwatch_start>0).length;
+  const now = Math.floor(Date.now() / 1000);
+  const online = state.pcs.filter(p => p.is_online).length;
+  const active = state.pcs.filter(p => p.session_end > now || p.stopwatch_start > 0).length;
+  
   document.getElementById('stat-total').textContent = state.pcs.length;
   document.getElementById('stat-online').textContent = online;
   document.getElementById('stat-active').textContent = active;
+  
   const grid = document.getElementById('pc-grid');
   if (!state.pcs.length) {
     grid.innerHTML = '<div style="grid-column:1/-1"><div class="empty"><div class="empty-ico"><i class="fa-solid fa-desktop"></i></div><div class="empty-h">No PCs yet</div><div class="empty-p">Tap "+ Add PC" to register one</div></div></div>';
     return;
   }
-  const sortedPcs = [...state.pcs].sort((a,b) => (a.order||0) - (b.order||0));
-  grid.innerHTML = sortedPcs.map(pc => {
-    const left = pc.session_end>now ? pc.session_end-now : 0;
-    const isWatch = pc.stopwatch_start>0;
-    const hasSession = left>0||isWatch;
-    const col  = !hasSession ? 'var(--t3)' : isWatch ? 'var(--blue)' : left>300 ? 'var(--green)' : left>0 ? 'var(--amber)' : 'var(--red)';
-    const bg   = !hasSession ? 'var(--s3)' : isWatch ? 'var(--blue-bg)' : left>300 ? 'var(--green-bg)' : left>0 ? 'var(--amber-bg)' : 'var(--red-bg)';
-    const bd   = !hasSession ? 'var(--bd)' : isWatch ? 'var(--blue-bd)' : left>300 ? 'var(--green-bd)' : left>0 ? 'var(--amber-bd)' : 'var(--red-bd)';
-    const status = !hasSession ? (pc.is_online ? 'Idle' : 'Offline') : isWatch ? 'Free' : left>0 ? 'Active' : 'Idle';
-    const elapsed = (isWatch && pc.stopwatch_start && pc.stopwatch_start < now) ? now - pc.stopwatch_start : 0;
-    const timer = isWatch ? fmtTime(elapsed) : left>0 ? fmtTime(left) : '--:--';
-    // FIX #1: Load payment_status from PC data (from database)
-    const pay = pc.payment_status||null;
-    const payBadge = pay==='paid'
-      ? `<span class="pay-badge" style="background:var(--green-bg);color:var(--green)"><i class="fa-solid fa-check"></i> Paid</span>`
-      : pay==='unpaid'
-      ? `<span class="pay-badge" style="background:var(--red-bg);color:var(--red)"><i class="fa-solid fa-xmark"></i> Unpaid</span>`
-      : '';
+  
+  grid.innerHTML = state.pcs.map(pc => {
+    const left = pc.session_end > now ? pc.session_end - now : 0;
+    const isWatch = pc.stopwatch_start > 0;
+    const col = !pc.is_online ? 'var(--t3)' : isWatch ? 'var(--blue)' : left > 300 ? 'var(--green)' : left > 0 ? 'var(--amber)' : 'var(--red)';
+    const bg = !pc.is_online ? 'var(--s3)' : isWatch ? 'var(--blue-bg)' : left > 300 ? 'var(--green-bg)' : left > 0 ? 'var(--amber-bg)' : 'var(--red-bg)';
+    const bd = !pc.is_online ? 'var(--bd)' : isWatch ? 'var(--blue-bd)' : left > 300 ? 'var(--green-bd)' : left > 0 ? 'var(--amber-bd)' : 'var(--red-bd)';
+    const status = !pc.is_online ? 'Offline' : isWatch ? 'Free' : left > 0 ? 'Active' : 'Idle';
+    const elapsed = isWatch ? Math.floor(Date.now() / 1000) - pc.stopwatch_start : 0;
+    const timer = !pc.is_online ? '- - -' : isWatch ? fmtTime(elapsed) : left > 0 ? fmtTime(left) : '--:--';
+    
     return `<div class="pc-card" onclick="openPC('${pc.id}')" style="--pc-color:${col};--pc-bg:${bg};--pc-bd:${bd}">
       <div class="pc-card-top">
         <div class="pc-card-name"><i class="fa-solid fa-computer"></i>${pc.name}</div>
         <div class="pc-dot"></div>
       </div>
       <div class="pc-timer">${timer}</div>
-      <div class="pc-footer"><span class="pc-badge">${status}</span>${payBadge}</div>
+      <div class="pc-footer"><span class="pc-badge">${status}</span></div>
     </div>`;
   }).join('');
 }
@@ -1004,86 +777,47 @@ function renderPCs() {
 async function addPC() {
   const name = document.getElementById('addpc-name').value.trim();
   const password = document.getElementById('addpc-pass').value;
-  const price = parseFloat(document.getElementById('addpc-price').value)||0;
-  if (!name||!password) { toast('Name and password required','err'); return; }
-  document.getElementById('addpc-btn-text').innerHTML='<span class="spin"></span>';
-  try {
-    const pc = await api('POST','/groups/'+state.activeGroup.id+'/pcs',{name,password,price_per_hour:price});
-    state.pcs.push(pc); renderPCs();
-    closeSheet('sheet-addpc');
-    ['addpc-name','addpc-pass','addpc-price'].forEach(id=>document.getElementById(id).value='');
-    toast('PC added','ok');
-  } catch(e) { toast(e.message,'err'); }
-  finally { document.getElementById('addpc-btn-text').textContent='Add PC'; }
-}
-
-function loadReorderPCList() {
-  const el = document.getElementById('reorder-pc-list');
-  if (!state.pcs?.length) { el.innerHTML='<div style="color:var(--t2);padding:8px 0;font-size:12px">No PCs in this group</div>'; return; }
-  const sortedPcs = [...state.pcs].sort((a,b) => (a.order||0) - (b.order||0));
-  el.innerHTML = sortedPcs.map((pc,idx)=>`<div class="pc-del-row" data-pc-id="${pc.id}">
-    <div class="pc-del-name"><i class="fa-solid fa-computer" style="color:var(--t3)"></i>${pc.name}</div>
-    <div class="reorder-btns">
-      <button class="reorder-btn" onclick="movePC('${pc.id}',-1)" ${idx===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button>
-      <button class="reorder-btn" onclick="movePC('${pc.id}',1)" ${idx===sortedPcs.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button>
-    </div>
-  </div>`).join('');
-}
-
-function movePC(pcId, direction) {
-  const sortedPcs = [...state.pcs].sort((a,b) => (a.order||0) - (b.order||0));
-  const idx = sortedPcs.findIndex(p=>p.id===pcId);
-  if (idx < 0) return;
-  const newIdx = idx + direction;
-  if (newIdx < 0 || newIdx >= sortedPcs.length) return;
-  const [moved] = sortedPcs.splice(idx, 1);
-  sortedPcs.splice(newIdx, 0, moved);
-  sortedPcs.forEach((pc, i) => {
-    pc.order = i;
-    const originalPc = state.pcs.find(p => p.id === pc.id);
-    if (originalPc) originalPc.order = i;
-  });
-  loadReorderPCList();
-}
-
-async function savePCOrder() {
-  const sortedPcs = [...state.pcs].sort((a,b) => (a.order||0) - (b.order||0));
-  const orderData = sortedPcs.map((pc,idx)=>({pc_id:pc.id, order:idx}));
-  document.getElementById('reorder-btn-text').innerHTML='<span class="spin"></span>';
-  try {
-    try {
-      await api('POST','/groups/'+state.activeGroup.id+'/pcs/reorder',{order:orderData});
-    } catch(e) {
-      console.log('Order saved locally (server endpoint not available)');
-    }
-    closeSheet('sheet-reorderpc');
-    toast('PC order saved','ok');
-    renderPCs();
-  } catch(e) {
-    closeSheet('sheet-reorderpc');
-    toast('Order saved locally','ok');
-    renderPCs();
+  const price = parseFloat(document.getElementById('addpc-price').value) || 0;
+  
+  if (!name || !password) { 
+    toast('Name and password required', 'err'); 
+    return; 
   }
-  finally { document.getElementById('reorder-btn-text').textContent='Save Order'; }
+  
+  document.getElementById('addpc-btn-text').innerHTML = '<span class="spin"></span>';
+  
+  try {
+    const pc = await api('POST', '/groups/' + state.activeGroup.id + '/pcs', { 
+      name, password, price_per_hour: price 
+    });
+    state.pcs.push(pc); 
+    renderPCs();
+    closeSheet('sheet-addpc');
+    ['addpc-name', 'addpc-pass', 'addpc-price'].forEach(id => document.getElementById(id).value = '');
+    toast('PC added', 'ok');
+  } catch(e) { 
+    toast(e.message, 'err'); 
+  } finally { 
+    document.getElementById('addpc-btn-text').textContent = 'Add PC'; 
+  }
 }
 
+// ── PC CONTROL ───────────────────────────────────────────────
 function openPC(id) {
-  state.activePc = state.pcs.find(p=>p.id===id);
+  state.activePc = state.pcs.find(p => p.id === id);
   document.getElementById('pc-title').textContent = state.activePc.name;
-  updateOnlinePill(); renderPCActions(); showScreen('pccontrol');
+  updateOnlinePill(); 
+  renderPCActions(); 
+  showScreen('pccontrol');
 }
 
 function updateOnlinePill() {
-  const pc = state.activePc; if(!pc) return;
+  const pc = state.activePc; 
+  if (!pc) return;
   const pill = document.getElementById('pc-pill');
-  const now = Math.floor(Date.now()/1000);
-  const hasSession = pc.session_end>now||pc.stopwatch_start>0;
   if (pc.is_online) {
     pill.innerHTML = '<span class="dot" style="background:var(--green)"></span> Online';
     pill.style.cssText = 'color:var(--green);border-color:var(--green-bd);background:var(--green-bg)';
-  } else if (hasSession) {
-    pill.innerHTML = '<span class="dot" style="background:var(--amber)"></span> Session Active';
-    pill.style.cssText = 'color:var(--amber);border-color:var(--amber-bd);background:var(--amber-bg)';
   } else {
     pill.innerHTML = '<span class="dot" style="background:var(--t3)"></span> Offline';
     pill.style.cssText = '';
@@ -1091,28 +825,24 @@ function updateOnlinePill() {
 }
 
 function renderPCActions() {
-  const pc = state.activePc; if(!pc) return;
-  const now = Math.floor(Date.now()/1000);
-  const left = pc.session_end>now ? pc.session_end-now : 0;
-  const isWatch = pc.stopwatch_start>0;
-  const isActive = left>0||isWatch;
-  // FIX #1: Load payment_status from PC data
-  const pay = pc.payment_status||null;
+  const pc = state.activePc; 
+  if (!pc) return;
+  const now = Math.floor(Date.now() / 1000);
+  const left = pc.session_end > now ? pc.session_end - now : 0;
+  const isWatch = pc.stopwatch_start > 0;
+  const isActive = left > 0 || isWatch;
+  
   const timerArea = document.getElementById('pc-timer-area');
   if (isActive) {
-    const col = isWatch ? 'var(--blue)' : left<300 ? 'var(--amber)' : left<60 ? 'var(--red)' : 'var(--green)';
-    const elapsed = (isWatch && pc.stopwatch_start && pc.stopwatch_start < now) ? now - pc.stopwatch_start : 0;
-    const val = isWatch ? fmtTime(elapsed) : fmtTime(left);
+    const col = isWatch ? 'var(--blue)' : left < 300 ? 'var(--amber)' : left < 60 ? 'var(--red)' : 'var(--green)';
+    const val = isWatch ? fmtTime(Math.floor(Date.now() / 1000) - pc.stopwatch_start) : fmtTime(left);
     timerArea.innerHTML = `<div class="timer-card">
       <div class="timer-big" style="color:${col}">${val}</div>
-      <div class="pay-col">
-        <button class="pay-btn ${pay==='paid'?'paid':''}" onclick="togglePay('paid')"><i class="fa-solid fa-check"></i> Paid</button>
-        <button class="pay-btn ${pay==='unpaid'?'unpaid':''}" onclick="togglePay('unpaid')"><i class="fa-solid fa-xmark"></i> Unpaid</button>
-      </div>
     </div>`;
   } else {
-    timerArea.innerHTML='';
+    timerArea.innerHTML = '';
   }
+  
   const sessionArea = document.getElementById('pc-session-area');
   if (isActive) {
     sessionArea.innerHTML = `<div class="section-head">Session Control</div>
@@ -1133,244 +863,293 @@ function renderPCActions() {
   }
 }
 
-// FIX #1: togglePay now ONLY updates payment status via API - does NOT end session
-async function togglePay(status) {
-  if (event) event.stopPropagation();
-  if (!state.activePc) return;
-  const id = state.activePc.id;
-  const newStatus = state.activePc.payment_status===status ? null : status;
-  try {
-    await api('POST','/pcs/'+id+'/payment',{payment_status:newStatus,group_id:state.activeGroup.id});
-    state.activePc.payment_status = newStatus;
-    const pc = state.pcs.find(p=>p.id===id);
-    if (pc) pc.payment_status = newStatus;
-    renderPCActions(); renderPCs();
-    toast(newStatus ? `Marked ${newStatus}` : 'Payment cleared','ok');
-  } catch(e) {
-    toast(e.message,'err');
-  }
-}
-
+// ── SESSION ACTIONS ──────────────────────────────────────────
 async function startSession(mins) {
   closeSheet('sheet-startsession');
   try {
-    const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
-    updatePcField(state.activePc.id,'session_end',r.session_end);
-    updatePcField(state.activePc.id,'stopwatch_start',0);
-    toast('Session started','ok');
-  } catch(e) { toast(e.message,'err'); }
+    const r = await api('POST', '/pcs/' + state.activePc.id + '/session/start', { 
+      duration_minutes: mins, group_id: state.activeGroup.id 
+    });
+    updatePcField(state.activePc.id, 'session_end', r.session_end);
+    updatePcField(state.activePc.id, 'stopwatch_start', 0);
+    toast('Session started', 'ok');
+  } catch(e) { 
+    toast(e.message, 'err'); 
+  }
 }
 
 function startCustomSession() {
-  const hrs=parseInt(document.getElementById('custom-hrs').value)||0;
-  const mins=parseInt(document.getElementById('custom-mins').value)||0;
-  const total=hrs*60+mins;
-  if (total<1) { toast('Enter duration','err'); return; }
-  document.getElementById('custom-hrs').value='';
-  document.getElementById('custom-mins').value='';
+  const hrs = parseInt(document.getElementById('custom-hrs').value) || 0;
+  const mins = parseInt(document.getElementById('custom-mins').value) || 0;
+  const total = hrs * 60 + mins;
+  if (total < 1) { 
+    toast('Enter duration', 'err'); 
+    return; 
+  }
+  document.getElementById('custom-hrs').value = '';
+  document.getElementById('custom-mins').value = '';
   startSession(total);
 }
 
 async function startStopwatch() {
   closeSheet('sheet-startsession');
   try {
-    const r = await api('POST','/pcs/'+state.activePc.id+'/session/stopwatch',{group_id:state.activeGroup.id});
-    updatePcField(state.activePc.id,'stopwatch_start',r.started_at);
-    updatePcField(state.activePc.id,'session_end',0);
-    toast('Free timer started','ok');
-  } catch(e) { toast(e.message,'err'); }
+    const r = await api('POST', '/pcs/' + state.activePc.id + '/session/stopwatch', { 
+      group_id: state.activeGroup.id 
+    });
+    updatePcField(state.activePc.id, 'stopwatch_start', r.started_at);
+    updatePcField(state.activePc.id, 'session_end', 0);
+    toast('Free timer started', 'ok');
+  } catch(e) { 
+    toast(e.message, 'err'); 
+  }
 }
 
 async function addTime(mins) {
   closeSheet('sheet-addtime');
   try {
-    if (state.activePc.stopwatch_start>0) {
-      const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
-      updatePcField(state.activePc.id,'session_end',r.session_end);
-      updatePcField(state.activePc.id,'stopwatch_start',0);
-      toast('Free timer → '+mins+'m','ok'); return;
+    if (state.activePc.stopwatch_start > 0) {
+      const r = await api('POST', '/pcs/' + state.activePc.id + '/session/start', { 
+        duration_minutes: mins, group_id: state.activeGroup.id 
+      });
+      updatePcField(state.activePc.id, 'session_end', r.session_end);
+      updatePcField(state.activePc.id, 'stopwatch_start', 0);
+      toast('Free timer → ' + mins + 'm', 'ok'); 
+      return;
     }
-    const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
-    updatePcField(state.activePc.id,'session_end',r.session_end);
-    toast('+'+mins+'m added','ok');
-  } catch(e) { toast(e.message,'err'); }
+    const r = await api('POST', '/pcs/' + state.activePc.id + '/session/add-time', { 
+      minutes: mins, group_id: state.activeGroup.id 
+    });
+    updatePcField(state.activePc.id, 'session_end', r.session_end);
+    toast('+' + mins + 'm added', 'ok');
+  } catch(e) { 
+    toast(e.message, 'err'); 
+  }
 }
 
 function addCustomTime() {
-  const hrs=parseInt(document.getElementById('add-hrs').value)||0;
-  const mins=parseInt(document.getElementById('add-mins').value)||0;
-  const total=hrs*60+mins;
-  if (total<1) { toast('Enter duration','err'); return; }
-  document.getElementById('add-hrs').value='';
-  document.getElementById('add-mins').value='';
+  const hrs = parseInt(document.getElementById('add-hrs').value) || 0;
+  const mins = parseInt(document.getElementById('add-mins').value) || 0;
+  const total = hrs * 60 + mins;
+  if (total < 1) { 
+    toast('Enter duration', 'err'); 
+    return; 
+  }
+  document.getElementById('add-hrs').value = '';
+  document.getElementById('add-mins').value = '';
   addTime(total);
 }
 
 async function removeTime(mins) {
   closeSheet('sheet-removetime');
   try {
-    const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:-mins,group_id:state.activeGroup.id});
-    updatePcField(state.activePc.id,'session_end',r.session_end);
-    toast('-'+mins+'m removed','ok');
-  } catch(e) { toast(e.message,'err'); }
+    const r = await api('POST', '/pcs/' + state.activePc.id + '/session/add-time', { 
+      minutes: -mins, group_id: state.activeGroup.id 
+    });
+    updatePcField(state.activePc.id, 'session_end', r.session_end);
+    toast('-' + mins + 'm removed', 'ok');
+  } catch(e) { 
+    toast(e.message, 'err'); 
+  }
 }
 
 function removeCustomTime() {
-  const hrs=parseInt(document.getElementById('rem-hrs').value)||0;
-  const mins=parseInt(document.getElementById('rem-mins').value)||0;
-  const total=hrs*60+mins;
-  if (total<1) { toast('Enter duration','err'); return; }
-  document.getElementById('rem-hrs').value='';
-  document.getElementById('rem-mins').value='';
+  const hrs = parseInt(document.getElementById('rem-hrs').value) || 0;
+  const mins = parseInt(document.getElementById('rem-mins').value) || 0;
+  const total = hrs * 60 + mins;
+  if (total < 1) { 
+    toast('Enter duration', 'err'); 
+    return; 
+  }
+  document.getElementById('rem-hrs').value = '';
+  document.getElementById('rem-mins').value = '';
   removeTime(total);
 }
 
 function confirmEndSession() {
-  if (!confirm('End session on '+state.activePc.name+'?\nScreen will lock immediately.')) return;
-  api('POST','/pcs/'+state.activePc.id+'/session/end',{group_id:state.activeGroup.id})
-  .then(()=>{ 
-    updatePcField(state.activePc.id,'session_end',0); 
-    updatePcField(state.activePc.id,'stopwatch_start',0); 
-    toast('Session ended','ok');
-    loadPCs();
-  })
-  .catch(e=>toast(e.message,'err'));
+  if (!confirm('End session on ' + state.activePc.name + '?\nScreen will lock immediately.')) return;
+  api('POST', '/pcs/' + state.activePc.id + '/session/end', { group_id: state.activeGroup.id })
+    .then(() => { 
+      updatePcField(state.activePc.id, 'session_end', 0); 
+      updatePcField(state.activePc.id, 'stopwatch_start', 0); 
+      toast('Session ended', 'ok'); 
+    })
+    .catch(e => toast(e.message, 'err'));
 }
 
 async function pcCmd(action) {
   try {
-    await api('POST','/pcs/'+state.activePc.id+'/'+action,{group_id:state.activeGroup.id});
-    toast(action==='lock'?'Screen locked':'Screen unlocked','ok');
-  } catch(e) { toast(e.message,'err'); }
+    await api('POST', '/pcs/' + state.activePc.id + '/' + action, { 
+      group_id: state.activeGroup.id 
+    });
+    toast(action === 'lock' ? 'Screen locked' : 'Screen unlocked', 'ok');
+  } catch(e) { 
+    toast(e.message, 'err'); 
+  }
 }
 
-function updatePcField(pcId,field,value) {
-  const pc = state.pcs.find(p=>p.id===pcId);
-  if (pc) pc[field]=value;
-  if (state.activePc?.id===pcId) { state.activePc[field]=value; renderPCActions(); }
+function updatePcField(pcId, field, value) {
+  const pc = state.pcs.find(p => p.id === pcId);
+  if (pc) pc[field] = value;
+  if (state.activePc?.id === pcId) { 
+    state.activePc[field] = value; 
+    renderPCActions(); 
+  }
   renderPCs();
 }
 
+// ── APPS ─────────────────────────────────────────────────────
 async function openApps() {
-  document.getElementById('apps-pc-name').textContent = 'on '+state.activePc.name;
+  document.getElementById('apps-pc-name').textContent = 'on ' + state.activePc.name;
   document.getElementById('apps-list').innerHTML = '<div style="text-align:center;padding:28px"><span class="spin"></span></div>';
   openSheet('sheet-apps');
   try {
-    const apps = await api('GET','/pcs/'+state.activePc.id+'/apps');
+    const apps = await api('GET', '/pcs/' + state.activePc.id + '/apps');
     window._apps = apps;
-    if (!apps.length) { document.getElementById('apps-list').innerHTML='<div style="color:var(--t2);text-align:center;padding:28px;font-size:12px">No shortcuts found.<br>Add .lnk files to the shortcuts folder.</div>'; return; }
-    document.getElementById('apps-list').innerHTML = apps.map((a,i)=>`<div class="app-row"><div class="app-name"><i class="fa-solid fa-file"></i>${a.name}</div><button class="launch-btn" onclick="launchApp(${i})"><i class="fa-solid fa-play"></i> Launch</button></div>`).join('');
-  } catch(e) { document.getElementById('apps-list').innerHTML='<div style="color:var(--red);text-align:center;padding:20px">Failed to load apps</div>'; }
+    if (!apps.length) { 
+      document.getElementById('apps-list').innerHTML = '<div style="color:var(--t2);text-align:center;padding:28px;font-size:12px">No shortcuts found.<br>Add .lnk files to the shortcuts folder.</div>'; 
+      return; 
+    }
+    document.getElementById('apps-list').innerHTML = apps.map((a, i) => 
+      `<div class="app-row"><div class="app-name"><i class="fa-solid fa-file"></i>${a.name}</div><button class="launch-btn" onclick="launchApp(${i})"><i class="fa-solid fa-play"></i> Launch</button></div>`
+    ).join('');
+  } catch(e) { 
+    document.getElementById('apps-list').innerHTML = '<div style="color:var(--red);text-align:center;padding:20px">Failed to load apps</div>'; 
+  }
 }
 
 async function launchApp(i) {
-  const app = window._apps?.[i]; if(!app) return;
+  const app = window._apps?.[i]; 
+  if (!app) return;
   closeSheet('sheet-apps');
-  try { await api('POST','/pcs/'+state.activePc.id+'/launch',{app_path:app.path,group_id:state.activeGroup.id}); toast(app.name+' launched','ok'); }
-  catch(e) { toast(e.message,'err'); }
+  try { 
+    await api('POST', '/pcs/' + state.activePc.id + '/launch', { 
+      app_path: app.path, group_id: state.activeGroup.id 
+    }); 
+    toast(app.name + ' launched', 'ok'); 
+  } catch(e) { 
+    toast(e.message, 'err'); 
+  }
 }
 
+// ── SETTINGS ─────────────────────────────────────────────────
 async function loadAdmins() {
   try {
-    const admins = await api('GET','/groups/'+state.activeGroup.id+'/admins');
+    const admins = await api('GET', '/groups/' + state.activeGroup.id + '/admins');
     document.getElementById('admins-list').innerHTML = admins.length
-      ? admins.map(a=>`<div class="admin-row"><div class="admin-av">${a.username[0].toUpperCase()}</div><div class="admin-name">${a.username}</div><button class="remove-btn" onclick="removeAdmin('${a.id}','${a.username}')">Remove</button></div>`).join('')
+      ? admins.map(a => `<div class="admin-row"><div class="admin-av">${a.username[0].toUpperCase()}</div><div class="admin-name">${a.username}</div><button class="remove-btn" onclick="removeAdmin('${a.id}','${a.username}')">Remove</button></div>`).join('')
       : '<div style="color:var(--t2);padding:8px 0;font-size:12px">No additional admins</div>';
   } catch(e) {}
 }
 
 async function addAdmin() {
   const username = document.getElementById('addadmin-user').value.trim();
-  if (!username) { toast('Enter a username','err'); return; }
-  document.getElementById('addadmin-btn-text').innerHTML='<span class="spin"></span>';
+  if (!username) { toast('Enter a username', 'err'); return; }
+  
+  document.getElementById('addadmin-btn-text').innerHTML = '<span class="spin"></span>';
+  
   try {
-    await api('POST','/groups/'+state.activeGroup.id+'/admins',{username});
+    await api('POST', '/groups/' + state.activeGroup.id + '/admins', { username });
     closeSheet('sheet-addadmin');
-    document.getElementById('addadmin-user').value='';
-    toast(username+' added','ok'); loadAdmins();
-  } catch(e) { toast(e.message,'err'); }
-  finally { document.getElementById('addadmin-btn-text').textContent='Add Admin'; }
+    document.getElementById('addadmin-user').value = '';
+    toast(username + ' added', 'ok'); 
+    loadAdmins();
+  } catch(e) { 
+    toast(e.message, 'err'); 
+  } finally { 
+    document.getElementById('addadmin-btn-text').textContent = 'Add Admin'; 
+  }
 }
 
-async function removeAdmin(id,username) {
-  if (!confirm('Remove '+username+' as admin?')) return;
-  try { await api('DELETE','/groups/'+state.activeGroup.id+'/admins/'+id); toast(username+' removed','ok'); loadAdmins(); }
-  catch(e) { toast(e.message,'err'); }
+async function removeAdmin(id, username) {
+  if (!confirm('Remove ' + username + ' as admin?')) return;
+  try { 
+    await api('DELETE', '/groups/' + state.activeGroup.id + '/admins/' + id); 
+    toast(username + ' removed', 'ok'); 
+    loadAdmins(); 
+  } catch(e) { 
+    toast(e.message, 'err'); 
+  }
 }
 
 function loadDeletePCList() {
   const el = document.getElementById('delete-pc-list');
-  if (!state.pcs?.length) { el.innerHTML='<div style="color:var(--t2);padding:8px 0;font-size:12px">No PCs in this group</div>'; return; }
-  el.innerHTML = state.pcs.map(pc=>`<div class="pc-del-row"><div class="pc-del-name"><i class="fa-solid fa-computer" style="color:var(--t3)"></i>${pc.name}</div><button class="pc-del-btn" onclick="deletePC('${pc.id}','${pc.name}')">Delete</button></div>`).join('');
+  if (!state.pcs?.length) { 
+    el.innerHTML = '<div style="color:var(--t2);padding:8px 0;font-size:12px">No PCs in this group</div>'; 
+    return; 
+  }
+  el.innerHTML = state.pcs.map(pc => 
+    `<div class="pc-del-row"><div class="pc-del-name"><i class="fa-solid fa-computer" style="color:var(--t3)"></i>${pc.name}</div><button class="pc-del-btn" onclick="deletePC('${pc.id}','${pc.name}')">Delete</button></div>`
+  ).join('');
 }
 
-async function deletePC(pcId,name) {
-  if (!confirm('Delete "'+name+'"\nThis cannot be undone.')) return;
+async function deletePC(pcId, name) {
+  if (!confirm('Delete "' + name + '"?\nThis cannot be undone.')) return;
   try {
-    await api('DELETE','/groups/'+state.activeGroup.id+'/pcs/'+pcId);
-    state.pcs = state.pcs.filter(p=>p.id!==pcId);
-    renderPCs(); loadDeletePCList(); toast(name+' deleted','ok');
-  } catch(e) { toast(e.message,'err'); }
+    await api('DELETE', '/groups/' + state.activeGroup.id + '/pcs/' + pcId);
+    state.pcs = state.pcs.filter(p => p.id !== pcId);
+    renderPCs(); 
+    loadDeletePCList(); 
+    toast(name + ' deleted', 'ok');
+  } catch(e) { 
+    toast(e.message, 'err'); 
+  }
 }
 
 async function confirmDeleteGroup() {
-  if (!confirm('Delete "'+state.activeGroup.name+'"\nAll PCs in this group will be removed.')) return;
+  if (!confirm('Delete "' + state.activeGroup.name + '"?\nAll PCs in this group will be removed.')) return;
   try {
-    await api('DELETE','/groups/'+state.activeGroup.id);
-    state.groups = state.groups.filter(g=>g.id!==state.activeGroup.id);
-    renderGroups(); showScreen('groups'); toast('Group deleted','ok');
-  } catch(e) { toast(e.message,'err'); }
+    await api('DELETE', '/groups/' + state.activeGroup.id);
+    state.groups = state.groups.filter(g => g.id !== state.activeGroup.id);
+    renderGroups(); 
+    showScreen('groups'); 
+    toast('Group deleted', 'ok');
+  } catch(e) { 
+    toast(e.message, 'err'); 
+  }
 }
 
+// ── SOCKET ───────────────────────────────────────────────────
 function connectSocket() {
   if (state.socket) state.socket.disconnect();
-  state.socket = io(state.serverUrl,{transports:['websocket']});
-  state.socket.on('connect',()=>{ 
-    state.socket.emit('admin:subscribe',{group_id:state.activeGroup.id,token:state.token}); 
+  state.socket = io(state.serverUrl, { transports: ['websocket'] });
+  
+  state.socket.on('connect', () => { 
+    state.socket.emit('admin:subscribe', { 
+      group_id: state.activeGroup.id, 
+      token: state.token 
+    }); 
   });
   
-  state.socket.on('group:'+state.activeGroup.id+':pc-status',({pc_id,is_online})=>{
-    const pc = state.pcs.find(p=>p.id===pc_id);
+  state.socket.on('group:' + state.activeGroup.id + ':pc-status', ({ pc_id, is_online }) => {
+    const pc = state.pcs.find(p => p.id === pc_id);
     if (pc) {
-      pc.is_online = is_online?1:0; 
+      pc.is_online = is_online ? 1 : 0; 
       renderPCs();
-      if (state.activePc?.id===pc_id) { 
-        state.activePc.is_online=pc.is_online; 
+      if (state.activePc?.id === pc_id) { 
+        state.activePc.is_online = pc.is_online; 
         updateOnlinePill(); 
       }
     }
   });
-  
-  // FIX #1: Listen for payment_status updates from server
-state.socket.on('group:'+state.activeGroup.id+':pc-session', ({pc_id, session_end, stopwatch_start, payment_status})=>{
-  const pc = state.pcs.find(p=>p.id===pc_id);
-  if (pc) {
-    pc.session_end = session_end;
-    pc.stopwatch_start = stopwatch_start;
-    if (payment_status !== undefined) pc.payment_status = payment_status;
-    renderPCs();
-    if (state.activePc?.id===pc_id) {
-      state.activePc.session_end = session_end;
-      state.activePc.stopwatch_start = stopwatch_start;
-      if (payment_status !== undefined) state.activePc.payment_status = payment_status;
-      renderPCActions();
-      updateOnlinePill();
-    }
-  }
-});
-function fmtTime(secs) {
-  if (secs<=0) return '00:00';
-  const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
-  if (h>0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
-function toast(msg,type='ok') {
+// ── UTILS ────────────────────────────────────────────────────
+function fmtTime(secs) {
+  if (secs <= 0) return '00:00';
+  const h = Math.floor(secs / 3600), 
+        m = Math.floor((secs % 3600) / 60), 
+        s = secs % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function toast(msg, type = 'ok') {
   const el = document.getElementById('toast');
   el.textContent = msg;
-  el.className = 'toast '+type+' show';
+  el.className = 'toast ' + type + ' show';
   clearTimeout(_toastT);
-  _toastT = setTimeout(()=>el.classList.remove('show'),2600);
+  _toastT = setTimeout(() => el.classList.remove('show'), 2600);
 }
 </script>
 </body>
