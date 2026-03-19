@@ -298,7 +298,7 @@ display: flex; align-items: center; gap: 7px;
 .pc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pc-color, var(--t3)); }
 /* FIX #3: Reduced timer font size by 15% (22px → 19px for mobile) */
 .pc-timer {
-font-family: var(--mono); font-size: 19px; font-weight: 700;
+font-family: var(--mono); font-size: 17px; font-weight: 700;
 line-height: 1; margin-bottom: 10px; color: var(--pc-color, var(--t3));
 }
 .pc-footer { display: flex; align-items: center; justify-content: space-between; }
@@ -721,11 +721,11 @@ GameZone
 <div class="sheet-sub">Extend the current session</div>
 <div class="chip-row">
 <!-- FIX #2: Added icons to add time chips -->
-<div class="chip green" onclick="addTime(30)"><i class="fa-solid fa-circle-plus"></i> 30m</div>
-<div class="chip green" onclick="addTime(60)"><i class="fa-solid fa-circle-plus"></i> 1h</div>
-<div class="chip green" onclick="addTime(90)"><i class="fa-solid fa-circle-plus"></i> 1.5h</div>
-<div class="chip green" onclick="addTime(120)"><i class="fa-solid fa-circle-plus"></i> 2h</div>
-<div class="chip green" onclick="addTime(180)"><i class="fa-solid fa-circle-plus"></i> 3h</div>
+<div class="chip green" onclick="addTime(31)"><i class="fa-solid fa-circle-plus"></i> 30m</div>
+<div class="chip green" onclick="addTime(61)"><i class="fa-solid fa-circle-plus"></i> 1h</div>
+<div class="chip green" onclick="addTime(91)"><i class="fa-solid fa-circle-plus"></i> 1.5h</div>
+<div class="chip green" onclick="addTime(121)"><i class="fa-solid fa-circle-plus"></i> 2h</div>
+<div class="chip green" onclick="addTime(181)"><i class="fa-solid fa-circle-plus"></i> 3h</div>
 </div>
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
 <div class="input-row" style="margin-bottom:20px">
@@ -1140,9 +1140,7 @@ async function togglePay(status) {
   const id = state.activePc.id;
   const newStatus = state.activePc.payment_status===status ? null : status;
   try {
-    // Call API to save payment status to database
     await api('POST','/pcs/'+id+'/payment',{payment_status:newStatus,group_id:state.activeGroup.id});
-    // Update local state
     state.activePc.payment_status = newStatus;
     const pc = state.pcs.find(p=>p.id===id);
     if (pc) pc.payment_status = newStatus;
@@ -1344,24 +1342,22 @@ function connectSocket() {
   });
   
   // FIX #1: Listen for payment_status updates from server
-  state.socket.on('group:'+state.activeGroup.id+':pc-session', ({pc_id, session_end, stopwatch_start, payment_status})=>{
-    const pc = state.pcs.find(p=>p.id===pc_id);
-    if (pc) {
-      pc.session_end = session_end;
-      pc.stopwatch_start = stopwatch_start;
-      if (payment_status !== undefined) pc.payment_status = payment_status;
-      renderPCs();
-      if (state.activePc?.id===pc_id) {
-        state.activePc.session_end = session_end;
-        state.activePc.stopwatch_start = stopwatch_start;
-        if (payment_status !== undefined) state.activePc.payment_status = payment_status;
-        renderPCActions();
-        updateOnlinePill();
-      }
+state.socket.on('group:'+state.activeGroup.id+':pc-session', ({pc_id, session_end, stopwatch_start, payment_status})=>{
+  const pc = state.pcs.find(p=>p.id===pc_id);
+  if (pc) {
+    pc.session_end = session_end;
+    pc.stopwatch_start = stopwatch_start;
+    if (payment_status !== undefined) pc.payment_status = payment_status;
+    renderPCs();
+    if (state.activePc?.id===pc_id) {
+      state.activePc.session_end = session_end;
+      state.activePc.stopwatch_start = stopwatch_start;
+      if (payment_status !== undefined) state.activePc.payment_status = payment_status;
+      renderPCActions();
+      updateOnlinePill();
     }
-  });
-}
-
+  }
+});
 function fmtTime(secs) {
   if (secs<=0) return '00:00';
   const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
