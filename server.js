@@ -170,16 +170,19 @@ app.post('/api/pcs/:pcId/session/start', authMiddleware, async (req, res) => {
     const pc = await db.get('pcs', p => p.id === pcId);
     if (!pc) return res.status(404).json({ error: 'PC not found' });
     const session_end = Math.floor(Date.now() / 1000) + duration_minutes * 60;
-    // FIX: Clear stopwatch_start when starting timed session
+    // Clear stopwatch_start when starting timed session
     await db.update('pcs', p => p.id === pcId, { session_end, stopwatch_start: 0 });
     await db.insert('sessions', { id: uuidv4(), pc_id: pcId, started_at: Math.floor(Date.now() / 1000), duration_minutes, price: (duration_minutes / 60) * pc.price_per_hour, ended_at: null });
     const remaining = duration_minutes * 60;
-    // FIX: Emit session update with BOTH fields for cross-device sync
+    
+    // FIX: Emit to PC room for PC client + group room for admin sync
+    io.to(`pc:${pcId}`).emit('session:start', { session_end, duration_minutes, remaining_seconds: remaining });
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { 
       pc_id: pcId, 
       session_end, 
       stopwatch_start: 0 
     });
+    
     res.json({ success: true, session_end, remaining_seconds: remaining });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -195,12 +198,15 @@ app.post('/api/pcs/:pcId/session/add-time', authMiddleware, async (req, res) => 
     const new_end = (pc.session_end > now ? pc.session_end : now) + minutes * 60;
     await db.update('pcs', p => p.id === pcId, { session_end: new_end });
     const rem = new_end - Math.floor(Date.now() / 1000);
-    // FIX: Emit session update with BOTH fields
+    
+    // FIX: Emit to PC room for PC client + group room for admin sync
+    io.to(`pc:${pcId}`).emit('session:add-time', { session_end: new_end, added_minutes: minutes, remaining_seconds: rem });
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { 
       pc_id: pcId, 
       session_end: new_end, 
       stopwatch_start: pc.stopwatch_start || 0 
     });
+    
     res.json({ success: true, session_end: new_end, remaining_seconds: rem });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -210,15 +216,19 @@ app.post('/api/pcs/:pcId/session/end', authMiddleware, async (req, res) => {
     const { pcId } = req.params;
     const { group_id } = req.body;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
-    // FIX: Clear BOTH session_end AND stopwatch_start when ending session
+    
+    // Clear BOTH fields when ending session
     await db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: 0 });
     await db.update('sessions', s => s.pc_id === pcId && !s.ended_at, { ended_at: Math.floor(Date.now() / 1000) });
-    // FIX: Emit session update with BOTH fields cleared for cross-device sync
+    
+    // FIX: Emit session:end to PC room (for PC client) + pc-session to group room (for admins)
+    io.to(`pc:${pcId}`).emit('session:end', {});
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { 
       pc_id: pcId, 
       session_end: 0, 
       stopwatch_start: 0 
     });
+    
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -229,14 +239,18 @@ app.post('/api/pcs/:pcId/session/stopwatch', authMiddleware, async (req, res) =>
     const { group_id } = req.body;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
     const started_at = Math.floor(Date.now() / 1000);
-    // FIX: Clear session_end when starting stopwatch
+    
+    // Clear session_end when starting stopwatch
     await db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: started_at });
-    // FIX: Emit session update with BOTH fields
+    
+    // FIX: Emit to PC room for PC client + group room for admin sync
+    io.to(`pc:${pcId}`).emit('session:stopwatch', { started_at });
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { 
       pc_id: pcId, 
       session_end: 0, 
       stopwatch_start: started_at 
     });
+    
     res.json({ success: true, started_at });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -246,15 +260,21 @@ app.post('/api/pcs/:pcId/session/stopwatch-end', authMiddleware, async (req, res
     const { pcId } = req.params;
     const { group_id } = req.body;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
-    // FIX: Clear BOTH fields when ending stopwatch
+    
+    // Clear BOTH fields when ending stopwatch
     await db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: 0 });
-    // FIX: Emit session update with BOTH fields cleared
+    
+    // FIX: Emit stopwatch-end to PC room + pc-session to group room
+    io.to(`pc:${pcId}`).emit('session:stopwatch-end', {});
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { 
       pc_id: pcId, 
       session_end: 0, 
       stopwatch_start: 0 
     });
+    
+    // Also send lock command to PC
     io.to(`pc:${pcId}`).emit('command:lock', {});
+    
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -296,17 +316,28 @@ io.on('connection', (socket) => {
     const pc = await db.get('pcs', p => p.name === pc_name && p.group_id === group_id);
     if (!pc || !bcrypt.compareSync(password, pc.password))
       return callback({ success: false, error: 'Invalid PC credentials' });
+    
     socket.join(`pc:${pc.id}`);
     socket.pcId = pc.id;
     socket.groupId = group_id;
+    
     await db.update('pcs', p => p.id === pc.id, { is_online: 1 });
     io.emit(`group:${group_id}:pc-status`, { pc_id: pc.id, is_online: true });
+    
     console.log(`[+] PC "${pc_name}" connected`);
+    
     const now = Math.floor(Date.now()/1000);
-    // FIX: Only send valid stopwatch_start (in the past)
+    // Only send valid stopwatch_start (in the past)
     const swStart = (pc.stopwatch_start && pc.stopwatch_start < now) ? pc.stopwatch_start : 0;
     const remAuth = pc.session_end > now ? pc.session_end - now : 0;
-    callback({ success: true, pc_id: pc.id, session_end: pc.session_end, stopwatch_start: swStart, remaining_seconds: remAuth });
+    
+    callback({ 
+      success: true, 
+      pc_id: pc.id, 
+      session_end: pc.session_end, 
+      stopwatch_start: swStart, 
+      remaining_seconds: remAuth 
+    });
   });
 
   socket.on('pc:apps', async ({ apps }) => {
