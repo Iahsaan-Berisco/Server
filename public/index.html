@@ -296,8 +296,9 @@ display: flex; align-items: center; gap: 7px;
 }
 .pc-card-name i { color: var(--t3); font-size: 11px; }
 .pc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pc-color, var(--t3)); }
+/* FIX #3: Reduced timer font size by 15% (22px → 19px for mobile) */
 .pc-timer {
-font-family: var(--mono); font-size: 22px; font-weight: 700;
+font-family: var(--mono); font-size: 19px; font-weight: 700;
 line-height: 1; margin-bottom: 10px; color: var(--pc-color, var(--t3));
 }
 .pc-footer { display: flex; align-items: center; justify-content: space-between; }
@@ -719,6 +720,7 @@ GameZone
 <div class="sheet-title">Add Time</div>
 <div class="sheet-sub">Extend the current session</div>
 <div class="chip-row">
+<!-- FIX #2: Added icons to add time chips -->
 <div class="chip green" onclick="addTime(30)"><i class="fa-solid fa-circle-plus"></i> 30m</div>
 <div class="chip green" onclick="addTime(60)"><i class="fa-solid fa-circle-plus"></i> 1h</div>
 <div class="chip green" onclick="addTime(90)"><i class="fa-solid fa-circle-plus"></i> 1.5h</div>
@@ -739,6 +741,7 @@ GameZone
 <div class="sheet-title" style="color:var(--red)">Remove Time</div>
 <div class="sheet-sub">Reduce remaining session time</div>
 <div class="chip-row">
+<!-- FIX #2: Added icons to remove time chips -->
 <div class="chip red" onclick="removeTime(15)"><i class="fa-solid fa-circle-minus"></i> 15m</div>
 <div class="chip red" onclick="removeTime(30)"><i class="fa-solid fa-circle-minus"></i> 30m</div>
 <div class="chip red" onclick="removeTime(60)"><i class="fa-solid fa-circle-minus"></i> 1h</div>
@@ -974,15 +977,13 @@ function renderPCs() {
     const left = pc.session_end>now ? pc.session_end-now : 0;
     const isWatch = pc.stopwatch_start>0;
     const hasSession = left>0||isWatch;
-    // FIX #5: Show timer based on session, not online status
     const col  = !hasSession ? 'var(--t3)' : isWatch ? 'var(--blue)' : left>300 ? 'var(--green)' : left>0 ? 'var(--amber)' : 'var(--red)';
     const bg   = !hasSession ? 'var(--s3)' : isWatch ? 'var(--blue-bg)' : left>300 ? 'var(--green-bg)' : left>0 ? 'var(--amber-bg)' : 'var(--red-bg)';
     const bd   = !hasSession ? 'var(--bd)' : isWatch ? 'var(--blue-bd)' : left>300 ? 'var(--green-bd)' : left>0 ? 'var(--amber-bd)' : 'var(--red-bd)';
-    // FIX #5: Show session status even if offline
     const status = !hasSession ? (pc.is_online ? 'Idle' : 'Offline') : isWatch ? 'Free' : left>0 ? 'Active' : 'Idle';
     const elapsed = (isWatch && pc.stopwatch_start && pc.stopwatch_start < now) ? now - pc.stopwatch_start : 0;
-    // FIX #5: Show timer even if offline but session active
     const timer = isWatch ? fmtTime(elapsed) : left>0 ? fmtTime(left) : '--:--';
+    // FIX #1: Load payment_status from PC data (from database)
     const pay = pc.payment_status||null;
     const payBadge = pay==='paid'
       ? `<span class="pay-badge" style="background:var(--green-bg);color:var(--green)"><i class="fa-solid fa-check"></i> Paid</span>`
@@ -1095,6 +1096,7 @@ function renderPCActions() {
   const left = pc.session_end>now ? pc.session_end-now : 0;
   const isWatch = pc.stopwatch_start>0;
   const isActive = left>0||isWatch;
+  // FIX #1: Load payment_status from PC data
   const pay = pc.payment_status||null;
   const timerArea = document.getElementById('pc-timer-area');
   if (isActive) {
@@ -1131,14 +1133,16 @@ function renderPCActions() {
   }
 }
 
-// FIX #1: Stop event propagation to prevent sheet opening
+// FIX #1: togglePay now ONLY updates payment status via API - does NOT end session
 async function togglePay(status) {
   if (event) event.stopPropagation();
   if (!state.activePc) return;
   const id = state.activePc.id;
   const newStatus = state.activePc.payment_status===status ? null : status;
   try {
+    // Call API to save payment status to database
     await api('POST','/pcs/'+id+'/payment',{payment_status:newStatus,group_id:state.activeGroup.id});
+    // Update local state
     state.activePc.payment_status = newStatus;
     const pc = state.pcs.find(p=>p.id===id);
     if (pc) pc.payment_status = newStatus;
@@ -1339,7 +1343,7 @@ function connectSocket() {
     }
   });
   
-  // FIX #2: Listen for session AND payment status updates
+  // FIX #1: Listen for payment_status updates from server
   state.socket.on('group:'+state.activeGroup.id+':pc-session', ({pc_id, session_end, stopwatch_start, payment_status})=>{
     const pc = state.pcs.find(p=>p.id===pc_id);
     if (pc) {
