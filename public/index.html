@@ -728,7 +728,7 @@ function renderPCActions() {
   if (isActive) {
     sessionArea.innerHTML = `<div class="section-head">Session Control</div>
       <div class="action-grid cols3" style="margin-bottom:20px">
-        <div class="action-card" onclick="openSheet('sheet-addtime')"><div class="action-card-icon"><i class="fa-solid fa-clock-plus" style="color:var(--green)"></i></div><div class="action-card-label">Add Time</div></div>
+        <div class="action-card" onclick="openSheet('sheet-addtime')"><div class="action-card-icon"><i class="fa-solid fa-alarm-clock" style="color:var(--green)"></i></div><div class="action-card-label">Add Time</div></div>
         <div class="action-card" onclick="openSheet('sheet-removetime')"><div class="action-card-icon"><i class="fa-solid fa-clock-minus" style="color:var(--amber)"></i></div><div class="action-card-label">Remove</div></div>
         <div class="action-card" onclick="confirmEndSession()"><div class="action-card-icon"><i class="fa-solid fa-stop" style="color:var(--red)"></i></div><div class="action-card-label">End</div></div>
       </div>`;
