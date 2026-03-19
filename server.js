@@ -19,7 +19,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ─── Auth Middleware ───────────────────────────────────────────────────────────
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token' });
@@ -34,7 +33,6 @@ async function canManageGroup(userId, groupId) {
   return !!(await db.get('group_members', m => m.group_id === groupId && m.user_id === userId));
 }
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
 app.post('/api/register', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -57,7 +55,6 @@ app.post('/api/login', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── Groups ───────────────────────────────────────────────────────────────────
 app.post('/api/groups', authMiddleware, async (req, res) => {
   try {
     const { name } = req.body;
@@ -128,7 +125,6 @@ app.delete('/api/groups/:groupId/admins/:userId', authMiddleware, async (req, re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── PCs ──────────────────────────────────────────────────────────────────────
 app.get('/api/groups/:groupId/pcs', authMiddleware, async (req, res) => {
   try {
     const { groupId } = req.params;
@@ -145,8 +141,27 @@ app.post('/api/groups/:groupId/pcs', authMiddleware, async (req, res) => {
     const { name, password, price_per_hour } = req.body;
     if (!name || !password) return res.status(400).json({ error: 'Name and password required' });
     const id = uuidv4();
-    await db.insert('pcs', { id, group_id: groupId, name, password: bcrypt.hashSync(password, 10), is_online: 0, session_end: 0, stopwatch_start: 0, price_per_hour: price_per_hour || 0 });
-    res.json({ id, name, group_id: groupId, is_online: 0, session_end: 0, stopwatch_start: 0, price_per_hour: price_per_hour || 0 });
+    await db.insert('pcs', { 
+      id, 
+      group_id: groupId, 
+      name, 
+      password: bcrypt.hashSync(password, 10), 
+      is_online: 0, 
+      session_end: 0, 
+      stopwatch_start: 0,
+      payment_status: null,
+      price_per_hour: price_per_hour || 0 
+    });
+    res.json({ 
+      id, 
+      name, 
+      group_id: groupId, 
+      is_online: 0, 
+      session_end: 0, 
+      stopwatch_start: 0,
+      payment_status: null,
+      price_per_hour: price_per_hour || 0 
+    });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -161,7 +176,25 @@ app.delete('/api/groups/:groupId/pcs/:pcId', authMiddleware, async (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── Sessions ─────────────────────────────────────────────────────────────────
+// FIX: New endpoint to save payment status
+app.post('/api/pcs/:pcId/payment', authMiddleware, async (req, res) => {
+  try {
+    const { pcId } = req.params;
+    const { payment_status, group_id } = req.body;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    
+    await db.update('pcs', p => p.id === pcId, { payment_status });
+    
+    // Emit to all admins in the group
+    io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', {
+      pc_id: pcId,
+      payment_status
+    });
+    
+    res.json({ success: true, payment_status });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/pcs/:pcId/session/start', authMiddleware, async (req, res) => {
   try {
     const { pcId } = req.params;
@@ -170,17 +203,16 @@ app.post('/api/pcs/:pcId/session/start', authMiddleware, async (req, res) => {
     const pc = await db.get('pcs', p => p.id === pcId);
     if (!pc) return res.status(404).json({ error: 'PC not found' });
     const session_end = Math.floor(Date.now() / 1000) + duration_minutes * 60;
-    // Clear stopwatch_start when starting timed session
     await db.update('pcs', p => p.id === pcId, { session_end, stopwatch_start: 0 });
     await db.insert('sessions', { id: uuidv4(), pc_id: pcId, started_at: Math.floor(Date.now() / 1000), duration_minutes, price: (duration_minutes / 60) * pc.price_per_hour, ended_at: null });
     const remaining = duration_minutes * 60;
     
-    // FIX: Emit to PC room for PC client + group room for admin sync
     io.to(`pc:${pcId}`).emit('session:start', { session_end, duration_minutes, remaining_seconds: remaining });
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { 
       pc_id: pcId, 
       session_end, 
-      stopwatch_start: 0 
+      stopwatch_start: 0,
+      payment_status: pc.payment_status
     });
     
     res.json({ success: true, session_end, remaining_seconds: remaining });
@@ -199,12 +231,12 @@ app.post('/api/pcs/:pcId/session/add-time', authMiddleware, async (req, res) => 
     await db.update('pcs', p => p.id === pcId, { session_end: new_end });
     const rem = new_end - Math.floor(Date.now() / 1000);
     
-    // FIX: Emit to PC room for PC client + group room for admin sync
     io.to(`pc:${pcId}`).emit('session:add-time', { session_end: new_end, added_minutes: minutes, remaining_seconds: rem });
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { 
       pc_id: pcId, 
       session_end: new_end, 
-      stopwatch_start: pc.stopwatch_start || 0 
+      stopwatch_start: pc.stopwatch_start || 0,
+      payment_status: pc.payment_status
     });
     
     res.json({ success: true, session_end: new_end, remaining_seconds: rem });
@@ -217,16 +249,15 @@ app.post('/api/pcs/:pcId/session/end', authMiddleware, async (req, res) => {
     const { group_id } = req.body;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
     
-    // Clear BOTH fields when ending session
     await db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: 0 });
     await db.update('sessions', s => s.pc_id === pcId && !s.ended_at, { ended_at: Math.floor(Date.now() / 1000) });
     
-    // FIX: Emit session:end to PC room (for PC client) + pc-session to group room (for admins)
     io.to(`pc:${pcId}`).emit('session:end', {});
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { 
       pc_id: pcId, 
       session_end: 0, 
-      stopwatch_start: 0 
+      stopwatch_start: 0,
+      payment_status: undefined
     });
     
     res.json({ success: true });
@@ -240,15 +271,14 @@ app.post('/api/pcs/:pcId/session/stopwatch', authMiddleware, async (req, res) =>
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
     const started_at = Math.floor(Date.now() / 1000);
     
-    // Clear session_end when starting stopwatch
     await db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: started_at });
     
-    // FIX: Emit to PC room for PC client + group room for admin sync
     io.to(`pc:${pcId}`).emit('session:stopwatch', { started_at });
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { 
       pc_id: pcId, 
       session_end: 0, 
-      stopwatch_start: started_at 
+      stopwatch_start: started_at,
+      payment_status: undefined
     });
     
     res.json({ success: true, started_at });
@@ -261,18 +291,16 @@ app.post('/api/pcs/:pcId/session/stopwatch-end', authMiddleware, async (req, res
     const { group_id } = req.body;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
     
-    // Clear BOTH fields when ending stopwatch
     await db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: 0 });
     
-    // FIX: Emit stopwatch-end to PC room + pc-session to group room
     io.to(`pc:${pcId}`).emit('session:stopwatch-end', {});
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { 
       pc_id: pcId, 
       session_end: 0, 
-      stopwatch_start: 0 
+      stopwatch_start: 0,
+      payment_status: undefined
     });
     
-    // Also send lock command to PC
     io.to(`pc:${pcId}`).emit('command:lock', {});
     
     res.json({ success: true });
@@ -310,7 +338,6 @@ app.get('/api/pcs/:pcId/apps', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── WebSocket ────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   socket.on('pc:auth', async ({ pc_name, group_id, password }, callback) => {
     const pc = await db.get('pcs', p => p.name === pc_name && p.group_id === group_id);
@@ -327,7 +354,6 @@ io.on('connection', (socket) => {
     console.log(`[+] PC "${pc_name}" connected`);
     
     const now = Math.floor(Date.now()/1000);
-    // Only send valid stopwatch_start (in the past)
     const swStart = (pc.stopwatch_start && pc.stopwatch_start < now) ? pc.stopwatch_start : 0;
     const remAuth = pc.session_end > now ? pc.session_end - now : 0;
     
@@ -359,7 +385,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// ─── Start ────────────────────────────────────────────────────────────────────
 db._ready.then(() => {
   server.listen(PORT, () => {
     console.log(`\n🎮 GameZone Server running on port ${PORT}`);
