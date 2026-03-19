@@ -899,6 +899,7 @@ function saveAuth(server,token,user) {
   localStorage.setItem('gz_user',JSON.stringify(user));
   localStorage.setItem('gz_server',server);
 }
+
 function doLogout() {
   if (!confirm('Logout?')) return;
   state.token=null; state.user=null;
@@ -911,6 +912,7 @@ async function loadGroups() {
   try { state.groups = await api('GET','/groups'); renderGroups(); }
   catch(e) { toast('Failed to load groups','err'); }
 }
+
 function renderGroups() {
   const el = document.getElementById('groups-list');
   if (!state.groups.length) {
@@ -927,6 +929,7 @@ function renderGroups() {
     </div>`
   ).join('');
 }
+
 async function createGroup() {
   const name = document.getElementById('newgroup-name').value.trim();
   if (!name) { toast('Enter a name','err'); return; }
@@ -940,6 +943,7 @@ async function createGroup() {
   } catch(e) { toast(e.message,'err'); }
   finally { document.getElementById('newgroup-btn-text').textContent='Create'; }
 }
+
 function openGroup(id) {
   state.activeGroup = state.groups.find(g=>g.id===id);
   document.getElementById('dash-title').textContent = state.activeGroup.name;
@@ -970,6 +974,7 @@ function renderPCs() {
     const left = pc.session_end>now ? pc.session_end-now : 0;
     const isWatch = pc.stopwatch_start>0;
     const hasSession = left>0||isWatch;
+    // FIX #5: Show timer based on session, not online status
     const col  = !hasSession ? 'var(--t3)' : isWatch ? 'var(--blue)' : left>300 ? 'var(--green)' : left>0 ? 'var(--amber)' : 'var(--red)';
     const bg   = !hasSession ? 'var(--s3)' : isWatch ? 'var(--blue-bg)' : left>300 ? 'var(--green-bg)' : left>0 ? 'var(--amber-bg)' : 'var(--red-bg)';
     const bd   = !hasSession ? 'var(--bd)' : isWatch ? 'var(--blue-bd)' : left>300 ? 'var(--green-bd)' : left>0 ? 'var(--amber-bd)' : 'var(--red-bd)';
@@ -1128,7 +1133,7 @@ function renderPCActions() {
 
 // FIX #1: Stop event propagation to prevent sheet opening
 async function togglePay(status) {
-  event.stopPropagation();
+  if (event) event.stopPropagation();
   if (!state.activePc) return;
   const id = state.activePc.id;
   const newStatus = state.activePc.payment_status===status ? null : status;
@@ -1334,6 +1339,7 @@ function connectSocket() {
     }
   });
   
+  // FIX #2: Listen for session AND payment status updates
   state.socket.on('group:'+state.activeGroup.id+':pc-session', ({pc_id, session_end, stopwatch_start, payment_status})=>{
     const pc = state.pcs.find(p=>p.id===pc_id);
     if (pc) {
