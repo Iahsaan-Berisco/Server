@@ -16,7 +16,6 @@ const JWT_SECRET = process.env.JWT_SECRET || 'gamezone-secret-2024';
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || process.env.DATABASE_URL;
 
-// ─── MongoDB Connection ───────────────────────────────────────────────────────
 let db;
 let dbClient;
 
@@ -50,7 +49,6 @@ async function connectDatabase() {
   }
 }
 
-// ─── Database Helper Functions ────────────────────────────────────────────────
 const dbHelpers = {
   async get(collection, filterFn) {
     const items = await db.collection(collection).find({}).toArray();
@@ -91,7 +89,6 @@ const dbHelpers = {
   }
 };
 
-// ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -114,7 +111,6 @@ async function canManageGroup(userId, groupId) {
   return !!(await dbHelpers.get('group_members', m => m.group_id === groupId && m.user_id === userId));
 }
 
-// ─── Auth Routes ──────────────────────────────────────────────────────────────
 app.post('/api/register', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -140,7 +136,6 @@ app.post('/api/login', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── Groups Routes ────────────────────────────────────────────────────────────
 app.post('/api/groups', authMiddleware, async (req, res) => {
   try {
     const { name } = req.body;
@@ -211,7 +206,6 @@ app.delete('/api/groups/:groupId/admins/:userId', authMiddleware, async (req, re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── PCs Routes ───────────────────────────────────────────────────────────────
 app.get('/api/groups/:groupId/pcs', authMiddleware, async (req, res) => {
   try {
     const { groupId } = req.params;
@@ -244,19 +238,28 @@ app.delete('/api/groups/:groupId/pcs/:pcId', authMiddleware, async (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── Payment Status Route ─────────────────────────────────────────────────────
+// FIX #1: Payment endpoint - ONLY updates payment status, does NOT touch session
 app.post('/api/pcs/:pcId/payment', authMiddleware, async (req, res) => {
   try {
     const { pcId } = req.params;
     const { payment_status, group_id } = req.body;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    
+    // ONLY update payment_status - do NOT touch session_end or stopwatch_start
     await dbHelpers.update('pcs', p => p.id === pcId, { payment_status });
-    io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, payment_status });
+    
+    // Emit to all admins in the group (includes payment_status only)
+    io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { 
+      pc_id: pcId, 
+      payment_status,
+      session_end: undefined,
+      stopwatch_start: undefined
+    });
+    
     res.json({ success: true, payment_status });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── PC Reorder Route ─────────────────────────────────────────────────────────
 app.post('/api/groups/:groupId/pcs/reorder', authMiddleware, async (req, res) => {
   try {
     const { groupId } = req.params;
@@ -269,7 +272,6 @@ app.post('/api/groups/:groupId/pcs/reorder', authMiddleware, async (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── Session Routes ───────────────────────────────────────────────────────────
 app.post('/api/pcs/:pcId/session/start', authMiddleware, async (req, res) => {
   try {
     const { pcId } = req.params;
@@ -343,7 +345,6 @@ app.post('/api/pcs/:pcId/session/stopwatch-end', authMiddleware, async (req, res
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── PC Control Routes ────────────────────────────────────────────────────────
 app.post('/api/pcs/:pcId/lock', authMiddleware, async (req, res) => {
   try {
     if (!await canManageGroup(req.user.id, req.body.group_id)) return res.status(403).json({ error: 'Forbidden' });
@@ -376,12 +377,10 @@ app.get('/api/pcs/:pcId/apps', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── Health Check Endpoint ────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', database: db ? 'connected' : 'disconnected', uptime: process.uptime() });
 });
 
-// ─── WebSocket ────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   socket.on('pc:auth', async ({ pc_name, group_id, password }, callback) => {
     const pc = await dbHelpers.get('pcs', p => p.name === pc_name && p.group_id === group_id);
@@ -419,7 +418,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// ─── Start Server ─────────────────────────────────────────────────────────────
 async function startServer() {
   try {
     await connectDatabase();
