@@ -14,7 +14,7 @@ const io = new Server(server, { cors: { origin: '*' } });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gamezone-secret-2024';
 const PORT = process.env.PORT || 3000;
-const MONGODB_URI = process.env.MONGODB_URI || process.env.DATABASE_URL;
+const MONGODB_URI = process.env.MONGO_URL || process.env.MONGODB_URI || process.env.DATABASE_URL;
 
 // ─── MongoDB Connection ───────────────────────────────────────────────────────
 let db;
