@@ -1028,7 +1028,8 @@ const col  = !pc.is_online ? 'var(--t3)' : isWatch ? 'var(--blue)' : left>300 ? 
 const bg   = !pc.is_online ? 'var(--s3)' : isWatch ? 'var(--blue-bg)' : left>300 ? 'var(--green-bg)' : left>0 ? 'var(--amber-bg)' : 'var(--red-bg)';
 const bd   = !pc.is_online ? 'var(--bd)' : isWatch ? 'var(--blue-bd)' : left>300 ? 'var(--green-bd)' : left>0 ? 'var(--amber-bd)' : 'var(--red-bd)';
 const status = !pc.is_online ? 'Offline' : isWatch ? 'Free' : left>0 ? 'Active' : 'Idle';
-const elapsed = isWatch ? Math.floor(Date.now()/1000)-pc.stopwatch_start : 0;
+// FIX: Only calculate elapsed time if stopwatch_start is valid and in the past
+const elapsed = (isWatch && pc.stopwatch_start && pc.stopwatch_start < now) ? now - pc.stopwatch_start : 0;
 const timer = !pc.is_online ? '- - -' : isWatch ? fmtTime(elapsed) : left>0 ? fmtTime(left) : '--:--';
 const pay = _pay[pc.id];
 const payBadge = pay==='paid'
@@ -1138,7 +1139,9 @@ const pay = _pay[pc.id]||null;
 const timerArea = document.getElementById('pc-timer-area');
 if (isActive) {
 const col = isWatch ? 'var(--blue)' : left<300 ? 'var(--amber)' : left<60 ? 'var(--red)' : 'var(--green)';
-const val = isWatch ? fmtTime(Math.floor(Date.now()/1000)-pc.stopwatch_start) : fmtTime(left);
+// FIX: Only calculate elapsed if stopwatch_start is valid
+const elapsed = (isWatch && pc.stopwatch_start && pc.stopwatch_start < now) ? now - pc.stopwatch_start : 0;
+const val = isWatch ? fmtTime(elapsed) : fmtTime(left);
 timerArea.innerHTML = `<div class="timer-card">
 <div class="timer-big" style="color:${col}">${val}</div>
 <div class="pay-col">
@@ -1181,7 +1184,7 @@ closeSheet('sheet-startsession');
 try {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'session_end',r.session_end);
-updatePcField(state.activePc.id,'stopwatch_start',0);
+updatePcField(state.activePc.id,'stopwatch_start',0); // FIX: Ensure stopwatch is cleared
 toast('Session started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
@@ -1199,7 +1202,7 @@ closeSheet('sheet-startsession');
 try {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/stopwatch',{group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'stopwatch_start',r.started_at);
-updatePcField(state.activePc.id,'session_end',0);
+updatePcField(state.activePc.id,'session_end',0); // FIX: Ensure session_end is cleared
 toast('Free timer started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
@@ -1209,7 +1212,7 @@ try {
 if (state.activePc.stopwatch_start>0) {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'session_end',r.session_end);
-updatePcField(state.activePc.id,'stopwatch_start',0);
+updatePcField(state.activePc.id,'stopwatch_start',0); // FIX: Clear stopwatch when switching to timed
 toast('Free timer → '+mins+'m','ok'); return;
 }
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
@@ -1246,7 +1249,12 @@ removeTime(total);
 function confirmEndSession() {
 if (!confirm('End session on '+state.activePc.name+'?\nScreen will lock immediately.')) return;
 api('POST','/pcs/'+state.activePc.id+'/session/end',{group_id:state.activeGroup.id})
-.then(()=>{ updatePcField(state.activePc.id,'session_end',0); updatePcField(state.activePc.id,'stopwatch_start',0); toast('Session ended','ok'); })
+.then(()=>{ 
+    // FIX: Always clear BOTH fields when ending session
+    updatePcField(state.activePc.id,'session_end',0); 
+    updatePcField(state.activePc.id,'stopwatch_start',0); 
+    toast('Session ended','ok'); 
+})
 .catch(e=>toast(e.message,'err'));
 }
 async function pcCmd(action) {
