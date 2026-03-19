@@ -647,7 +647,8 @@ GameZone
 <i class="fa-solid fa-trash-can"></i> Delete Group
 </button>
 <button class="btn btn-danger btn-full" onclick="doLogout()">
-<i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+<i class="fa-solid fa-right-from-bracket"></i> Logout
+</button>
 </div>
 <div style="height:24px"></div>
 </div>
@@ -954,7 +955,6 @@ async function loadPCs() {
 function renderPCs() {
   const now = Math.floor(Date.now()/1000);
   const online = state.pcs.filter(p=>p.is_online).length;
-  // FIX: Count active based on session data, not online status
   const active = state.pcs.filter(p=>p.session_end>now||p.stopwatch_start>0).length;
   document.getElementById('stat-total').textContent = state.pcs.length;
   document.getElementById('stat-online').textContent = online;
@@ -968,18 +968,14 @@ function renderPCs() {
   grid.innerHTML = sortedPcs.map(pc => {
     const left = pc.session_end>now ? pc.session_end-now : 0;
     const isWatch = pc.stopwatch_start>0;
-    // FIX: Show timer color based on session, not online status
     const hasSession = left>0||isWatch;
     const col  = !hasSession ? 'var(--t3)' : isWatch ? 'var(--blue)' : left>300 ? 'var(--green)' : left>0 ? 'var(--amber)' : 'var(--red)';
     const bg   = !hasSession ? 'var(--s3)' : isWatch ? 'var(--blue-bg)' : left>300 ? 'var(--green-bg)' : left>0 ? 'var(--amber-bg)' : 'var(--red-bg)';
     const bd   = !hasSession ? 'var(--bd)' : isWatch ? 'var(--blue-bd)' : left>300 ? 'var(--green-bd)' : left>0 ? 'var(--amber-bd)' : 'var(--red-bd)';
-    // FIX: Show session status, not just online
     const status = !hasSession ? (pc.is_online ? 'Idle' : 'Offline') : isWatch ? 'Free' : left>0 ? 'Active' : 'Idle';
-    // FIX: Calculate elapsed time safely
     const elapsed = (isWatch && pc.stopwatch_start && pc.stopwatch_start < now) ? now - pc.stopwatch_start : 0;
-    // FIX: Show timer even if offline (for when PC is turned off)
     const timer = isWatch ? fmtTime(elapsed) : left>0 ? fmtTime(left) : '--:--';
-    // FIX: Load payment status from PC data
+    // FIX: Load payment_status from PC data
     const pay = pc.payment_status||null;
     const payBadge = pay==='paid'
       ? `<span class="pay-badge" style="background:var(--green-bg);color:var(--green)"><i class="fa-solid fa-check"></i> Paid</span>`
@@ -1092,7 +1088,6 @@ function renderPCActions() {
   const left = pc.session_end>now ? pc.session_end-now : 0;
   const isWatch = pc.stopwatch_start>0;
   const isActive = left>0||isWatch;
-  // FIX: Load payment status from PC data
   const pay = pc.payment_status||null;
   const timerArea = document.getElementById('pc-timer-area');
   if (isActive) {
@@ -1133,7 +1128,7 @@ function renderPCActions() {
 async function togglePay(status) {
   if (!state.activePc) return;
   const id = state.activePc.id;
-  const newStatus = pc.payment_status===status ? null : status;
+  const newStatus = state.activePc.payment_status===status ? null : status;
   try {
     await api('POST','/pcs/'+id+'/payment',{payment_status:newStatus,group_id:state.activeGroup.id});
     // Update local state
@@ -1338,7 +1333,7 @@ function connectSocket() {
     }
   });
   
-  // FIX: Listen for session updates (includes payment status)
+  // FIX: Listen for session AND payment status updates
   state.socket.on('group:'+state.activeGroup.id+':pc-session', ({pc_id, session_end, stopwatch_start, payment_status})=>{
     const pc = state.pcs.find(p=>p.id===pc_id);
     if (pc) {
