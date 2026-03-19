@@ -131,7 +131,8 @@ html, body { height: 100%; background: var(--bg); color: var(--t1); font-family:
 .pc-card-name { font-size: 13px; font-weight: 700; color: var(--t1); display: flex; align-items: center; gap: 7px; }
 .pc-card-name i { color: var(--t3); font-size: 11px; }
 .pc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pc-color, var(--t3)); }
-.pc-timer { font-family: var(--mono); font-size: 22px; font-weight: 700; line-height: 1; margin-bottom: 10px; color: var(--pc-color, var(--t3)); }
+/* FIX #3: Timer font reduced by 15% (22px → 19px) */
+.pc-timer { font-family: var(--mono); font-size: 19px; font-weight: 700; line-height: 1; margin-bottom: 10px; color: var(--pc-color, var(--t3)); }
 .pc-footer { display: flex; align-items: center; justify-content: space-between; }
 .pc-badge { font-size: 9px; font-weight: 700; padding: 3px 7px; border-radius: 5px; text-transform: uppercase; letter-spacing: .5px; color: var(--pc-color, var(--t3)); background: var(--pc-bg, var(--s3)); border: 1px solid var(--pc-bd, var(--bd)); }
 .pay-badge { font-size: 9px; font-weight: 700; padding: 3px 7px; border-radius: 5px; text-transform: uppercase; }
@@ -440,9 +441,34 @@ window.addEventListener('load', () => {
   state.serverUrl = localStorage.getItem('gz_server') || '';
   if (state.token && state.user) { showScreen('groups'); loadGroups(); }
   else { const s = localStorage.getItem('gz_server')||''; if(s) document.getElementById('login-server').value=s; }
+  
+  // FIX #2: Only update timer text every second, not full re-render
   setInterval(() => {
-    if (currentScreen==='dashboard') renderPCs();
-    if (currentScreen==='pccontrol') renderPCActions();
+    if (currentScreen==='dashboard') {
+      const now = Math.floor(Date.now()/1000);
+      document.querySelectorAll('.pc-timer').forEach((timerEl, idx) => {
+        const pc = state.pcs[idx];
+        if (pc) {
+          const left = pc.session_end>now ? pc.session_end-now : 0;
+          const isWatch = pc.stopwatch_start>0;
+          const elapsed = isWatch ? now-pc.stopwatch_start : 0;
+          timerEl.textContent = isWatch ? fmtTime(elapsed) : left>0 ? fmtTime(left) : '--:--';
+        }
+      });
+    }
+    if (currentScreen==='pccontrol') {
+      const pc = state.activePc;
+      if (pc) {
+        const now = Math.floor(Date.now()/1000);
+        const left = pc.session_end>now ? pc.session_end-now : 0;
+        const isWatch = pc.stopwatch_start>0;
+        const elapsed = isWatch ? now-pc.stopwatch_start : 0;
+        const timerBig = document.querySelector('.timer-big');
+        if (timerBig) {
+          timerBig.textContent = isWatch ? fmtTime(elapsed) : fmtTime(left);
+        }
+      }
+    }
   }, 1000);
 });
 
@@ -645,12 +671,10 @@ function renderPCs() {
     const col  = !pc.is_online ? 'var(--t3)' : isWatch ? 'var(--blue)' : left>300 ? 'var(--green)' : left>0 ? 'var(--amber)' : 'var(--red)';
     const bg   = !pc.is_online ? 'var(--s3)' : isWatch ? 'var(--blue-bg)' : left>300 ? 'var(--green-bg)' : left>0 ? 'var(--amber-bg)' : 'var(--red-bg)';
     const bd   = !pc.is_online ? 'var(--bd)' : isWatch ? 'var(--blue-bd)' : left>300 ? 'var(--green-bd)' : left>0 ? 'var(--amber-bd)' : 'var(--red-bd)';
-    // FIX: Show timer if session active, even if offline
     const hasSession = left>0 || isWatch;
     const status = !hasSession ? (pc.is_online ? 'Idle' : 'Offline') : isWatch ? 'Free' : 'Active';
-    const elapsed = isWatch ? Math.floor(Date.now()/1000)-pc.stopwatch_start : 0;
+    const elapsed = isWatch ? now-pc.stopwatch_start : 0;
     const timer = !hasSession ? (pc.is_online ? '--:--' : '- - -') : isWatch ? fmtTime(elapsed) : fmtTime(left);
-    // FIX: Load payment_status from PC data (from database)
     const pay = pc.payment_status || null;
     const payBadge = pay==='paid'
       ? `<span class="pay-badge" style="background:var(--green-bg);color:var(--green)"><i class="fa-solid fa-check"></i> Paid</span>`
@@ -708,12 +732,11 @@ function renderPCActions() {
   const left = pc.session_end>now ? pc.session_end-now : 0;
   const isWatch = pc.stopwatch_start>0;
   const isActive = left>0||isWatch;
-  // FIX: Load payment_status from PC data
   const pay = pc.payment_status || null;
   const timerArea = document.getElementById('pc-timer-area');
   if (isActive) {
     const col = isWatch ? 'var(--blue)' : left<300 ? 'var(--amber)' : left<60 ? 'var(--red)' : 'var(--green)';
-    const val = isWatch ? fmtTime(Math.floor(Date.now()/1000)-pc.stopwatch_start) : fmtTime(left);
+    const val = isWatch ? fmtTime(now-pc.stopwatch_start) : fmtTime(left);
     timerArea.innerHTML = `<div class="timer-card">
       <div class="timer-big" style="color:${col}">${val}</div>
       <div class="pay-col">
@@ -726,10 +749,11 @@ function renderPCActions() {
   }
   const sessionArea = document.getElementById('pc-session-area');
   if (isActive) {
+    // FIX #1: Changed icons to fa-circle-plus and fa-circle-minus
     sessionArea.innerHTML = `<div class="section-head">Session Control</div>
       <div class="action-grid cols3" style="margin-bottom:20px">
-        <div class="action-card" onclick="openSheet('sheet-addtime')"><div class="action-card-icon"><i class="fa-solid fa-alarm-clock" style="color:var(--green)"></i></div><div class="action-card-label">Add Time</div></div>
-        <div class="action-card" onclick="openSheet('sheet-removetime')"><div class="action-card-icon"><i class="fa-solid fa-clock-minus" style="color:var(--amber)"></i></div><div class="action-card-label">Remove</div></div>
+        <div class="action-card" onclick="openSheet('sheet-addtime')"><div class="action-card-icon"><i class="fa-solid fa-circle-plus" style="color:var(--green)"></i></div><div class="action-card-label">Add Time</div></div>
+        <div class="action-card" onclick="openSheet('sheet-removetime')"><div class="action-card-icon"><i class="fa-solid fa-circle-minus" style="color:var(--amber)"></i></div><div class="action-card-label">Remove</div></div>
         <div class="action-card" onclick="confirmEndSession()"><div class="action-card-icon"><i class="fa-solid fa-stop" style="color:var(--red)"></i></div><div class="action-card-label">End</div></div>
       </div>`;
   } else {
@@ -744,15 +768,12 @@ function renderPCActions() {
   }
 }
 
-// FIX: togglePay now saves to database via API
 async function togglePay(status) {
   if (!state.activePc) return;
   const id = state.activePc.id;
   const newStatus = state.activePc.payment_status===status ? null : status;
   try {
-    // Call API to save payment_status to database
     await api('POST','/pcs/'+id+'/payment',{payment_status:newStatus,group_id:state.activeGroup.id});
-    // Update local state
     state.activePc.payment_status = newStatus;
     const pc = state.pcs.find(p=>p.id===id);
     if (pc) pc.payment_status = newStatus;
@@ -929,39 +950,29 @@ async function confirmDeleteGroup() {
   } catch(e) { toast(e.message,'err'); }
 }
 
-// FIX: Socket listener for session/payment updates
 function connectSocket() {
   if (state.socket) state.socket.disconnect();
   state.socket = io(state.serverUrl,{transports:['websocket']});
-  
-  state.socket.on('connect',()=>{ 
-    state.socket.emit('admin:subscribe',{group_id:state.activeGroup.id,token:state.token}); 
+  state.socket.on('connect',()=>{
+    state.socket.emit('admin:subscribe',{group_id:state.activeGroup.id,token:state.token});
   });
-  
-  // PC online/offline status
   state.socket.on('group:'+state.activeGroup.id+':pc-status',({pc_id,is_online})=>{
     const pc = state.pcs.find(p=>p.id===pc_id);
     if (pc) {
-      pc.is_online = is_online?1:0; 
+      pc.is_online = is_online?1:0;
       renderPCs();
-      if (state.activePc?.id===pc_id) { 
-        state.activePc.is_online=pc.is_online; 
-        updateOnlinePill(); 
+      if (state.activePc?.id===pc_id) {
+        state.activePc.is_online=pc.is_online;
+        updateOnlinePill();
       }
     }
   });
-  
-  // FIX: Listen for session AND payment status updates from server
   state.socket.on('group:'+state.activeGroup.id+':pc-session', ({pc_id, session_end, stopwatch_start, payment_status})=>{
     const pc = state.pcs.find(p=>p.id===pc_id);
     if (pc) {
-      // Update session fields
       if (session_end !== undefined) pc.session_end = session_end;
       if (stopwatch_start !== undefined) pc.stopwatch_start = stopwatch_start;
-      // FIX: Update payment status from database
       if (payment_status !== undefined) pc.payment_status = payment_status;
-      
-      // Re-render
       renderPCs();
       if (state.activePc?.id===pc_id) {
         if (session_end !== undefined) state.activePc.session_end = session_end;
