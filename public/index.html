@@ -32,9 +32,9 @@
 --t3: #525252;
 --bd: rgba(255,255,255,.07);
 --bd2: rgba(255,255,255,.12);
---r: 10px;
---r2: 14px;
---r3: 20px;
+--r: 8px;
+--r2: 12px;
+--r3: 16px;
 --sans: 'Inter', sans-serif;
 --mono: 'JetBrains Mono', monospace;
 --sidebar: 300px;
@@ -66,6 +66,11 @@ z-index: 10; overflow: hidden;
 }
 .screen.active { opacity: 1; pointer-events: all; transform: none; z-index: 20; }
 @media (min-width: 1024px) {
+:root {
+--r: 12px;
+--r2: 16px;
+--r3: 20px;
+}
 #app {
 display: grid;
 grid-template-columns: var(--sidebar) 1fr;
@@ -499,10 +504,6 @@ border-top-color: #fff; border-radius: 50%;
 animation: _spin .6s linear infinite; display: inline-block;
 }
 @keyframes _spin { to { transform: rotate(360deg); } }
-@keyframes _pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-@keyframes _bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
-.anim-pulse i { animation: _pulse 2s infinite; display: inline-block; }
-.anim-bounce i { animation: _bounce 2s infinite; display: inline-block; }
 </style>
 </head>
 <body>
@@ -586,7 +587,7 @@ GameZone
 <div class="section-head">Screen Control</div>
 <div class="action-grid" style="margin-bottom:20px">
 <div class="action-card" onclick="pcCmd('lock')">
-<div class="action-card-icon anim-pulse"><i class="fa-solid fa-lock" style="color:var(--amber)"></i></div>
+<div class="action-card-icon"><i class="fa-solid fa-lock" style="color:var(--amber)"></i></div>
 <div class="action-card-label">Lock</div>
 </div>
 <div class="action-card" onclick="pcCmd('unlock')">
@@ -597,7 +598,7 @@ GameZone
 <div class="section-head">Applications</div>
 <div class="action-grid cols1" style="margin-bottom:20px">
 <div class="action-card" onclick="openApps()">
-<div class="action-card-icon anim-bounce"><i class="fa-solid fa-rocket" style="color:var(--blue)"></i></div>
+<div class="action-card-icon"><i class="fa-solid fa-rocket" style="color:var(--blue)"></i></div>
 <div class="action-card-label">Launch App</div>
 <div class="action-card-sub">Open remotely on this PC</div>
 </div>
@@ -718,11 +719,11 @@ GameZone
 <div class="sheet-title">Add Time</div>
 <div class="sheet-sub">Extend the current session</div>
 <div class="chip-row">
-<div class="chip green" onclick="addTime(30)"><i class="fa-solid fa-plus"></i> 30m</div>
-<div class="chip green" onclick="addTime(60)"><i class="fa-solid fa-plus"></i> 1h</div>
-<div class="chip green" onclick="addTime(90)"><i class="fa-solid fa-plus"></i> 1.5h</div>
-<div class="chip green" onclick="addTime(120)"><i class="fa-solid fa-plus"></i> 2h</div>
-<div class="chip green" onclick="addTime(180)"><i class="fa-solid fa-plus"></i> 3h</div>
+<div class="chip green" onclick="addTime(30)"><i class="fa-solid fa-circle-plus"></i> 30m</div>
+<div class="chip green" onclick="addTime(60)"><i class="fa-solid fa-circle-plus"></i> 1h</div>
+<div class="chip green" onclick="addTime(90)"><i class="fa-solid fa-circle-plus"></i> 1.5h</div>
+<div class="chip green" onclick="addTime(120)"><i class="fa-solid fa-circle-plus"></i> 2h</div>
+<div class="chip green" onclick="addTime(180)"><i class="fa-solid fa-circle-plus"></i> 3h</div>
 </div>
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
 <div class="input-row" style="margin-bottom:20px">
@@ -738,10 +739,10 @@ GameZone
 <div class="sheet-title" style="color:var(--red)">Remove Time</div>
 <div class="sheet-sub">Reduce remaining session time</div>
 <div class="chip-row">
-<div class="chip red" onclick="removeTime(15)">-15m</div>
-<div class="chip red" onclick="removeTime(30)">-30m</div>
-<div class="chip red" onclick="removeTime(60)">-1h</div>
-<div class="chip red" onclick="removeTime(120)">-2h</div>
+<div class="chip red" onclick="removeTime(15)"><i class="fa-solid fa-circle-minus"></i> 15m</div>
+<div class="chip red" onclick="removeTime(30)"><i class="fa-solid fa-circle-minus"></i> 30m</div>
+<div class="chip red" onclick="removeTime(60)"><i class="fa-solid fa-circle-minus"></i> 1h</div>
+<div class="chip red" onclick="removeTime(120)"><i class="fa-solid fa-circle-minus"></i> 2h</div>
 </div>
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
 <div class="input-row" style="margin-bottom:20px">
@@ -972,10 +973,11 @@ function renderPCs() {
     const col  = !hasSession ? 'var(--t3)' : isWatch ? 'var(--blue)' : left>300 ? 'var(--green)' : left>0 ? 'var(--amber)' : 'var(--red)';
     const bg   = !hasSession ? 'var(--s3)' : isWatch ? 'var(--blue-bg)' : left>300 ? 'var(--green-bg)' : left>0 ? 'var(--amber-bg)' : 'var(--red-bg)';
     const bd   = !hasSession ? 'var(--bd)' : isWatch ? 'var(--blue-bd)' : left>300 ? 'var(--green-bd)' : left>0 ? 'var(--amber-bd)' : 'var(--red-bd)';
+    // FIX #5: Show session status even if offline
     const status = !hasSession ? (pc.is_online ? 'Idle' : 'Offline') : isWatch ? 'Free' : left>0 ? 'Active' : 'Idle';
     const elapsed = (isWatch && pc.stopwatch_start && pc.stopwatch_start < now) ? now - pc.stopwatch_start : 0;
+    // FIX #5: Show timer even if offline but session active
     const timer = isWatch ? fmtTime(elapsed) : left>0 ? fmtTime(left) : '--:--';
-    // FIX: Load payment_status from PC data
     const pay = pc.payment_status||null;
     const payBadge = pay==='paid'
       ? `<span class="pay-badge" style="background:var(--green-bg);color:var(--green)"><i class="fa-solid fa-check"></i> Paid</span>`
@@ -1124,14 +1126,14 @@ function renderPCActions() {
   }
 }
 
-// FIX: Save payment status to database and sync via socket
+// FIX #1: Stop event propagation to prevent sheet opening
 async function togglePay(status) {
+  event.stopPropagation();
   if (!state.activePc) return;
   const id = state.activePc.id;
   const newStatus = state.activePc.payment_status===status ? null : status;
   try {
     await api('POST','/pcs/'+id+'/payment',{payment_status:newStatus,group_id:state.activeGroup.id});
-    // Update local state
     state.activePc.payment_status = newStatus;
     const pc = state.pcs.find(p=>p.id===id);
     if (pc) pc.payment_status = newStatus;
@@ -1320,7 +1322,6 @@ function connectSocket() {
     state.socket.emit('admin:subscribe',{group_id:state.activeGroup.id,token:state.token}); 
   });
   
-  // PC status updates
   state.socket.on('group:'+state.activeGroup.id+':pc-status',({pc_id,is_online})=>{
     const pc = state.pcs.find(p=>p.id===pc_id);
     if (pc) {
@@ -1333,7 +1334,6 @@ function connectSocket() {
     }
   });
   
-  // FIX: Listen for session AND payment status updates
   state.socket.on('group:'+state.activeGroup.id+':pc-session', ({pc_id, session_end, stopwatch_start, payment_status})=>{
     const pc = state.pcs.find(p=>p.id===pc_id);
     if (pc) {
