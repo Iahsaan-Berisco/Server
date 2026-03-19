@@ -42,9 +42,6 @@
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; background: var(--bg); color: var(--t1); font-family: var(--sans); overflow: hidden; }
-/* ──────────────────────────────────────────
-GLOBAL TEXT SELECTION (DISABLED BY DEFAULT)
-────────────────────────────────────────── */
 * {
 -webkit-user-select: none;
 -moz-user-select: none;
@@ -57,13 +54,7 @@ user-select: none;
 -ms-user-select: text !important;
 user-select: text !important;
 }
-/* ──────────────────────────────────────────
-APP SHELL
-────────────────────────────────────────── */
 #app { height: 100dvh; position: relative; overflow: hidden; }
-/* ──────────────────────────────────────────
-MOBILE: stacked absolute screens
-────────────────────────────────────────── */
 .screen {
 position: absolute; inset: 0;
 display: flex; flex-direction: column;
@@ -74,9 +65,6 @@ transition: opacity .22s ease, transform .22s ease;
 z-index: 10; overflow: hidden;
 }
 .screen.active { opacity: 1; pointer-events: all; transform: none; z-index: 20; }
-/* ──────────────────────────────────────────
-DESKTOP OVERRIDES (1024+)
-────────────────────────────────────────── */
 @media (min-width: 1024px) {
 #app {
 display: grid;
@@ -125,7 +113,6 @@ grid-row: 1;
 .stats-row { padding: 24px 32px 20px; }
 .topbar { padding: 0 32px; }
 .scroll-inner { max-width: 860px; margin: 0 auto; }
-/* FAB on desktop - right aligned, fixed width */
 .fab {
 position: fixed !important;
 bottom: 32px;
@@ -138,9 +125,6 @@ padding: 13px 20px !important;
 .desktop-only { display: flex !important; }
 }
 .desktop-only { display: none !important; }
-/* ──────────────────────────────────────────
-TOPBAR
-────────────────────────────────────────── */
 .topbar {
 height: var(--nav-h);
 padding: 0 18px;
@@ -166,9 +150,6 @@ background: none; border: none; cursor: pointer; color: var(--t3);
 border-radius: var(--r); font-size: 16px; transition: color .15s, background .15s;
 }
 .icon-btn:hover { color: var(--t1); background: var(--s3); }
-/* ──────────────────────────────────────────
-SCROLL AREA
-────────────────────────────────────────── */
 .scroll-area {
 flex: 1; overflow-y: auto; overflow-x: hidden;
 -webkit-overflow-scrolling: touch;
@@ -177,9 +158,6 @@ flex: 1; overflow-y: auto; overflow-x: hidden;
 .scroll-area::-webkit-scrollbar-thumb { background: var(--s4); border-radius: 2px; }
 .scroll-inner { width: 100%; }
 .screen-pad { padding: 20px 18px; }
-/* ──────────────────────────────────────────
-LOGIN
-────────────────────────────────────────── */
 #screen-login { background: var(--bg); justify-content: center; align-items: center; }
 .login-card {
 background: var(--s1); border: 1px solid var(--bd);
@@ -210,9 +188,6 @@ font-family: var(--sans); transition: all .18s;
 display: flex; align-items: center; justify-content: center; gap: 5px;
 }
 .tab-btn.active { background: var(--s2); color: var(--t1); }
-/* ──────────────────────────────────────────
-FORM FIELDS
-────────────────────────────────────────── */
 .field { margin-bottom: 14px; }
 .field-label {
 display: block; font-size: 11px; font-weight: 600; color: var(--t3);
@@ -225,9 +200,6 @@ font-family: var(--sans); outline: none; transition: border-color .18s;
 }
 .field-input:focus { border-color: var(--green); }
 .field-input::placeholder { color: var(--t3); }
-/* ──────────────────────────────────────────
-BUTTONS
-────────────────────────────────────────── */
 .btn {
 display: inline-flex; align-items: center; justify-content: center; gap: 7px;
 padding: 11px 18px; border-radius: var(--r); font-size: 13px; font-weight: 600;
@@ -243,9 +215,6 @@ white-space: nowrap;
 .btn-ghost:hover { background: var(--s3); border-color: var(--bd2); }
 .btn-danger { background: var(--red-bg); border: 1px solid var(--red-bd); color: var(--red); }
 .btn-danger:hover { background: rgba(239,68,68,.18); }
-/* ──────────────────────────────────────────
-SIDEBAR (GROUPS)
-────────────────────────────────────────── */
 .sidebar-header {
 display: none;
 align-items: center; justify-content: space-between;
@@ -280,9 +249,6 @@ font-size: 14px; color: var(--t2); transition: background .15s;
 .group-item-name { font-size: 14px; font-weight: 600; }
 .group-item-sub { font-size: 11px; color: var(--t2); margin-top: 1px; }
 .group-item-arrow { color: var(--t3); font-size: 11px; }
-/* ──────────────────────────────────────────
-DASHBOARD STATS
-────────────────────────────────────────── */
 .stats-row {
 display: grid; grid-template-columns: repeat(3, 1fr);
 gap: 12px; padding: 20px 18px 16px;
@@ -299,9 +265,6 @@ line-height: 1; letter-spacing: -1.5px;
 font-size: 10px; font-weight: 700; letter-spacing: 1px;
 text-transform: uppercase; color: var(--t3); margin-top: 6px;
 }
-/* ──────────────────────────────────────────
-PC GRID
-────────────────────────────────────────── */
 .pc-grid {
 display: grid; grid-template-columns: repeat(2, 1fr);
 gap: 10px; padding: 0 18px 18px;
@@ -343,9 +306,6 @@ border: 1px solid var(--pc-bd, var(--bd));
 font-size: 9px; font-weight: 700; padding: 3px 7px;
 border-radius: 5px; text-transform: uppercase;
 }
-/* ──────────────────────────────────────────
-PC CONTROL
-────────────────────────────────────────── */
 .section-head {
 font-size: 10px; font-weight: 700; color: var(--t3);
 text-transform: uppercase; letter-spacing: 1.4px;
@@ -397,9 +357,6 @@ padding: 4px 10px; border-radius: 99px;
 border: 1px solid var(--bd); background: var(--s2); color: var(--t2);
 }
 .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
-/* ──────────────────────────────────────────
-SETTINGS
-────────────────────────────────────────── */
 .settings-card {
 background: var(--s1); border: 1px solid var(--bd);
 border-radius: var(--r2); overflow: hidden; margin-bottom: 16px;
@@ -446,9 +403,6 @@ display: flex; align-items: center; justify-content: center;
 }
 .reorder-btn:hover { background: var(--green-bg); color: var(--green); }
 .reorder-btn:disabled { opacity: .3; cursor: not-allowed; }
-/* ──────────────────────────────────────────
-FAB
-────────────────────────────────────────── */
 .fab {
 margin: 0 18px;
 margin-bottom: max(18px, calc(env(safe-area-inset-bottom) + 10px));
@@ -462,9 +416,6 @@ width: calc(100% - 36px);
 }
 .fab:hover { background: #0ea572; }
 .fab:active { transform: scale(.97); }
-/* ──────────────────────────────────────────
-SHEETS - CENTERED WITH 20PX BOTTOM GAP
-────────────────────────────────────────── */
 .sheet-bg {
 position: fixed; inset: 0; background: rgba(0,0,0,.75);
 backdrop-filter: blur(6px); z-index: 100;
@@ -526,16 +477,10 @@ cursor: pointer; font-family: var(--sans); text-transform: uppercase; letter-spa
 transition: background .15s;
 }
 .launch-btn:hover { background: rgba(16,185,129,.18); }
-/* ──────────────────────────────────────────
-EMPTY STATE
-────────────────────────────────────────── */
 .empty { text-align: center; padding: 56px 20px; }
 .empty-ico { font-size: 32px; color: var(--t3); margin-bottom: 14px; }
 .empty-h { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
 .empty-p { font-size: 12px; color: var(--t2); }
-/* ──────────────────────────────────────────
-TOAST
-────────────────────────────────────────── */
 .toast {
 position: fixed; bottom: max(22px, env(safe-area-inset-bottom)); left: 50%;
 transform: translateX(-50%) translateY(70px);
@@ -548,9 +493,6 @@ display: flex; align-items: center; gap: 8px;
 .toast.show { transform: translateX(-50%) translateY(0); }
 .toast.ok { border-color: var(--green-bd); color: var(--green); }
 .toast.err { border-color: var(--red-bd); color: var(--red); }
-/* ──────────────────────────────────────────
-SPINNER / MISC
-────────────────────────────────────────── */
 .spin {
 width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.1);
 border-top-color: #fff; border-radius: 50%;
@@ -565,7 +507,6 @@ animation: _spin .6s linear infinite; display: inline-block;
 </head>
 <body>
 <div id="app">
-<!-- ════════════════════ LOGIN ════════════════════ -->
 <div class="screen active" id="screen-login">
 <div class="login-card">
 <div class="login-logo">
@@ -595,7 +536,6 @@ animation: _spin .6s linear infinite; display: inline-block;
 </div>
 </div>
 </div>
-<!-- ════════════════════ GROUPS / SIDEBAR ════════════════════ -->
 <div class="screen" id="screen-groups">
 <div class="sidebar-header">
 <div class="sidebar-brand">
@@ -615,7 +555,6 @@ GameZone
 </div>
 <button class="fab" onclick="openSheet('sheet-newgroup')"><i class="fa-solid fa-plus"></i> New Group</button>
 </div>
-<!-- ════════════════════ DASHBOARD ════════════════════ -->
 <div class="screen" id="screen-dashboard">
 <div class="topbar">
 <button class="back-btn" onclick="goBack('groups')"><i class="fa-solid fa-chevron-left"></i> Back</button>
@@ -634,7 +573,6 @@ GameZone
 </div>
 <button class="fab" onclick="openSheet('sheet-addpc')"><i class="fa-solid fa-plus"></i> Add PC</button>
 </div>
-<!-- ════════════════════ PC CONTROL ════════════════════ -->
 <div class="screen" id="screen-pccontrol">
 <div class="topbar">
 <button class="back-btn" onclick="goBack('dashboard')"><i class="fa-solid fa-chevron-left"></i></button>
@@ -669,7 +607,6 @@ GameZone
 </div>
 </div>
 </div>
-<!-- ════════════════════ SETTINGS ════════════════════ -->
 <div class="screen" id="screen-settings">
 <div class="topbar">
 <button class="back-btn" onclick="goBack('dashboard')"><i class="fa-solid fa-chevron-left"></i></button>
@@ -717,7 +654,6 @@ GameZone
 </div>
 </div>
 </div>
-<!-- ════════════════════ SHEETS ════════════════════ -->
 <div class="sheet-bg" id="bg-newgroup" onclick="closeSheet('sheet-newgroup')"></div>
 <div class="sheet" id="sheet-newgroup">
 <div class="sheet-handle"></div>
@@ -847,7 +783,6 @@ const state = { token:null, user:null, serverUrl:null, groups:[], activeGroup:nu
 const _pay = {};
 let currentScreen = 'login';
 let _toastT;
-
 window.addEventListener('load', () => {
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
 state.token = localStorage.getItem('gz_token');
@@ -860,7 +795,6 @@ if (currentScreen==='dashboard') renderPCs();
 if (currentScreen==='pccontrol') renderPCActions();
 }, 1000);
 });
-
 const MAIN_SCREENS = ['screen-dashboard','screen-pccontrol','screen-settings'];
 function showScreen(name) {
 const isDesktop = window.innerWidth >= 1024;
@@ -885,9 +819,7 @@ if (el) el.classList.add('active');
 currentScreen = name;
 if (name === 'settings') { loadAdmins(); loadDeletePCList(); loadReorderPCList(); }
 }
-
 function goBack(to) { showScreen(to); }
-
 function openSheet(id) {
 document.getElementById(id).classList.add('open');
 document.getElementById('bg-' + id.replace('sheet-','')).classList.add('open');
@@ -896,7 +828,6 @@ function closeSheet(id) {
 document.getElementById(id).classList.remove('open');
 document.getElementById('bg-' + id.replace('sheet-','')).classList.remove('open');
 }
-
 async function api(method, path, body) {
 const res = await fetch(state.serverUrl+'/api'+path, {
 method,
@@ -907,14 +838,12 @@ const data = await res.json();
 if (!res.ok) throw new Error(data.error||'Request failed');
 return data;
 }
-
 function switchTab(tab) {
 document.getElementById('tab-login').classList.toggle('active', tab==='login');
 document.getElementById('tab-register').classList.toggle('active', tab==='register');
 document.getElementById('login-form').style.display = tab==='login'?'block':'none';
 document.getElementById('register-form').style.display = tab==='register'?'block':'none';
 }
-
 async function doLogin() {
 const server = document.getElementById('login-server').value.trim().replace(/\/$/,'');
 const username = document.getElementById('login-user').value.trim();
@@ -931,7 +860,6 @@ saveAuth(server,d.token,d.user); showScreen('groups'); loadGroups(); toast('Sign
 } catch(e) { toast(e.message||'Login failed','err'); }
 finally { btn.disabled=false; document.getElementById('login-btn-text').textContent='Sign In'; }
 }
-
 async function doRegister() {
 const server = document.getElementById('reg-server').value.trim().replace(/\/$/,'');
 const username = document.getElementById('reg-user').value.trim();
@@ -948,7 +876,6 @@ saveAuth(server,d.token,d.user); showScreen('groups'); loadGroups(); toast('Acco
 } catch(e) { toast(e.message||'Registration failed','err'); }
 finally { btn.disabled=false; document.getElementById('reg-btn-text').textContent='Create Account'; }
 }
-
 function saveAuth(server,token,user) {
 state.token=token; state.user=user; state.serverUrl=server;
 localStorage.setItem('gz_token',token);
@@ -962,7 +889,6 @@ localStorage.removeItem('gz_token'); localStorage.removeItem('gz_user');
 if (state.socket) state.socket.disconnect();
 showScreen('login');
 }
-
 async function loadGroups() {
 try { state.groups = await api('GET','/groups'); renderGroups(); }
 catch(e) { toast('Failed to load groups','err'); }
@@ -1003,7 +929,6 @@ document.getElementById('s-name').textContent = state.activeGroup.name;
 document.getElementById('s-id').textContent = state.activeGroup.id;
 showScreen('dashboard'); loadPCs(); connectSocket();
 }
-
 async function loadPCs() {
 try { state.pcs = await api('GET','/groups/'+state.activeGroup.id+'/pcs'); renderPCs(); }
 catch(e) { toast('Failed to load PCs','err'); }
@@ -1028,7 +953,7 @@ const col  = !pc.is_online ? 'var(--t3)' : isWatch ? 'var(--blue)' : left>300 ? 
 const bg   = !pc.is_online ? 'var(--s3)' : isWatch ? 'var(--blue-bg)' : left>300 ? 'var(--green-bg)' : left>0 ? 'var(--amber-bg)' : 'var(--red-bg)';
 const bd   = !pc.is_online ? 'var(--bd)' : isWatch ? 'var(--blue-bd)' : left>300 ? 'var(--green-bd)' : left>0 ? 'var(--amber-bd)' : 'var(--red-bd)';
 const status = !pc.is_online ? 'Offline' : isWatch ? 'Free' : left>0 ? 'Active' : 'Idle';
-// FIX: Only calculate elapsed time if stopwatch_start is valid and in the past
+// FIX: Only calculate elapsed if stopwatch_start is valid AND in the past
 const elapsed = (isWatch && pc.stopwatch_start && pc.stopwatch_start < now) ? now - pc.stopwatch_start : 0;
 const timer = !pc.is_online ? '- - -' : isWatch ? fmtTime(elapsed) : left>0 ? fmtTime(left) : '--:--';
 const pay = _pay[pc.id];
@@ -1062,7 +987,6 @@ toast('PC added','ok');
 } catch(e) { toast(e.message,'err'); }
 finally { document.getElementById('addpc-btn-text').textContent='Add PC'; }
 }
-
 function loadReorderPCList() {
 const el = document.getElementById('reorder-pc-list');
 if (!state.pcs?.length) { el.innerHTML='<div style="color:var(--t2);padding:8px 0;font-size:12px">No PCs in this group</div>'; return; }
@@ -1075,7 +999,6 @@ el.innerHTML = sortedPcs.map((pc,idx)=>`<div class="pc-del-row" data-pc-id="${pc
 </div>
 </div>`).join('');
 }
-
 function movePC(pcId, direction) {
 const sortedPcs = [...state.pcs].sort((a,b) => (a.order||0) - (b.order||0));
 const idx = sortedPcs.findIndex(p=>p.id===pcId);
@@ -1091,7 +1014,6 @@ if (originalPc) originalPc.order = i;
 });
 loadReorderPCList();
 }
-
 async function savePCOrder() {
 const sortedPcs = [...state.pcs].sort((a,b) => (a.order||0) - (b.order||0));
 const orderData = sortedPcs.map((pc,idx)=>({pc_id:pc.id, order:idx}));
@@ -1112,7 +1034,6 @@ renderPCs();
 }
 finally { document.getElementById('reorder-btn-text').textContent='Save Order'; }
 }
-
 function openPC(id) {
 state.activePc = state.pcs.find(p=>p.id===id);
 document.getElementById('pc-title').textContent = state.activePc.name;
@@ -1178,13 +1099,12 @@ _pay[id] = _pay[id]===status ? null : status;
 renderPCActions(); renderPCs();
 toast(_pay[id] ? `Marked ${_pay[id]}` : 'Payment cleared','ok');
 }
-
 async function startSession(mins) {
 closeSheet('sheet-startsession');
 try {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'session_end',r.session_end);
-updatePcField(state.activePc.id,'stopwatch_start',0); // FIX: Ensure stopwatch is cleared
+updatePcField(state.activePc.id,'stopwatch_start',0);
 toast('Session started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
@@ -1202,7 +1122,7 @@ closeSheet('sheet-startsession');
 try {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/stopwatch',{group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'stopwatch_start',r.started_at);
-updatePcField(state.activePc.id,'session_end',0); // FIX: Ensure session_end is cleared
+updatePcField(state.activePc.id,'session_end',0);
 toast('Free timer started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
@@ -1212,7 +1132,7 @@ try {
 if (state.activePc.stopwatch_start>0) {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'session_end',r.session_end);
-updatePcField(state.activePc.id,'stopwatch_start',0); // FIX: Clear stopwatch when switching to timed
+updatePcField(state.activePc.id,'stopwatch_start',0);
 toast('Free timer → '+mins+'m','ok'); return;
 }
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
@@ -1253,7 +1173,9 @@ api('POST','/pcs/'+state.activePc.id+'/session/end',{group_id:state.activeGroup.
     // FIX: Always clear BOTH fields when ending session
     updatePcField(state.activePc.id,'session_end',0); 
     updatePcField(state.activePc.id,'stopwatch_start',0); 
-    toast('Session ended','ok'); 
+    toast('Session ended','ok');
+    // Force re-fetch PCs from server to sync all devices
+    loadPCs();
 })
 .catch(e=>toast(e.message,'err'));
 }
@@ -1269,7 +1191,6 @@ if (pc) pc[field]=value;
 if (state.activePc?.id===pcId) { state.activePc[field]=value; renderPCActions(); }
 renderPCs();
 }
-
 async function openApps() {
 document.getElementById('apps-pc-name').textContent = 'on '+state.activePc.name;
 document.getElementById('apps-list').innerHTML = '<div style="text-align:center;padding:28px"><span class="spin"></span></div>';
@@ -1287,7 +1208,6 @@ closeSheet('sheet-apps');
 try { await api('POST','/pcs/'+state.activePc.id+'/launch',{app_path:app.path,group_id:state.activeGroup.id}); toast(app.name+' launched','ok'); }
 catch(e) { toast(e.message,'err'); }
 }
-
 async function loadAdmins() {
 try {
 const admins = await api('GET','/groups/'+state.activeGroup.id+'/admins');
@@ -1334,7 +1254,6 @@ state.groups = state.groups.filter(g=>g.id!==state.activeGroup.id);
 renderGroups(); showScreen('groups'); toast('Group deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
-
 function connectSocket() {
 if (state.socket) state.socket.disconnect();
 state.socket = io(state.serverUrl,{transports:['websocket']});
@@ -1346,8 +1265,21 @@ pc.is_online = is_online?1:0; renderPCs();
 if (state.activePc?.id===pc_id) { state.activePc.is_online=pc.is_online; updateOnlinePill(); }
 }
 });
+// FIX: Listen for session updates to sync across devices
+state.socket.on('group:'+state.activeGroup?.id+':pc-session', ({pc_id, session_end, stopwatch_start})=>{
+const pc = state.pcs.find(p=>p.id===pc_id);
+if (pc) {
+pc.session_end = session_end;
+pc.stopwatch_start = stopwatch_start;
+renderPCs();
+if (state.activePc?.id===pc_id) {
+state.activePc.session_end = session_end;
+state.activePc.stopwatch_start = stopwatch_start;
+renderPCActions();
 }
-
+}
+});
+}
 function fmtTime(secs) {
 if (secs<=0) return '00:00';
 const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
