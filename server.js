@@ -356,14 +356,13 @@ app.post('/api/pcs/:pcId/session/add-time', authMiddleware, accountCheck, async 
     if (!pc) return res.status(404).json({ error: 'PC not found' });
     const now = Math.floor(Date.now() / 1000);
 
-    // Free timer (stopwatch) — adding time converts it to a countdown
+    // Free timer (stopwatch) — adding time backdates the start so elapsed time increases
     if (pc.stopwatch_start > 0 && minutes > 0) {
-      const session_end = now + minutes * 60;
-      await db.update('pcs', p => p.id === pcId, { session_end, stopwatch_start: 0 });
-      const remaining = minutes * 60;
-      io.to(`pc:${pcId}`).emit('session:start', { session_end, duration_minutes: minutes, remaining_seconds: remaining });
-      io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end, stopwatch_start: 0, payment_status: pc.payment_status });
-      return res.json({ success: true, session_end, remaining_seconds: remaining });
+      const new_start = pc.stopwatch_start - (minutes * 60);
+      await db.update('pcs', p => p.id === pcId, { stopwatch_start: new_start });
+      io.to(`pc:${pcId}`).emit('session:stopwatch', { started_at: new_start });
+      io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: 0, stopwatch_start: new_start, payment_status: pc.payment_status });
+      return res.json({ success: true, stopwatch_start: new_start });
     }
 
     const current_end = pc.session_end > now ? pc.session_end : now;
