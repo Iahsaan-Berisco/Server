@@ -423,10 +423,31 @@ app.post('/api/pcs/:pcId/unlock', authMiddleware, accountCheck, async (req, res)
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/pcs/:pcId/kill', authMiddleware, accountCheck, async (req, res) => {
+// Request process list from PC — PC responds via socket 'pc:processes' event
+app.post('/api/pcs/:pcId/processes', authMiddleware, accountCheck, async (req, res) => {
   try {
-    if (!await canManageGroup(req.user.id, req.body.group_id)) return res.status(403).json({ error: 'Forbidden' });
-    io.to(`pc:${req.params.pcId}`).emit('command:kill', {});
+    const { group_id } = req.body;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    // Ask the PC to send its process list, wait up to 5s for response
+    const pcId = req.params.pcId;
+    const responseKey = `procs:${pcId}`;
+    let resolved = false;
+    const cleanup = () => { io.off(responseKey, handler); };
+    const handler = (data) => {
+      if (!resolved) { resolved = true; cleanup(); res.json({ processes: data.processes }); }
+    };
+    io.once(responseKey, handler);
+    io.to(`pc:${pcId}`).emit('command:get-processes', {});
+    setTimeout(() => { if (!resolved) { resolved = true; cleanup(); res.json({ processes: [] }); } }, 5000);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Kill a specific process by PID
+app.post('/api/pcs/:pcId/kill-process', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { group_id, pid, name } = req.body;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    io.to(`pc:${req.params.pcId}`).emit('command:kill-process', { pid, name });
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -495,6 +516,13 @@ io.on('connection', (socket) => {
 
   socket.on('admin:subscribe', ({ group_id, token }) => {
     try { jwt.verify(token, JWT_SECRET); socket.join(`group:${group_id}`); } catch {}
+  });
+
+  // PC sends back process list in response to command:get-processes
+  socket.on('pc:processes', ({ processes }) => {
+    if (socket.pcId) {
+      io.emit(`procs:${socket.pcId}`, { processes });
+    }
   });
 
   socket.on('disconnect', async () => {
