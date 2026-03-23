@@ -4,8 +4,8 @@
   "description": "Manage your gaming cafe PCs from your phone",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fff",
-  "theme_color": "#0f0f0f",
+  "background_color": "#0f0f0f",
+  "theme_color": "#fff",
   "orientation": "portrait",
   "icons": [
     {
