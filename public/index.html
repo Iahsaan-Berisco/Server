@@ -605,11 +605,21 @@ function doLogout() {
 }
 
 async function loadGroups() {
+  // Always fetch fresh status from server — fixes stale pending/approved state
+  try {
+    const me = await api('GET', '/me');
+    if (state.user) {
+      state.user.status = me.status;
+      state.user.expiry_date = me.expiry_date;
+      localStorage.setItem('gz_user', JSON.stringify(state.user));
+    }
+  } catch(e) { /* ignore — fall through to cached status */ }
+
   const status = state.user?.status || 'active';
   if (status !== 'active') { renderGroups(); return; }
   try { state.groups = await api('GET','/groups'); renderGroups(); }
   catch(e) {
-    if (e.message==='account_pending')       { if(state.user) state.user.status='pending';     renderGroups(); }
+    if (e.message==='account_pending')          { if(state.user) state.user.status='pending';     renderGroups(); }
     else if (e.message==='subscription_expired')  { if(state.user) state.user.status='expired';      renderGroups(); }
     else if (e.message==='account_deactivated') { if(state.user) state.user.status='deactivated'; renderGroups(); }
     else toast('Failed to load groups','err');
