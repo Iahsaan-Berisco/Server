@@ -871,9 +871,9 @@ function renderPCActions() {
   // Local time history (localStorage only, never stored in DB)
   const history = lhGet(pc.id);
   if (history && history.length > 0) {
-    let hHtml = `<div class="section-head">Recent Activity
-      <button onclick="refreshHistory()" style="margin-left:auto;background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;font-family:var(--sans);display:flex;align-items:center;gap:4px;padding:0;letter-spacing:0;text-transform:none;font-weight:600" title="Refresh">
-        <i class="fa-solid fa-rotate"></i> Refresh
+    let hHtml = `<div class="section-head" style="justify-content:space-between">Recent Activity
+      <button onclick="refreshHistory()" style="margin-left:auto;background:var(--s3);border:1px solid var(--bd2);color:var(--t2);cursor:pointer;font-size:10px;font-family:var(--sans);display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--r);letter-spacing:0;text-transform:none;font-weight:600;transition:all .15s" onmouseover="this.style.color='var(--t1)'" onmouseout="this.style.color='var(--t2)'">
+        <i class="fa-solid fa-rotate" style="font-size:10px"></i> Refresh
       </button></div>
       <div class="action-grid" style="padding-bottom:0;margin-bottom:20px;display:block">
       <div style="background:var(--s1);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">`;
@@ -941,17 +941,18 @@ async function startStopwatch() {
 async function addTime(mins) {
   closeSheet('sheet-addtime');
   try {
-    if (state.activePc.stopwatch_start>0) {
-      const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
-      updatePcField(state.activePc.id,'session_end',r.session_end);
-      updatePcField(state.activePc.id,'stopwatch_start',0);
-      lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
-      toast('Free timer → '+mins+'m','ok'); return;
-    }
     const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
-    updatePcField(state.activePc.id,'session_end',r.session_end);
-    lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
-    toast('+'+mins+'m added','ok');
+    if (state.activePc.stopwatch_start > 0) {
+      // Was free timer — now converted to countdown
+      updatePcField(state.activePc.id,'session_end', r.session_end);
+      updatePcField(state.activePc.id,'stopwatch_start', 0);
+      lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
+      toast('Free timer → '+mins+'m countdown','ok');
+    } else {
+      updatePcField(state.activePc.id,'session_end',r.session_end);
+      lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
+      toast('+'+mins+'m added','ok');
+    }
   } catch(e) { toast(e.message,'err'); }
 }
 
@@ -972,7 +973,8 @@ async function removeTime(mins) {
     if (r.session_ended) {
       updatePcField(state.activePc.id,'session_end',0);
       updatePcField(state.activePc.id,'stopwatch_start',0);
-      toast('Time exceeded — session ended','ok');
+      lhAdd(state.activePc.id, {type:'remove',mins,at:Date.now()});
+      toast('Session ended — time exceeded','ok');
     } else {
       updatePcField(state.activePc.id,'session_end',r.session_end);
       lhAdd(state.activePc.id, {type:'remove',mins,at:Date.now()});
