@@ -518,6 +518,12 @@ io.on('connection', (socket) => {
     try { jwt.verify(token, JWT_SECRET); socket.join(`group:${group_id}`); } catch {}
   });
 
+  // Admin broadcasts history update to other admins in same group
+  socket.on('admin:history-update', ({ group_id, pc_id, history }) => {
+    // Relay to all OTHER admins in this group (not back to sender)
+    socket.to(`group:${group_id}`).emit('admin:history-sync', { pc_id, history });
+  });
+
   // PC sends back process list in response to command:get-processes
   socket.on('pc:processes', ({ processes }) => {
     if (socket.pcId) {
