@@ -438,6 +438,20 @@ app.get('/api/pcs/:pcId/apps', authMiddleware, accountCheck, async (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ─── Me (fresh status check) ─────────────────────────────────────────────────
+app.get('/api/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await db.get('users', u => u.id === req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    let status = user.status || 'active';
+    if (status === 'active' && user.expiry_date && Date.now() > user.expiry_date) {
+      status = 'expired';
+      await db.update('users', u => u.id === user.id, { status: 'expired' });
+    }
+    res.json({ status, expiry_date: user.expiry_date || null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ─── Health ─────────────────────────────────────────────────────────────────────
 app.get('/api/health', async (req, res) => {
   try {
