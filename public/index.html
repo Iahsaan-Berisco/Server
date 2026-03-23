@@ -588,11 +588,15 @@ function saveAuth(server, token, user, status, expiry_date) {
 
 function checkExpiryWarning() {
   const expiry = state.user?.expiry_date;
-  if (!expiry) return;
+  const banner = document.getElementById('expiry-banner');
+  if (!banner) return;
+  if (!expiry) { banner.style.display='none'; return; }
   const daysLeft = Math.ceil((expiry - Date.now()) / 86400000);
   if (daysLeft > 0 && daysLeft <= 5) {
-    const banner = document.getElementById('expiry-banner');
-    if (banner) { banner.style.display='flex'; document.getElementById('expiry-days').textContent=daysLeft; }
+    banner.style.display = 'flex';
+    document.getElementById('expiry-days').textContent = daysLeft;
+  } else {
+    banner.style.display = 'none';
   }
 }
 
@@ -615,6 +619,7 @@ async function loadGroups() {
     }
   } catch(e) { /* ignore — fall through to cached status */ }
 
+  checkExpiryWarning();  // re-evaluate banner after fresh status
   const status = state.user?.status || 'active';
   if (status !== 'active') { renderGroups(); return; }
   try { state.groups = await api('GET','/groups'); renderGroups(); }
