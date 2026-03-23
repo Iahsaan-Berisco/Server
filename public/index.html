@@ -276,7 +276,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="section-head">Applications</div>
 <div class="action-grid" style="margin-bottom:20px">
 <div class="action-card" onclick="openApps()"><div class="action-card-icon"><i class="fa-solid fa-rocket" style="color:var(--blue)"></i></div><div class="action-card-label">Launch App</div><div class="action-card-sub">Open remotely</div></div>
-<div class="action-card" onclick="killTasks()"><div class="action-card-icon"><i class="fa-solid fa-skull-crossbones" style="color:var(--red)"></i></div><div class="action-card-label">Kill Tasks</div><div class="action-card-sub">End all running apps</div></div>
+<div class="action-card" onclick="openKillSheet()"><div class="action-card-icon"><i class="fa-solid fa-skull-crossbones" style="color:var(--red)"></i></div><div class="action-card-label">Kill Task</div><div class="action-card-sub">End a running app</div></div>
 </div>
 <div id="pc-session-area"></div>
 <div style="height:16px"></div>
@@ -444,6 +444,13 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div id="delete-pc-list"><div style="text-align:center;padding:20px"><span class="spin"></span></div></div>
 </div>
 
+<div class="sheet-bg" id="bg-killtasks" onclick="closeSheet('sheet-killtasks')"></div>
+<div class="sheet" id="sheet-killtasks">
+<div class="sheet-handle"></div>
+<div class="sheet-title">Kill Task</div>
+<div class="sheet-sub" id="killtasks-pc-name"></div>
+<div id="killtasks-list"><div style="text-align:center;padding:28px"><span class="spin"></span></div></div>
+</div>
 <div class="toast" id="toast"></div>
 </div>
 
@@ -1001,11 +1008,49 @@ async function openApps() {
   } catch(e) { document.getElementById('apps-list').innerHTML='<div style="color:var(--red);text-align:center;padding:20px">Failed to load apps</div>'; }
 }
 
-async function killTasks() {
-  if (!confirm('Kill all running apps on '+state.activePc.name+'?')) return;
+async function openKillSheet() {
+  document.getElementById('killtasks-pc-name').textContent = 'on '+state.activePc.name;
+  document.getElementById('killtasks-list').innerHTML = '<div style="text-align:center;padding:28px"><span class="spin"></span><div style="color:var(--t3);font-size:11px;margin-top:10px">Fetching running processes...</div></div>';
+  openSheet('sheet-killtasks');
   try {
-    await api('POST','/pcs/'+state.activePc.id+'/kill',{group_id:state.activeGroup.id});
-    toast('Kill signal sent','ok');
+    const r = await api('POST','/pcs/'+state.activePc.id+'/processes',{group_id:state.activeGroup.id});
+    const procs = r.processes || [];
+    window._procs = procs;
+    if (!procs.length) {
+      document.getElementById('killtasks-list').innerHTML = '<div style="color:var(--t2);text-align:center;padding:28px;font-size:12px">No user processes found<br>or PC client is offline</div>';
+      return;
+    }
+    document.getElementById('killtasks-list').innerHTML = procs.map((p,i) => `
+      <div class="app-row">
+        <div class="app-name">
+          <i class="fa-solid fa-microchip" style="color:var(--t3)"></i>
+          <div>
+            <div style="font-size:13px;font-weight:600">${p.display}</div>
+            <div style="font-size:10px;color:var(--t3)">${p.mem} MB</div>
+          </div>
+        </div>
+        <button class="launch-btn" style="background:var(--red-bg);border-color:var(--red-bd);color:var(--red)" onclick="killProcess(${i})">
+          <i class="fa-solid fa-xmark"></i> Kill
+        </button>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('killtasks-list').innerHTML = '<div style="color:var(--red);text-align:center;padding:20px">Failed to fetch processes</div>';
+  }
+}
+
+async function killProcess(i) {
+  const proc = window._procs?.[i]; if (!proc) return;
+  try {
+    await api('POST','/pcs/'+state.activePc.id+'/kill-process',{pid:proc.pid,name:proc.name,group_id:state.activeGroup.id});
+    // Remove from list
+    window._procs.splice(i,1);
+    toast(proc.display+' killed','ok');
+    if (!window._procs.length) {
+      closeSheet('sheet-killtasks');
+    } else {
+      // Re-render without the killed process
+      openKillSheet();
+    }
   } catch(e) { toast(e.message,'err'); }
 }
 
