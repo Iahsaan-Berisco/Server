@@ -355,14 +355,36 @@ app.post('/api/pcs/:pcId/session/add-time', authMiddleware, accountCheck, async 
     const pc = await db.get('pcs', p => p.id === pcId);
     if (!pc) return res.status(404).json({ error: 'PC not found' });
     const now = Math.floor(Date.now() / 1000);
-    const new_end = Math.max((pc.session_end > now ? pc.session_end : now) + minutes * 60, now + 30);
-    // Time history (max 5 entries)
+
+    // Free timer (stopwatch) — adding time converts it to a countdown
+    if (pc.stopwatch_start > 0 && minutes > 0) {
+      const session_end = now + minutes * 60;
+      await db.update('pcs', p => p.id === pcId, { session_end, stopwatch_start: 0 });
+      const remaining = minutes * 60;
+      io.to(`pc:${pcId}`).emit('session:start', { session_end, duration_minutes: minutes, remaining_seconds: remaining });
+      io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end, stopwatch_start: 0, payment_status: pc.payment_status });
+      return res.json({ success: true, session_end, remaining_seconds: remaining });
+    }
+
+    const current_end = pc.session_end > now ? pc.session_end : now;
+    const raw_end = current_end + minutes * 60;
+
+    // Remove time exceeds remaining — end the session immediately
+    if (minutes < 0 && raw_end <= now) {
+      await db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: 0 });
+      await db.update('sessions', s => s.pc_id === pcId && !s.ended_at, { ended_at: now });
+      io.to(`pc:${pcId}`).emit('session:end', {});
+      io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: 0, stopwatch_start: 0 });
+      return res.json({ success: true, session_ended: true });
+    }
+
+    const new_end = raw_end;
     const history = pc.time_history || [];
     const newHistory = [{ mins: minutes, at: Date.now(), type: minutes > 0 ? 'add' : 'remove' }, ...history].slice(0, 5);
     await db.update('pcs', p => p.id === pcId, { session_end: new_end, time_history: newHistory });
     const rem = new_end - now;
     io.to(`pc:${pcId}`).emit('session:add-time', { session_end: new_end, added_minutes: minutes, remaining_seconds: rem });
-    io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: new_end, stopwatch_start: pc.stopwatch_start || 0, payment_status: pc.payment_status, time_history: newHistory });
+    io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: new_end, stopwatch_start: 0, payment_status: pc.payment_status });
     res.json({ success: true, session_end: new_end, remaining_seconds: rem });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
