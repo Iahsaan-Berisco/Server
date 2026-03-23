@@ -22,12 +22,13 @@ const ADMIN_SECRET = JWT_SECRET + '_superadmin_v1';
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
-// Admin panel — served outside /public so it won't be statically discoverable
+// Admin panel — must be BEFORE static middleware
 app.get('/connect', (_req, res) =>
   res.sendFile(path.join(__dirname, 'admin.html'))
 );
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── Middleware ────────────────────────────────────────────────────────────────
 function authMiddleware(req, res, next) {
