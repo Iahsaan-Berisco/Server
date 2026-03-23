@@ -1192,19 +1192,18 @@ function connectSocket() {
     }
   });
 
-  state.socket.on('group:'+state.activeGroup.id+':pc-session', ({ pc_id, session_end, stopwatch_start, payment_status }) => {
+  state.socket.on('group:'+state.activeGroup.id+':pc-session', (data) => {
+    const { pc_id } = data;
     const pc = state.pcs.find(p=>p.id===pc_id);
     if (pc) {
-      if (session_end     !== undefined) pc.session_end     = session_end;
-      if (stopwatch_start !== undefined) pc.stopwatch_start = stopwatch_start;
-      if (payment_status  !== undefined) pc.payment_status  = payment_status;
-      // time_history is local only — not synced via socket
+      if ('session_end'     in data) pc.session_end     = data.session_end;
+      if ('stopwatch_start' in data) pc.stopwatch_start = data.stopwatch_start;
+      if ('payment_status'  in data) pc.payment_status  = data.payment_status;
       renderPCs();
       if (state.activePc?.id===pc_id) {
-        if (session_end     !== undefined) state.activePc.session_end     = session_end;
-        if (stopwatch_start !== undefined) state.activePc.stopwatch_start = stopwatch_start;
-        if (payment_status  !== undefined) state.activePc.payment_status  = payment_status;
-        // time_history is local only
+        if ('session_end'     in data) state.activePc.session_end     = data.session_end;
+        if ('stopwatch_start' in data) state.activePc.stopwatch_start = data.stopwatch_start;
+        if ('payment_status'  in data) state.activePc.payment_status  = data.payment_status;
         renderPCActions(); updateOnlinePill();
       }
     }
