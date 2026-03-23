@@ -942,14 +942,13 @@ async function addTime(mins) {
   closeSheet('sheet-addtime');
   try {
     const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
-    if (state.activePc.stopwatch_start > 0) {
-      // Was free timer — now converted to countdown
-      updatePcField(state.activePc.id,'session_end', r.session_end);
-      updatePcField(state.activePc.id,'stopwatch_start', 0);
+    if (r.stopwatch_start !== undefined) {
+      // Free timer — elapsed time increased by backdating start
+      updatePcField(state.activePc.id,'stopwatch_start', r.stopwatch_start);
       lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
-      toast('Free timer → '+mins+'m countdown','ok');
+      toast('+'+mins+'m added to free timer','ok');
     } else {
-      updatePcField(state.activePc.id,'session_end',r.session_end);
+      updatePcField(state.activePc.id,'session_end', r.session_end);
       lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
       toast('+'+mins+'m added','ok');
     }
