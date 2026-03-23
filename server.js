@@ -324,7 +324,7 @@ app.post('/api/pcs/:pcId/payment', authMiddleware, accountCheck, async (req, res
     const { payment_status, group_id } = req.body;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
     await db.update('pcs', p => p.id === pcId, { payment_status });
-    io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, payment_status, session_end: undefined, stopwatch_start: undefined });
+    io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, payment_status });
     res.json({ success: true, payment_status });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
