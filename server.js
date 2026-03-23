@@ -423,6 +423,14 @@ app.post('/api/pcs/:pcId/unlock', authMiddleware, accountCheck, async (req, res)
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+app.post('/api/pcs/:pcId/kill', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    if (!await canManageGroup(req.user.id, req.body.group_id)) return res.status(403).json({ error: 'Forbidden' });
+    io.to(`pc:${req.params.pcId}`).emit('command:kill', {});
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/pcs/:pcId/launch', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { app_path, group_id } = req.body;
