@@ -160,8 +160,8 @@ select.field-input{cursor:pointer;background:var(--bg)}
 </div>
 
 <!-- Edit Sheet -->
-<div class="sheet-bg" id="bg-edit" onclick="closeEdit()"></div>
-<div class="sheet" id="sheet-edit">
+<div class="sheet-bg" id="bg-edit" onclick="closeEdit()">
+<div class="sheet" id="sheet-edit" onclick="event.stopPropagation()">
   <div class="sheet-handle"></div>
   <div class="sheet-title" id="edit-title">Edit Account</div>
   <input type="hidden" id="edit-id">
@@ -204,6 +204,7 @@ select.field-input{cursor:pointer;background:var(--bg)}
     <button class="btn btn-ghost" onclick="closeEdit()">Cancel</button>
     <button class="btn btn-primary" onclick="saveEdit()"><span id="edit-btn-text">Save Changes</span></button>
   </div>
+</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -401,8 +402,8 @@ function openEdit(id) {
     document.getElementById('edit-expiry').value = '';
   }
   updateExpiryDisplay();
-  document.getElementById('sheet-edit').classList.add('open');
   document.getElementById('bg-edit').classList.add('open');
+  document.getElementById('sheet-edit').classList.add('open');
 }
 
 function closeEdit() {
