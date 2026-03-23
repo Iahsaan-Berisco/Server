@@ -444,22 +444,28 @@ app.post('/api/pcs/:pcId/unlock', authMiddleware, accountCheck, async (req, res)
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Request process list from PC — PC responds via socket 'pc:processes' event
+// In-memory map to hold pending process-list callbacks
+const _pendingProcs = {};
+
+// Request process list from PC
 app.post('/api/pcs/:pcId/processes', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { group_id } = req.body;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
-    // Ask the PC to send its process list, wait up to 5s for response
     const pcId = req.params.pcId;
-    const responseKey = `procs:${pcId}`;
-    let resolved = false;
-    const cleanup = () => { io.off(responseKey, handler); };
-    const handler = (data) => {
-      if (!resolved) { resolved = true; cleanup(); res.json({ processes: data.processes }); }
+    // Store callback — will be called when PC responds via socket
+    const timeout = setTimeout(() => {
+      if (_pendingProcs[pcId]) {
+        delete _pendingProcs[pcId];
+        res.json({ processes: [] });
+      }
+    }, 6000);
+    _pendingProcs[pcId] = (processes) => {
+      clearTimeout(timeout);
+      delete _pendingProcs[pcId];
+      res.json({ processes });
     };
-    io.once(responseKey, handler);
     io.to(`pc:${pcId}`).emit('command:get-processes', {});
-    setTimeout(() => { if (!resolved) { resolved = true; cleanup(); res.json({ processes: [] }); } }, 5000);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -549,10 +555,10 @@ io.on('connection', (socket) => {
     socket.to(`group:${group_id}`).emit('admin:request-history', { pc_id });
   });
 
-  // PC sends back process list in response to command:get-processes
+  // PC sends back process list — fire the pending HTTP callback
   socket.on('pc:processes', ({ processes }) => {
-    if (socket.pcId) {
-      io.emit(`procs:${socket.pcId}`, { processes });
+    if (socket.pcId && _pendingProcs[socket.pcId]) {
+      _pendingProcs[socket.pcId](processes);
     }
   });
 
