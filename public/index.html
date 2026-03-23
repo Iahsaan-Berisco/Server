@@ -871,7 +871,10 @@ function renderPCActions() {
   // Local time history (localStorage only, never stored in DB)
   const history = lhGet(pc.id);
   if (history && history.length > 0) {
-    let hHtml = `<div class="section-head">Recent Activity</div>
+    let hHtml = `<div class="section-head">Recent Activity
+      <button onclick="refreshHistory()" style="margin-left:auto;background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;font-family:var(--sans);display:flex;align-items:center;gap:4px;padding:0;letter-spacing:0;text-transform:none;font-weight:600" title="Refresh">
+        <i class="fa-solid fa-rotate"></i> Refresh
+      </button></div>
       <div class="action-grid" style="padding-bottom:0;margin-bottom:20px;display:block">
       <div style="background:var(--s1);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">`;
     history.forEach(entry => {
@@ -1171,10 +1174,21 @@ function connectSocket() {
   // Receive history from other admin devices — instant update, no refresh needed
   state.socket.on('admin:history-sync', ({ pc_id, history }) => {
     lhSet(pc_id, history);
-    // Update local pc object too so renderPCs reflects it
     const pc = state.pcs.find(p => p.id === pc_id);
     if (pc) pc._history_updated = Date.now();
     if (state.activePc?.id === pc_id) renderPCActions();
+  });
+
+  // When another device requests history, respond with what we have
+  state.socket.on('admin:request-history', ({ pc_id }) => {
+    const h = lhGet(pc_id);
+    if (h.length > 0 && state.activeGroup) {
+      state.socket.emit('admin:history-update', {
+        group_id: state.activeGroup.id,
+        pc_id,
+        history: h
+      });
+    }
   });
 
   state.socket.on('group:'+state.activeGroup.id+':pc-session', ({ pc_id, session_end, stopwatch_start, payment_status }) => {
@@ -1216,6 +1230,19 @@ function lhAdd(pcId, entry) {
       history: h.slice(0,5)
     });
   }
+}
+
+function refreshHistory() {
+  if (!state.activePc) return;
+  // Re-fetch latest history from other devices via socket ping
+  if (state.socket && state.activeGroup) {
+    state.socket.emit('admin:request-history', {
+      group_id: state.activeGroup.id,
+      pc_id: state.activePc.id
+    });
+  }
+  renderPCActions();
+  toast('Refreshed','ok');
 }
 
 function timeAgo(ms) {
