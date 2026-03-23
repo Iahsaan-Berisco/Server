@@ -872,7 +872,8 @@ function renderPCActions() {
   const history = lhGet(pc.id);
   if (history && history.length > 0) {
     let hHtml = `<div class="section-head">Recent Activity</div>
-      <div style="margin:0 18px 20px;background:var(--s1);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">`;
+      <div class="action-grid" style="padding-bottom:0;margin-bottom:20px;display:block">
+      <div style="background:var(--s1);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">`;
     history.forEach(entry => {
       const isFree = entry.type === 'free';
       const isAdd  = entry.type === 'add';
@@ -884,7 +885,7 @@ function renderPCActions() {
           <span style="font-size:11px;color:var(--t3)">${label}</span>
       </div>`;
     });
-    hHtml += '</div>';
+    hHtml += '</div></div>';
     sessionArea.innerHTML += hHtml;
   }
 }
@@ -965,9 +966,15 @@ async function removeTime(mins) {
   closeSheet('sheet-removetime');
   try {
     const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:-mins,group_id:state.activeGroup.id});
-    updatePcField(state.activePc.id,'session_end',r.session_end);
-    lhAdd(state.activePc.id, {type:'remove',mins,at:Date.now()});
-    toast('-'+mins+'m removed','ok');
+    if (r.session_ended) {
+      updatePcField(state.activePc.id,'session_end',0);
+      updatePcField(state.activePc.id,'stopwatch_start',0);
+      toast('Time exceeded — session ended','ok');
+    } else {
+      updatePcField(state.activePc.id,'session_end',r.session_end);
+      lhAdd(state.activePc.id, {type:'remove',mins,at:Date.now()});
+      toast('-'+mins+'m removed','ok');
+    }
   } catch(e) { toast(e.message,'err'); }
 }
 
@@ -1161,9 +1168,12 @@ function connectSocket() {
       if (state.activePc?.id===pc_id) { state.activePc.is_online=pc.is_online; updateOnlinePill(); }
     }
   });
-  // Receive history from other admin devices (in-memory broadcast, not DB)
+  // Receive history from other admin devices — instant update, no refresh needed
   state.socket.on('admin:history-sync', ({ pc_id, history }) => {
     lhSet(pc_id, history);
+    // Update local pc object too so renderPCs reflects it
+    const pc = state.pcs.find(p => p.id === pc_id);
+    if (pc) pc._history_updated = Date.now();
     if (state.activePc?.id === pc_id) renderPCActions();
   });
 
