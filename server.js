@@ -515,7 +515,20 @@ app.get('/api/health', async (req, res) => {
     res.json({ status: 'ok', database: 'connected', uptime: process.uptime() });
   } catch { res.json({ status: 'ok', database: 'disconnected', uptime: process.uptime() }); }
 });
-
+// ✅ New endpoint to fetch stored history
+app.get('/api/pcs/:pcId/history', authMiddleware, accountCheck, async (req, res) => {
+    try {
+        const { pcId } = req.params;
+        const { group_id } = req.query;
+        if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+        
+        const pc = await db.get('pcs', p => p.id === pcId);
+        // Return stored history or empty array
+        res.json({ history: pc.time_history || [] });
+    } catch(e) { 
+        res.status(500).json({ error: e.message }); 
+    }
+});
 // ─── WebSocket ──────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   socket.on('pc:auth', async ({ pc_name, group_id, password }, callback) => {
@@ -545,15 +558,18 @@ io.on('connection', (socket) => {
     try { jwt.verify(token, JWT_SECRET); socket.join(`group:${group_id}`); } catch {}
   });
 
-  // Admin broadcasts history update to other admins in same group
-  socket.on('admin:history-update', ({ group_id, pc_id, history }) => {
+// In io.on('connection')
+socket.on('admin:history-update', async ({ group_id, pc_id, history }) => {
+    // ✅ 1. Save to existing time_history field in DB (no new fields)
+    const pc = await db.get('pcs', p => p.id === pc_id);
+    if (pc) {
+        // Optional: Verify admin has access before saving
+        await db.update('pcs', p => p.id === pc_id, { time_history: history });
+    }
+    
+    // ✅ 2. Broadcast to other admins (ensure event name matches client)
     socket.to(`group:${group_id}`).emit('admin:history-update', { pc_id, history });
-  });
-
-  // Admin requests history from other devices in same group
-  socket.on('admin:request-history', ({ group_id, pc_id }) => {
-    socket.to(`group:${group_id}`).emit('admin:request-history', { pc_id });
-  });
+});
 
   // PC sends back process list — fire the pending HTTP callback
   socket.on('pc:processes', ({ processes }) => {
