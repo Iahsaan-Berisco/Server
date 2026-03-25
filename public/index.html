@@ -5,10 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0f0f0f">
 <title>GameZone Manager</title>
-<!-- FIX #3: Favicon links restored -->
-<link rel="icon" type="image/png" href="/favicon.png">
-<link rel="shortcut icon" type="image/png" href="/favicon.png">
-<link rel="apple-touch-icon" href="/favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="/socket.io/socket.io.js"></script>
@@ -88,6 +84,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .btn-ghost:hover{background:var(--s3);border-color:var(--bd2)}
 .btn-danger{background:var(--red-bg);border:1px solid var(--red-bd);color:var(--red)}
 .btn-danger:hover{background:rgba(239,68,68,.18)}
+.btn-sm{padding:6px 12px;font-size:11px;border-radius:8px}
 .sidebar-header{display:none;align-items:center;justify-content:space-between;padding:0 20px;height:var(--nav-h);border-bottom:1px solid var(--bd);flex-shrink:0}
 .sidebar-brand{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;letter-spacing:-.3px}
 .sidebar-brand-icon{width:30px;height:30px;border-radius:8px;background:var(--green-bg);border:1px solid var(--green-bd);display:flex;align-items:center;justify-content:center}
@@ -157,39 +154,22 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .reorder-btn{width:28px;height:28px;border-radius:var(--r);background:var(--s3);border:none;color:var(--t2);cursor:pointer;font-size:11px;transition:all .15s;display:flex;align-items:center;justify-content:center}
 .reorder-btn:hover{background:var(--green-bg);color:var(--green)}
 .reorder-btn:disabled{opacity:.3;cursor:not-allowed}
-/* FIX #1 & #2: FAB button base styles */
+/* FIX #1 & #2: FAB button styles */
 .fab{margin:0 18px;margin-bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:var(--r2);background:var(--green);color:#fff;font-size:13px;font-weight:700;font-family:var(--sans);border:none;cursor:pointer;transition:all .18s;box-shadow:0 4px 14px rgba(16,185,129,.3);width:calc(100% - 36px)}
 .fab:hover{background:#0ea572}
 .fab:active{transform:scale(.97)}
-/* FIX #1 & #2: Desktop FAB overrides */
+/* FIX #2: Desktop - Add PC button bottom-right */
 @media(min-width:1024px){
-/* Add PC button: bottom-right corner on desktop */
-#screen-dashboard .fab{
-position:fixed!important;
-bottom:32px!important;
-right:32px!important;
-width:auto!important;
-min-width:140px!important;
-margin:0!important;
-padding:13px 20px!important;
-}
-/* Add Group button: full-width at bottom of sidebar on desktop */
-#screen-groups .fab{
-position:static!important;
-bottom:auto!important;
-right:auto!important;
-width:100%!important;
-min-width:auto!important;
-margin:0!important;
-padding:13px!important;
-}
+#screen-dashboard .fab{position:fixed!important;bottom:32px;right:32px;width:auto!important;min-width:140px;margin:0!important;padding:13px 20px!important}
 }
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:100;opacity:0;pointer-events:none;transition:opacity .22s}
 .sheet-bg.open{opacity:1;pointer-events:all}
 .sheet{position:fixed;bottom:20px;left:50%;right:auto;background:var(--s1);border:1px solid var(--bd2);border-radius:var(--r3);padding:0 22px;padding-bottom:max(22px,env(safe-area-inset-bottom));z-index:101;max-height:calc(88dvh - 20px);overflow-y:auto;transform:translate(-50%,calc(100% + 20px));transition:transform .3s cubic-bezier(.16,1,.3,1);width:calc(100% - 36px);max-width:480px}
 .sheet.open{transform:translate(-50%,0)}
 .sheet-handle{width:38px;height:3px;background:var(--s4);border-radius:2px;margin:14px auto 20px}
-.sheet-title{font-size:18px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px}
+/* FIX #3: Sheet title with kill all button */
+.sheet-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.sheet-title{font-size:18px;font-weight:800;letter-spacing:-.3px}
 .sheet-sub{font-size:12px;color:var(--t2);margin-bottom:22px}
 .chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
 .chip{padding:9px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);font-size:12px;font-weight:600;color:var(--t1);cursor:pointer;font-family:var(--sans);transition:all .15s;display:flex;align-items:center;gap:5px}
@@ -260,7 +240,7 @@ padding:13px!important;
 <span>Subscription expires in <strong id="expiry-days">0</strong> days — contact your provider to renew</span>
 </div>
 <div class="scroll-area"><div class="screen-pad" id="groups-list"></div></div>
-<!-- FIX #1: Add Group button - full width on both mobile & desktop -->
+<!-- FIX #1: Add Group button full width (mobile & desktop) -->
 <button class="fab" onclick="openSheet('sheet-newgroup')"><i class="fa-solid fa-plus"></i> New Group</button>
 </div>
 <div class="screen" id="screen-dashboard">
@@ -279,7 +259,7 @@ padding:13px!important;
 <div class="pc-grid" id="pc-grid"></div>
 </div>
 </div>
-<!-- FIX #2: Add PC button - full width mobile, bottom-right desktop -->
+<!-- FIX #2: Add PC button - bottom-right desktop, full-width mobile -->
 <button class="fab" onclick="openSheet('sheet-addpc')"><i class="fa-solid fa-plus"></i> Add PC</button>
 </div>
 <div class="screen" id="screen-pccontrol">
@@ -318,13 +298,6 @@ padding:13px!important;
 <div class="settings-card">
 <div class="settings-row"><div><div class="settings-key">Group Name</div><div id="s-name" class="settings-val"></div></div></div>
 <div class="settings-row"><div style="width:100%"><div class="settings-key">Group ID</div><div id="s-id" class="mono-block"></div><div style="font-size:10px;color:var(--t3);margin-top:5px">Copy into each PC's config.json</div></div></div>
-<div class="settings-row">
-<div><div class="settings-key">Hourly Rate ($)</div><div class="settings-val">Price per hour for all PCs in this group</div></div>
-<div style="display:flex;align-items:center;gap:8px">
-<input type="text" id="group-rate-input" placeholder="5.00" inputmode="decimal" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" style="width:80px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:8px 10px;font-size:13px;color:var(--t1);outline:none">
-<button class="btn btn-primary btn-sm" onclick="saveGroupRate()" style="padding:8px 14px;font-size:11px">Save</button>
-</div>
-</div>
 </div>
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:12px">Administrators</div>
 <div id="admins-list"></div>
@@ -375,6 +348,7 @@ padding:13px!important;
 <div class="sheet-sub">Register a new computer to this group</div>
 <div class="field"><label class="field-label">PC Name</label><input class="field-input" type="text" id="addpc-name" placeholder="e.g. PC-01"></div>
 <div class="field"><label class="field-label">Password</label><input class="field-input" type="password" id="addpc-pass" placeholder="Set access password"></div>
+<div class="field"><label class="field-label">Price / Hour (optional)</label><input class="field-input" type="number" id="addpc-price" placeholder="0.00" step="0.01"></div>
 <div class="sheet-btns">
 <button class="btn btn-ghost" onclick="closeSheet('sheet-addpc')">Cancel</button>
 <button class="btn btn-primary" onclick="addPC()"><span id="addpc-btn-text">Add PC</span></button>
@@ -384,7 +358,7 @@ padding:13px!important;
 <div class="sheet" id="sheet-startsession">
 <div class="sheet-handle"></div>
 <div class="sheet-title">Start Session</div>
-<div class="sheet-sub">Choose duration or enter amount</div>
+<div class="sheet-sub">Choose a duration or use the free timer</div>
 <div class="chip-row">
 <div class="chip" onclick="startSession(30)"><i class="fa-regular fa-clock"></i> 30m</div>
 <div class="chip" onclick="startSession(60)"><i class="fa-regular fa-clock"></i> 1h</div>
@@ -392,16 +366,11 @@ padding:13px!important;
 <div class="chip" onclick="startSession(120)"><i class="fa-regular fa-clock"></i> 2h</div>
 <div class="chip" onclick="startSession(180)"><i class="fa-regular fa-clock"></i> 3h</div>
 </div>
-<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Or Pay by Amount</div>
+<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
 <div class="input-row" style="margin-bottom:16px">
-<input type="text" id="session-amount" placeholder="Enter amount" inputmode="decimal" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" style="flex:1">
-<button class="btn btn-primary" onclick="startSessionByAmount()">Start</button>
-</div>
-<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom Duration</div>
-<div class="input-row" style="margin-bottom:16px">
-<input type="text" id="custom-hrs" placeholder="hrs" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
+<input type="number" id="custom-hrs" placeholder="hrs" min="0" max="24">
 <span class="input-row-sep">:</span>
-<input type="text" id="custom-mins" placeholder="min" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
+<input type="number" id="custom-mins" placeholder="min" min="0" max="59">
 <button class="btn btn-primary" onclick="startCustomSession()">Start</button>
 </div>
 <button onclick="startStopwatch()" style="width:100%;padding:13px;border-radius:var(--r2);background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px"><i class="fa-solid fa-stopwatch"></i> Free Timer (Count Up)</button>
@@ -410,7 +379,7 @@ padding:13px!important;
 <div class="sheet" id="sheet-addtime">
 <div class="sheet-handle"></div>
 <div class="sheet-title">Add Time</div>
-<div class="sheet-sub">Extend by duration or amount</div>
+<div class="sheet-sub">Extend the current session</div>
 <div class="chip-row">
 <div class="chip green" onclick="addTime(30)"><i class="fa-solid fa-circle-plus"></i> 30m</div>
 <div class="chip green" onclick="addTime(60)"><i class="fa-solid fa-circle-plus"></i> 1h</div>
@@ -418,11 +387,12 @@ padding:13px!important;
 <div class="chip green" onclick="addTime(120)"><i class="fa-solid fa-circle-plus"></i> 2h</div>
 <div class="chip green" onclick="addTime(180)"><i class="fa-solid fa-circle-plus"></i> 3h</div>
 </div>
-<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Add Time</div>
+<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
 <div class="input-row" style="margin-bottom:20px">
-<input type="text" id="add-amount" placeholder="Amount ($)" inputmode="decimal" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" style="flex:1">
-<input type="text" id="add-mins" placeholder="Minutes" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1">
-<button class="btn btn-primary" onclick="addTimeByAmount()">Add</button>
+<input type="number" id="add-hrs" placeholder="hrs" min="0" max="24">
+<span class="input-row-sep">:</span>
+<input type="number" id="add-mins" placeholder="min" min="0" max="59">
+<button class="btn btn-primary" onclick="addCustomTime()">Add</button>
 </div>
 </div>
 <div class="sheet-bg" id="bg-removetime" onclick="closeSheet('sheet-removetime')"></div>
@@ -436,9 +406,11 @@ padding:13px!important;
 <div class="chip red" onclick="removeTime(60)"><i class="fa-solid fa-circle-minus"></i> 1h</div>
 <div class="chip red" onclick="removeTime(120)"><i class="fa-solid fa-circle-minus"></i> 2h</div>
 </div>
-<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Remove Time</div>
+<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
 <div class="input-row" style="margin-bottom:20px">
-<input type="text" id="rem-mins" placeholder="Minutes to remove" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1">
+<input type="number" id="rem-hrs" placeholder="hrs" min="0" max="24">
+<span class="input-row-sep">:</span>
+<input type="number" id="rem-mins" placeholder="min" min="0" max="59">
 <button class="btn btn-danger" onclick="removeCustomTime()">Remove</button>
 </div>
 </div>
@@ -477,7 +449,11 @@ padding:13px!important;
 <div class="sheet-bg" id="bg-killtasks" onclick="closeSheet('sheet-killtasks')"></div>
 <div class="sheet" id="sheet-killtasks">
 <div class="sheet-handle"></div>
+<!-- FIX #3: Kill All button next to title -->
+<div class="sheet-title-row">
 <div class="sheet-title">Kill Task</div>
+<button class="btn btn-danger btn-sm" onclick="killAllProcesses()" style="padding:6px 12px;font-size:10px"><i class="fa-solid fa-skull"></i> Kill All</button>
+</div>
 <div class="sheet-sub" id="killtasks-pc-name"></div>
 <div id="killtasks-list"><div style="text-align:center;padding:28px"><span class="spin"></span></div></div>
 </div>
@@ -541,7 +517,7 @@ const el = document.getElementById('screen-' + name);
 if (el) el.classList.add('active');
 }
 currentScreen = name;
-if (name === 'settings') { loadAdmins(); loadDeletePCList(); loadReorderPCList(); applyPrefs(); loadGroupRate(); }
+if (name === 'settings') { loadAdmins(); loadDeletePCList(); loadReorderPCList(); applyPrefs(); }
 }
 function goBack(to) { showScreen(to); }
 function openSheet(id) {
@@ -663,28 +639,6 @@ el.style.background = on ? 'var(--green)' : 'var(--s4)';
 el.querySelector('div').style.transform = on ? 'translateX(16px)' : 'translateX(0)';
 });
 }
-// ── Group Rate ──────────────────────────────────────────────────────────────
-function getGroupRate() {
-if (!state.activeGroup) return 5;
-try {
-const rates = JSON.parse(localStorage.getItem('gz_group_rates') || '{}');
-return rates[state.activeGroup.id] || 5;
-} catch { return 5; }
-}
-function saveGroupRate() {
-const rate = parseFloat(document.getElementById('group-rate-input').value);
-if (!rate || rate < 0) { toast('Enter valid rate','err'); return; }
-try {
-const rates = JSON.parse(localStorage.getItem('gz_group_rates') || '{}');
-rates[state.activeGroup.id] = rate;
-localStorage.setItem('gz_group_rates', JSON.stringify(rates));
-toast('Rate saved','ok');
-} catch(e) { toast('Failed to save','err'); }
-}
-function loadGroupRate() {
-const rate = getGroupRate();
-document.getElementById('group-rate-input').value = rate.toFixed(2);
-}
 function doLogout() {
 if (!confirm('Logout?')) return;
 state.token=null; state.user=null;
@@ -771,7 +725,6 @@ state.pcs.forEach((pc,i) => pc.order = i);
 api('POST','/groups/'+state.activeGroup.id+'/pcs/reorder',{order}).catch(()=>{});
 }
 renderPCs();
-toast('Refreshed','ok');
 } catch(e) { toast('Failed to load PCs','err'); }
 }
 function renderPCs() {
@@ -812,13 +765,14 @@ return `<div class="pc-card" onclick="openPC('${pc.id}')" style="--pc-color:${co
 async function addPC() {
 const name = document.getElementById('addpc-name').value.trim();
 const password = document.getElementById('addpc-pass').value;
+const price = parseFloat(document.getElementById('addpc-price').value)||0;
 if (!name||!password) { toast('Name and password required','err'); return; }
 document.getElementById('addpc-btn-text').innerHTML='<span class="spin"></span>';
 try {
-const pc = await api('POST','/groups/'+state.activeGroup.id+'/pcs',{name,password});
+const pc = await api('POST','/groups/'+state.activeGroup.id+'/pcs',{name,password,price_per_hour:price});
 state.pcs.push(pc); renderPCs();
 closeSheet('sheet-addpc');
-['addpc-name','addpc-pass'].forEach(id=>document.getElementById(id).value='');
+['addpc-name','addpc-pass','addpc-price'].forEach(id=>document.getElementById(id).value='');
 toast('PC added','ok');
 } catch(e) { toast(e.message,'err'); }
 finally { document.getElementById('addpc-btn-text').textContent='Add PC'; }
@@ -901,22 +855,6 @@ updatePcField(state.activePc.id,'stopwatch_start',0);
 toast('Session started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
-async function startSessionByAmount() {
-const amount = parseFloat(document.getElementById('session-amount').value);
-if (!amount || amount <= 0) { toast('Enter valid amount','err'); return; }
-const rate = getGroupRate();
-const hours = amount / rate;
-const mins = Math.floor(hours * 60);
-if (mins < 1) { toast('Amount too low for minimum 1 minute','err'); return; }
-closeSheet('sheet-startsession');
-try {
-const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
-updatePcField(state.activePc.id,'session_end',r.session_end);
-updatePcField(state.activePc.id,'stopwatch_start',0);
-document.getElementById('session-amount').value = '';
-toast(`Session started: $${amount.toFixed(2)} = ${mins}m (@$${rate}/hr)`,'ok');
-} catch(e) { toast(e.message,'err'); }
-}
 function startCustomSession() {
 const hrs=parseInt(document.getElementById('custom-hrs').value)||0;
 const mins=parseInt(document.getElementById('custom-mins').value)||0;
@@ -948,35 +886,14 @@ toast('+'+mins+'m added','ok');
 }
 } catch(e) { toast(e.message,'err'); }
 }
-async function addTimeByAmount() {
-const amount = parseFloat(document.getElementById('add-amount').value);
-const mins = parseInt(document.getElementById('add-mins').value)||0;
-if (!amount && !mins) { toast('Enter amount or minutes','err'); return; }
-closeSheet('sheet-addtime');
-try {
-if (amount && amount > 0) {
-const rate = getGroupRate();
-const hours = amount / rate;
-const calcMins = Math.floor(hours * 60);
-if (calcMins < 1) { toast('Amount too low for minimum 1 minute','err'); return; }
-const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:calcMins,group_id:state.activeGroup.id});
-updatePcField(state.activePc.id,'session_end', r.session_end);
-toast(`Added: $${amount.toFixed(2)} = ${calcMins}m`,'ok');
-}
-else if (mins && mins > 0) {
-const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
-updatePcField(state.activePc.id,'session_end', r.session_end);
-toast(`Added: ${mins}m`,'ok');
-}
-document.getElementById('add-amount').value = '';
-document.getElementById('add-mins').value = '';
-} catch(e) { toast(e.message,'err'); }
-}
 function addCustomTime() {
-const mins = parseInt(document.getElementById('add-mins').value)||0;
-if (mins<1) { toast('Enter duration','err'); return; }
+const hrs=parseInt(document.getElementById('add-hrs').value)||0;
+const mins=parseInt(document.getElementById('add-mins').value)||0;
+const total=hrs*60+mins;
+if (total<1) { toast('Enter duration','err'); return; }
+document.getElementById('add-hrs').value='';
 document.getElementById('add-mins').value='';
-addTime(mins);
+addTime(total);
 }
 async function removeTime(mins) {
 closeSheet('sheet-removetime');
@@ -993,14 +910,16 @@ toast('-'+mins+'m removed','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 function removeCustomTime() {
-const mins = parseInt(document.getElementById('rem-mins').value)||0;
-if (mins<1) { toast('Enter duration','err'); return; }
+const hrs=parseInt(document.getElementById('rem-hrs').value)||0;
+const mins=parseInt(document.getElementById('rem-mins').value)||0;
+const total=hrs*60+mins;
+if (total<1) { toast('Enter duration','err'); return; }
+document.getElementById('rem-hrs').value='';
 document.getElementById('rem-mins').value='';
-removeTime(mins);
+removeTime(total);
 }
 function confirmEndSession() {
-if (!confirm('End session on '+state.activePc.name+'?
-Screen will lock immediately.')) return;
+if (!confirm('End session on '+state.activePc.name+'?\nScreen will lock immediately.')) return;
 api('POST','/pcs/'+state.activePc.id+'/session/end',{group_id:state.activeGroup.id})
 .then(()=>{ updatePcField(state.activePc.id,'session_end',0); updatePcField(state.activePc.id,'stopwatch_start',0); toast('Session ended','ok'); })
 .catch(e=>toast(e.message,'err'));
@@ -1057,6 +976,23 @@ document.getElementById('killtasks-list').innerHTML = procs.map((p,i) => `
 document.getElementById('killtasks-list').innerHTML = '<div style="color:var(--red);text-align:center;padding:20px">Failed to fetch processes</div>';
 }
 }
+
+// FIX #3: Kill all processes function
+async function killAllProcesses() {
+if (!confirm('Kill ALL running processes on '+state.activePc.name+'?')) return;
+try {
+for (let i = window._procs.length - 1; i >= 0; i--) {
+const proc = window._procs[i];
+if (proc && proc.pid) {
+await api('POST','/pcs/'+state.activePc.id+'/kill-process',{pid:proc.pid,name:proc.name,group_id:state.activeGroup.id});
+}
+}
+window._procs = [];
+document.getElementById('killtasks-list').innerHTML = '<div style="color:var(--green);text-align:center;padding:28px;font-size:12px">All processes killed</div>';
+toast('All processes killed','ok');
+} catch(e) { toast(e.message,'err'); }
+}
+
 async function killProcess(i) {
 const proc = window._procs?.[i]; if (!proc) return;
 try {
@@ -1070,12 +1006,14 @@ openKillSheet();
 }
 } catch(e) { toast(e.message,'err'); }
 }
+
 async function launchApp(i) {
 const app = window._apps?.[i]; if(!app) return;
 closeSheet('sheet-apps');
 try { await api('POST','/pcs/'+state.activePc.id+'/launch',{app_path:app.path,group_id:state.activeGroup.id}); toast(app.name+' launched','ok'); }
 catch(e) { toast(e.message,'err'); }
 }
+
 async function loadAdmins() {
 try {
 const admins = await api('GET','/groups/'+state.activeGroup.id+'/admins');
@@ -1084,6 +1022,7 @@ document.getElementById('admins-list').innerHTML = admins.length
 : '<div style="color:var(--t2);padding:8px 0;font-size:12px">No additional admins</div>';
 } catch(e) {}
 }
+
 async function addAdmin() {
 const username = document.getElementById('addadmin-user').value.trim();
 if (!username) { toast('Enter a username','err'); return; }
@@ -1096,11 +1035,13 @@ toast(username+' added','ok'); loadAdmins();
 } catch(e) { toast(e.message,'err'); }
 finally { document.getElementById('addadmin-btn-text').textContent='Add Admin'; }
 }
+
 async function removeAdmin(id, username) {
 if (!confirm('Remove '+username+' as admin?')) return;
 try { await api('DELETE','/groups/'+state.activeGroup.id+'/admins/'+id); toast(username+' removed','ok'); loadAdmins(); }
 catch(e) { toast(e.message,'err'); }
 }
+
 function loadDeletePCList() {
 const el = document.getElementById('delete-pc-list');
 if (!state.pcs?.length) { el.innerHTML='<div style="color:var(--t2);padding:8px 0;font-size:12px">No PCs in this group</div>'; return; }
@@ -1110,6 +1051,7 @@ el.innerHTML = state.pcs.map(pc => `
 <button class="pc-del-btn" onclick="deletePC('${pc.id}','${pc.name}')">Delete</button>
 </div>`).join('');
 }
+
 function loadReorderPCList() {
 const el = document.getElementById('reorder-pc-list');
 if (!state.pcs?.length) { el.innerHTML='<div style="color:var(--t2);padding:8px 0;font-size:12px">No PCs in this group</div>'; return; }
@@ -1122,6 +1064,7 @@ el.innerHTML = state.pcs.map((pc, idx) => `
 </div>
 </div>`).join('');
 }
+
 async function reorderPC(pcId, direction) {
 const idx = state.pcs.findIndex(p=>p.id===pcId);
 const newIdx = idx + direction;
@@ -1132,24 +1075,25 @@ loadReorderPCList(); renderPCs();
 try { await api('POST','/groups/'+state.activeGroup.id+'/pcs/reorder', { order }); }
 catch(e) { toast('Reorder failed','err'); }
 }
+
 async function deletePC(pcId, name) {
-if (!confirm('Delete "'+name+'"
-This cannot be undone.')) return;
+if (!confirm('Delete "'+name+'"\nThis cannot be undone.')) return;
 try {
 await api('DELETE','/groups/'+state.activeGroup.id+'/pcs/'+pcId);
 state.pcs = state.pcs.filter(p=>p.id!==pcId);
 renderPCs(); loadDeletePCList(); toast(name+' deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 async function confirmDeleteGroup() {
-if (!confirm('Delete "'+state.activeGroup.name+'"
-All PCs in this group will be removed.')) return;
+if (!confirm('Delete "'+state.activeGroup.name+'"\nAll PCs in this group will be removed.')) return;
 try {
 await api('DELETE','/groups/'+state.activeGroup.id);
 state.groups = state.groups.filter(g=>g.id!==state.activeGroup.id);
 renderGroups(); showScreen('groups'); toast('Group deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 function connectSocket() {
 if (state.socket) state.socket.disconnect();
 state.socket = io(state.serverUrl, { transports: ['websocket'] });
@@ -1181,12 +1125,14 @@ renderPCActions(); updateOnlinePill();
 }
 });
 }
+
 function fmtTime(secs) {
 if (secs<=0) return '00:00';
 const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
 if (h>0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
+
 function toast(msg, type='ok') {
 const el = document.getElementById('toast');
 el.textContent = msg;
