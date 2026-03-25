@@ -535,7 +535,6 @@ document.getElementById(id).classList.remove('open');
 document.getElementById('bg-' + id.replace('sheet-','')).classList.remove('open');
 }
 
-// ✅ FIX: Removed click debouncing - was blocking API calls
 async function api(method, path, body) {
 const res = await fetch(state.serverUrl+'/api'+path, {
 method,
@@ -675,38 +674,26 @@ localStorage.removeItem('gz_token'); localStorage.removeItem('gz_user');
 if (state.socket) state.socket.disconnect();
 showScreen('login');
 }
-
-// ✅ FIX: Better error logging for debugging
 async function loadGroups() {
 try {
-console.log('[DEBUG] Loading groups...');
 const me = await api('GET', '/me');
 if (state.user) {
 state.user.status = me.status;
 state.user.expiry_date = me.expiry_date;
 localStorage.setItem('gz_user', JSON.stringify(state.user));
 }
-} catch(e) { 
-console.error('[DEBUG] /me failed:', e);
-}
+} catch(e) { }
 checkExpiryWarning();
 const status = state.user?.status || 'active';
 if (status !== 'active') { renderGroups(); return; }
-try { 
-console.log('[DEBUG] Fetching /api/groups...');
-state.groups = await api('GET','/groups'); 
-console.log('[DEBUG] Groups loaded:', state.groups.length);
-renderGroups(); 
-}
+try { state.groups = await api('GET','/groups'); renderGroups(); }
 catch(e) {
-console.error('[DEBUG] /groups failed:', e);
 if (e.message==='account_pending')          { if(state.user) state.user.status='pending';     renderGroups(); }
 else if (e.message==='subscription_expired')  { if(state.user) state.user.status='expired';      renderGroups(); }
 else if (e.message==='account_deactivated') { if(state.user) state.user.status='deactivated'; renderGroups(); }
-else toast('Failed to load groups: '+e.message,'err');
+else toast('Failed to load groups','err');
 }
 }
-
 function renderGroups() {
 const el = document.getElementById('groups-list');
 const status = state.user?.status || 'active';
@@ -913,6 +900,7 @@ hHtml += `<div style="text-align:center;padding:28px;color:var(--t3);font-size:1
 hHtml += '</div></div>';
 sessionArea.innerHTML += hHtml;
 }
+
 async function togglePay(status) {
 if (!state.activePc) return;
 const id = state.activePc.id;
@@ -979,6 +967,8 @@ lhAdd(state.activePc.id, {type:'free',mins:0,at:Date.now()});
 toast('Free timer started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
+// ✅ FIX #1: Added renderPCActions() to refresh UI after lhAdd()
 async function addTime(mins) {
 closeSheet('sheet-addtime');
 try {
@@ -991,9 +981,12 @@ toast('+'+mins+'m added to free timer','ok');
 updatePcField(state.activePc.id,'session_end', r.session_end);
 lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
 toast('+'+mins+'m added','ok');
+// ✅ Refresh UI to show updated history
+renderPCActions();
 }
 } catch(e) { toast(e.message,'err'); }
 }
+
 async function addTimeByAmount() {
 const amount = parseFloat(document.getElementById('add-amount').value);
 const mins = parseInt(document.getElementById('add-mins').value)||0;
@@ -1018,6 +1011,8 @@ toast(`Added: ${mins}m`,'ok');
 }
 document.getElementById('add-amount').value = '';
 document.getElementById('add-mins').value = '';
+// ✅ Refresh UI to show updated history
+renderPCActions();
 } catch(e) { toast(e.message,'err'); }
 }
 function addCustomTime() {
@@ -1040,6 +1035,8 @@ updatePcField(state.activePc.id,'session_end',r.session_end);
 lhAdd(state.activePc.id, {type:'remove',mins,at:Date.now()});
 toast('-'+mins+'m removed','ok');
 }
+// ✅ Refresh UI to show updated history
+renderPCActions();
 } catch(e) { toast(e.message,'err'); }
 }
 function removeCustomTime() {
@@ -1048,6 +1045,8 @@ if (mins<1) { toast('Enter duration','err'); return; }
 document.getElementById('rem-mins').value='';
 removeTime(mins);
 }
+
+// ✅ FIX #2: Broadcast free timer elapsed time to other devices
 function confirmEndSession() {
 if (!confirm('End session on '+state.activePc.name+'?\nScreen will lock immediately.')) return;
 const pc = state.activePc;
@@ -1063,21 +1062,33 @@ break;
 }
 }
 lhSet(pc.id, history);
+// ✅ Broadcast updated history to other devices
+if (state.socket && state.activeGroup) {
+state.socket.emit('admin:history-update', {
+group_id: state.activeGroup.id,
+pc_id: pc.id,
+history: history.slice(0,5)
+});
+}
 _freeTimerStart = 0;
 _freeTimerAdded = 0;
 }
 api('POST','/pcs/'+state.activePc.id+'/session/end',{group_id:state.activeGroup.id})
-.then(()=>{ updatePcField(state.activePc.id,'session_end',0); updatePcField(state.activePc.id,'stopwatch_start',0); toast('Session ended','ok'); renderPCActions(); })
+.then(()=>{ 
+updatePcField(state.activePc.id,'session_end',0); 
+updatePcField(state.activePc.id,'stopwatch_start',0); 
+toast('Session ended','ok'); 
+renderPCActions(); 
+})
 .catch(e=>toast(e.message,'err'));
 }
+
 async function pcCmd(action) {
 try {
 await api('POST','/pcs/'+state.activePc.id+'/'+action,{group_id:state.activeGroup.id});
 toast(action==='lock'?'Screen locked':'Screen unlocked','ok');
 } catch(e) { toast(e.message,'err'); }
 }
-
-// ✅ FIX: Restored renderPCs() call - needed for dashboard updates
 function updatePcField(pcId, field, value) {
 const pc = state.pcs.find(p=>p.id===pcId);
 if (pc) pc[field]=value;
@@ -1085,9 +1096,8 @@ if (state.activePc?.id===pcId) {
 state.activePc[field]=value; 
 renderPCActions();
 }
-renderPCs();  // ✅ Restored - dashboard needs this
+renderPCs();
 }
-
 async function openApps() {
 document.getElementById('apps-pc-name').textContent = 'on '+state.activePc.name;
 document.getElementById('apps-list').innerHTML = '<div style="text-align:center;padding:28px"><span class="spin"></span></div>';
@@ -1234,7 +1244,7 @@ renderGroups(); showScreen('groups'); toast('Group deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// ✅ FIX: Socket listener for real-time history sync between devices
+// ✅ FIX #3: Added socket listener for history updates from other devices
 function connectSocket() {
 if (state.socket) state.socket.disconnect();
 state.socket = io(state.serverUrl, { transports: ['websocket'] });
@@ -1274,7 +1284,7 @@ state.socket.on('admin:history-update', (data) => {
 if (data.group_id === state.activeGroup?.id && data.pc_id === state.activePc?.id) {
 const h = data.history || [];
 localStorage.setItem('gz_history_' + data.pc_id, JSON.stringify(h.slice(0,5)));
-renderPCActions();
+renderPCActions();  // Refresh UI to show updated history
 }
 });
 }
