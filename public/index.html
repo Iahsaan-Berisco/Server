@@ -372,11 +372,19 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="chip" onclick="startSession(120)"><i class="fa-regular fa-clock"></i> 2h</div>
 <div class="chip" onclick="startSession(180)"><i class="fa-regular fa-clock"></i> 3h</div>
 </div>
-<!-- FIX #1: Start time by rate (like add time sheet) -->
+<!-- FIX: Amount + Minutes input like Add Time sheet -->
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Or Pay by Amount</div>
 <div class="input-row" style="margin-bottom:16px">
 <input type="text" id="session-amount" placeholder="Amount ($)" inputmode="decimal" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" style="flex:1">
+<input type="text" id="session-mins" placeholder="Minutes" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1">
 <button class="btn btn-primary" onclick="startSessionByAmount()">Start</button>
+</div>
+<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom Duration</div>
+<div class="input-row" style="margin-bottom:16px">
+<input type="text" id="custom-hrs" placeholder="hrs" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
+<span class="input-row-sep">:</span>
+<input type="text" id="custom-mins" placeholder="min" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
+<button class="btn btn-primary" onclick="startCustomSession()">Start</button>
 </div>
 <button onclick="startStopwatch()" style="width:100%;padding:13px;border-radius:var(--r2);background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px"><i class="fa-solid fa-stopwatch"></i> Free Timer (Count Up)</button>
 </div>
@@ -942,20 +950,23 @@ toast('Session started','ok');
 
 async function startSessionByAmount() {
 const amount = parseFloat(document.getElementById('session-amount').value);
-if (!amount || amount <= 0) { toast('Enter valid amount','err'); return; }
-const rate = getGroupRate();
-const hours = amount / rate;
-const mins = Math.floor(hours * 60);
-if (mins < 1) { toast('Amount too low for minimum 1 minute','err'); return; }
+const mins = parseInt(document.getElementById('session-mins').value)||0;
+if (!amount && !mins) { toast('Enter amount or minutes','err'); return; }
 closeSheet('sheet-startsession');
 try {
-const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
+let totalMins = mins;
+if (amount && amount > 0) {
+const rate = getGroupRate();
+const hours = amount / rate;
+totalMins += Math.floor(hours * 60);
+}
+if (totalMins < 1) { toast('Duration too low','err'); return; }
+const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:totalMins,group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'session_end',r.session_end);
 updatePcField(state.activePc.id,'stopwatch_start',0);
-// FIX #3: Add to history when starting session by amount
-lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
 document.getElementById('session-amount').value = '';
-toast(`Session started: $${amount.toFixed(2)} = ${mins}m (@$${rate}/hr)`,'ok');
+document.getElementById('session-mins').value = '';
+toast(`Session started: ${totalMins}m`,'ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
