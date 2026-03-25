@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0f0f0f">
 <title>GameZone Manager</title>
+<!-- FIX #3: Favicon links restored -->
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="shortcut icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="/socket.io/socket.io.js"></script>
@@ -153,10 +157,33 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .reorder-btn{width:28px;height:28px;border-radius:var(--r);background:var(--s3);border:none;color:var(--t2);cursor:pointer;font-size:11px;transition:all .15s;display:flex;align-items:center;justify-content:center}
 .reorder-btn:hover{background:var(--green-bg);color:var(--green)}
 .reorder-btn:disabled{opacity:.3;cursor:not-allowed}
-/* FIX: Original FAB button style restored */
+/* FIX #1 & #2: FAB button base styles */
 .fab{margin:0 18px;margin-bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:var(--r2);background:var(--green);color:#fff;font-size:13px;font-weight:700;font-family:var(--sans);border:none;cursor:pointer;transition:all .18s;box-shadow:0 4px 14px rgba(16,185,129,.3);width:calc(100% - 36px)}
 .fab:hover{background:#0ea572}
 .fab:active{transform:scale(.97)}
+/* FIX #1 & #2: Desktop FAB overrides */
+@media(min-width:1024px){
+/* Add PC button: bottom-right corner on desktop */
+#screen-dashboard .fab{
+position:fixed!important;
+bottom:32px!important;
+right:32px!important;
+width:auto!important;
+min-width:140px!important;
+margin:0!important;
+padding:13px 20px!important;
+}
+/* Add Group button: full-width at bottom of sidebar on desktop */
+#screen-groups .fab{
+position:static!important;
+bottom:auto!important;
+right:auto!important;
+width:100%!important;
+min-width:auto!important;
+margin:0!important;
+padding:13px!important;
+}
+}
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:100;opacity:0;pointer-events:none;transition:opacity .22s}
 .sheet-bg.open{opacity:1;pointer-events:all}
 .sheet{position:fixed;bottom:20px;left:50%;right:auto;background:var(--s1);border:1px solid var(--bd2);border-radius:var(--r3);padding:0 22px;padding-bottom:max(22px,env(safe-area-inset-bottom));z-index:101;max-height:calc(88dvh - 20px);overflow-y:auto;transform:translate(-50%,calc(100% + 20px));transition:transform .3s cubic-bezier(.16,1,.3,1);width:calc(100% - 36px);max-width:480px}
@@ -170,11 +197,10 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .chip:active{transform:scale(.95)}
 .chip.green{background:var(--green-bg);border-color:var(--green-bd);color:var(--green)}
 .chip.red{background:var(--red-bg);border-color:var(--red-bd);color:var(--red)}
-/* FIX: Input row with no-wrap and full-width inputs */
-.input-row{display:flex;gap:8px;align-items:center;flex-wrap:nowrap}
-.input-row input{flex:1;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:11px 13px;font-size:13px;color:var(--t1);font-family:var(--sans);outline:none;transition:border-color .18s;min-width:0}
+.input-row{display:flex;gap:8px;align-items:center}
+.input-row input{flex:1;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:11px 13px;font-size:13px;color:var(--t1);font-family:var(--sans);outline:none;transition:border-color .18s}
 .input-row input:focus{border-color:var(--green)}
-.input-row-sep{color:var(--t3);font-weight:600;font-size:14px;flex-shrink:0}
+.input-row-sep{color:var(--t3);font-weight:600;font-size:14px}
 .sheet-btns{display:flex;gap:8px;margin-top:20px}
 .sheet-btns .btn{flex:1}
 .app-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--bd)}
@@ -234,6 +260,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <span>Subscription expires in <strong id="expiry-days">0</strong> days — contact your provider to renew</span>
 </div>
 <div class="scroll-area"><div class="screen-pad" id="groups-list"></div></div>
+<!-- FIX #1: Add Group button - full width on both mobile & desktop -->
 <button class="fab" onclick="openSheet('sheet-newgroup')"><i class="fa-solid fa-plus"></i> New Group</button>
 </div>
 <div class="screen" id="screen-dashboard">
@@ -252,7 +279,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="pc-grid" id="pc-grid"></div>
 </div>
 </div>
-<!-- FIX: Refresh button removed, only Add PC FAB remains -->
+<!-- FIX #2: Add PC button - full width mobile, bottom-right desktop -->
 <button class="fab" onclick="openSheet('sheet-addpc')"><i class="fa-solid fa-plus"></i> Add PC</button>
 </div>
 <div class="screen" id="screen-pccontrol">
@@ -460,7 +487,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 const state = { token:null, user:null, serverUrl:null, groups:[], activeGroup:null, pcs:[], activePc:null, socket:null };
 let currentScreen = 'login';
 let _toastT;
-
 window.addEventListener('load', () => {
 state.token = localStorage.getItem('gz_token');
 state.user = JSON.parse(localStorage.getItem('gz_user') || 'null');
@@ -493,7 +519,6 @@ if (timerBig) timerBig.textContent = isWatch ? fmtTime(elapsed) : fmtTime(left);
 }
 }, 1000);
 });
-
 const MAIN_SCREENS = ['screen-dashboard','screen-pccontrol','screen-settings'];
 function showScreen(name) {
 const isDesktop = window.innerWidth >= 1024;
@@ -518,9 +543,7 @@ if (el) el.classList.add('active');
 currentScreen = name;
 if (name === 'settings') { loadAdmins(); loadDeletePCList(); loadReorderPCList(); applyPrefs(); loadGroupRate(); }
 }
-
 function goBack(to) { showScreen(to); }
-
 function openSheet(id) {
 document.getElementById(id).classList.add('open');
 document.getElementById('bg-' + id.replace('sheet-','')).classList.add('open');
@@ -529,7 +552,6 @@ function closeSheet(id) {
 document.getElementById(id).classList.remove('open');
 document.getElementById('bg-' + id.replace('sheet-','')).classList.remove('open');
 }
-
 async function api(method, path, body) {
 const res = await fetch(state.serverUrl+'/api'+path, {
 method,
@@ -542,21 +564,18 @@ const data = await res.json();
 if (!res.ok) throw new Error(data.error||'Request failed');
 return data;
 }
-
 function switchTab(tab) {
 document.getElementById('tab-login').classList.toggle('active', tab==='login');
 document.getElementById('tab-register').classList.toggle('active', tab==='register');
 document.getElementById('login-form').style.display = tab==='login'?'block':'none';
 document.getElementById('register-form').style.display = tab==='register'?'block':'none';
 }
-
 async function fetchWithTimeout(url, options, timeout=10000) {
 const controller = new AbortController();
 const id = setTimeout(() => controller.abort(), timeout);
 try { const res = await fetch(url, { ...options, signal: controller.signal }); return res; }
 finally { clearTimeout(id); }
 }
-
 async function doLogin() {
 const server = document.getElementById('login-server').value.trim().replace(/\/$/,'');
 const username = document.getElementById('login-user').value.trim();
@@ -579,7 +598,6 @@ if (e.name==='AbortError') toast('Connection timed out','err');
 else toast(e.message||'Login failed','err');
 } finally { btn.disabled=false; document.getElementById('login-btn-text').textContent='Sign In'; }
 }
-
 async function doRegister() {
 const server = document.getElementById('reg-server').value.trim().replace(/\/$/,'');
 const username = document.getElementById('reg-user').value.trim();
@@ -600,7 +618,6 @@ if (e.name==='AbortError') toast('Connection timed out','err');
 else toast(e.message||'Registration failed','err');
 } finally { btn.disabled=false; document.getElementById('reg-btn-text').textContent='Create Account'; }
 }
-
 function saveAuth(server, token, user, status, expiry_date) {
 state.token = token;
 state.user = { ...user, status: status||'active', expiry_date: expiry_date||null };
@@ -609,7 +626,6 @@ localStorage.setItem('gz_token', token);
 localStorage.setItem('gz_user', JSON.stringify(state.user));
 localStorage.setItem('gz_server', server);
 }
-
 function checkExpiryWarning() {
 const expiry = state.user?.expiry_date;
 const banner = document.getElementById('expiry-banner');
@@ -623,7 +639,6 @@ document.getElementById('expiry-days').textContent = daysLeft;
 banner.style.display = 'none';
 }
 }
-
 // ── Preferences ──────────────────────────────────────────────────────────────
 function getPrefs() {
 try { return JSON.parse(localStorage.getItem('gz_prefs') || '{}'); } catch { return {}; }
@@ -648,7 +663,6 @@ el.style.background = on ? 'var(--green)' : 'var(--s4)';
 el.querySelector('div').style.transform = on ? 'translateX(16px)' : 'translateX(0)';
 });
 }
-
 // ── Group Rate ──────────────────────────────────────────────────────────────
 function getGroupRate() {
 if (!state.activeGroup) return 5;
@@ -671,7 +685,6 @@ function loadGroupRate() {
 const rate = getGroupRate();
 document.getElementById('group-rate-input').value = rate.toFixed(2);
 }
-
 function doLogout() {
 if (!confirm('Logout?')) return;
 state.token=null; state.user=null;
@@ -679,7 +692,6 @@ localStorage.removeItem('gz_token'); localStorage.removeItem('gz_user');
 if (state.socket) state.socket.disconnect();
 showScreen('login');
 }
-
 async function loadGroups() {
 try {
 const me = await api('GET', '/me');
@@ -700,7 +712,6 @@ else if (e.message==='account_deactivated') { if(state.user) state.user.status='
 else toast('Failed to load groups','err');
 }
 }
-
 function renderGroups() {
 const el = document.getElementById('groups-list');
 const status = state.user?.status || 'active';
@@ -730,7 +741,6 @@ el.innerHTML = state.groups.map(g =>
 </div>`
 ).join('');
 }
-
 async function createGroup() {
 const name = document.getElementById('newgroup-name').value.trim();
 if (!name) { toast('Enter a name','err'); return; }
@@ -744,7 +754,6 @@ toast('Group created','ok');
 } catch(e) { toast(e.message,'err'); }
 finally { document.getElementById('newgroup-btn-text').textContent='Create'; }
 }
-
 function openGroup(id) {
 state.activeGroup = state.groups.find(g=>g.id===id);
 document.getElementById('dash-title').textContent = state.activeGroup.name;
@@ -752,7 +761,6 @@ document.getElementById('s-name').textContent = state.activeGroup.name;
 document.getElementById('s-id').textContent = state.activeGroup.id;
 showScreen('dashboard'); loadPCs(); connectSocket();
 }
-
 async function loadPCs() {
 try {
 state.pcs = await api('GET','/groups/'+state.activeGroup.id+'/pcs');
@@ -766,7 +774,6 @@ renderPCs();
 toast('Refreshed','ok');
 } catch(e) { toast('Failed to load PCs','err'); }
 }
-
 function renderPCs() {
 const now = Math.floor(Date.now()/1000);
 const online = state.pcs.filter(p=>p.is_online).length;
@@ -802,7 +809,6 @@ return `<div class="pc-card" onclick="openPC('${pc.id}')" style="--pc-color:${co
 </div>`;
 }).join('');
 }
-
 async function addPC() {
 const name = document.getElementById('addpc-name').value.trim();
 const password = document.getElementById('addpc-pass').value;
@@ -817,13 +823,11 @@ toast('PC added','ok');
 } catch(e) { toast(e.message,'err'); }
 finally { document.getElementById('addpc-btn-text').textContent='Add PC'; }
 }
-
 function openPC(id) {
 state.activePc = state.pcs.find(p=>p.id===id);
 document.getElementById('pc-title').textContent = state.activePc.name;
 updateOnlinePill(); renderPCActions(); showScreen('pccontrol');
 }
-
 function updateOnlinePill() {
 const pc = state.activePc; if(!pc) return;
 const pill = document.getElementById('pc-pill');
@@ -835,7 +839,6 @@ pill.innerHTML = '<span class="dot" style="background:var(--t3)"></span> Offline
 pill.style.cssText = '';
 }
 }
-
 function renderPCActions() {
 const pc = state.activePc; if(!pc) return;
 const now = Math.floor(Date.now()/1000);
@@ -876,7 +879,6 @@ sessionArea.innerHTML = `<div class="section-head">Session Control</div>
 </div>`;
 }
 }
-
 async function togglePay(status) {
 if (!state.activePc) return;
 const id = state.activePc.id;
@@ -890,7 +892,6 @@ renderPCActions(); renderPCs();
 toast(newStatus ? 'Marked '+newStatus : 'Payment cleared','ok');
 } catch(e) { toast(e.message,'err'); }
 }
-
 async function startSession(mins) {
 closeSheet('sheet-startsession');
 try {
@@ -900,7 +901,6 @@ updatePcField(state.activePc.id,'stopwatch_start',0);
 toast('Session started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
-
 async function startSessionByAmount() {
 const amount = parseFloat(document.getElementById('session-amount').value);
 if (!amount || amount <= 0) { toast('Enter valid amount','err'); return; }
@@ -917,7 +917,6 @@ document.getElementById('session-amount').value = '';
 toast(`Session started: $${amount.toFixed(2)} = ${mins}m (@$${rate}/hr)`,'ok');
 } catch(e) { toast(e.message,'err'); }
 }
-
 function startCustomSession() {
 const hrs=parseInt(document.getElementById('custom-hrs').value)||0;
 const mins=parseInt(document.getElementById('custom-mins').value)||0;
@@ -927,7 +926,6 @@ document.getElementById('custom-hrs').value='';
 document.getElementById('custom-mins').value='';
 startSession(total);
 }
-
 async function startStopwatch() {
 closeSheet('sheet-startsession');
 try {
@@ -937,7 +935,6 @@ updatePcField(state.activePc.id,'session_end',0);
 toast('Free timer started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
-
 async function addTime(mins) {
 closeSheet('sheet-addtime');
 try {
@@ -951,7 +948,6 @@ toast('+'+mins+'m added','ok');
 }
 } catch(e) { toast(e.message,'err'); }
 }
-
 async function addTimeByAmount() {
 const amount = parseFloat(document.getElementById('add-amount').value);
 const mins = parseInt(document.getElementById('add-mins').value)||0;
@@ -976,14 +972,12 @@ document.getElementById('add-amount').value = '';
 document.getElementById('add-mins').value = '';
 } catch(e) { toast(e.message,'err'); }
 }
-
 function addCustomTime() {
 const mins = parseInt(document.getElementById('add-mins').value)||0;
 if (mins<1) { toast('Enter duration','err'); return; }
 document.getElementById('add-mins').value='';
 addTime(mins);
 }
-
 async function removeTime(mins) {
 closeSheet('sheet-removetime');
 try {
@@ -998,35 +992,31 @@ toast('-'+mins+'m removed','ok');
 }
 } catch(e) { toast(e.message,'err'); }
 }
-
 function removeCustomTime() {
 const mins = parseInt(document.getElementById('rem-mins').value)||0;
 if (mins<1) { toast('Enter duration','err'); return; }
 document.getElementById('rem-mins').value='';
 removeTime(mins);
 }
-
 function confirmEndSession() {
-if (!confirm('End session on '+state.activePc.name+'?\nScreen will lock immediately.')) return;
+if (!confirm('End session on '+state.activePc.name+'?
+Screen will lock immediately.')) return;
 api('POST','/pcs/'+state.activePc.id+'/session/end',{group_id:state.activeGroup.id})
 .then(()=>{ updatePcField(state.activePc.id,'session_end',0); updatePcField(state.activePc.id,'stopwatch_start',0); toast('Session ended','ok'); })
 .catch(e=>toast(e.message,'err'));
 }
-
 async function pcCmd(action) {
 try {
 await api('POST','/pcs/'+state.activePc.id+'/'+action,{group_id:state.activeGroup.id});
 toast(action==='lock'?'Screen locked':'Screen unlocked','ok');
 } catch(e) { toast(e.message,'err'); }
 }
-
 function updatePcField(pcId, field, value) {
 const pc = state.pcs.find(p=>p.id===pcId);
 if (pc) pc[field]=value;
 if (state.activePc?.id===pcId) { state.activePc[field]=value; renderPCActions(); }
 renderPCs();
 }
-
 async function openApps() {
 document.getElementById('apps-pc-name').textContent = 'on '+state.activePc.name;
 document.getElementById('apps-list').innerHTML = '<div style="text-align:center;padding:28px"><span class="spin"></span></div>';
@@ -1038,7 +1028,6 @@ if (!apps.length) { document.getElementById('apps-list').innerHTML='<div style="
 document.getElementById('apps-list').innerHTML = apps.map((a,i)=>`<div class="app-row"><div class="app-name"><i class="fa-solid fa-file"></i>${a.name}</div><button class="launch-btn" onclick="launchApp(${i})"><i class="fa-solid fa-play"></i> Launch</button></div>`).join('');
 } catch(e) { document.getElementById('apps-list').innerHTML='<div style="color:var(--red);text-align:center;padding:20px">Failed to load apps</div>'; }
 }
-
 async function openKillSheet() {
 document.getElementById('killtasks-pc-name').textContent = 'on '+state.activePc.name;
 document.getElementById('killtasks-list').innerHTML = '<div style="text-align:center;padding:28px"><span class="spin"></span><div style="color:var(--t3);font-size:11px;margin-top:10px">Fetching running processes...</div></div>';
@@ -1068,7 +1057,6 @@ document.getElementById('killtasks-list').innerHTML = procs.map((p,i) => `
 document.getElementById('killtasks-list').innerHTML = '<div style="color:var(--red);text-align:center;padding:20px">Failed to fetch processes</div>';
 }
 }
-
 async function killProcess(i) {
 const proc = window._procs?.[i]; if (!proc) return;
 try {
@@ -1082,14 +1070,12 @@ openKillSheet();
 }
 } catch(e) { toast(e.message,'err'); }
 }
-
 async function launchApp(i) {
 const app = window._apps?.[i]; if(!app) return;
 closeSheet('sheet-apps');
 try { await api('POST','/pcs/'+state.activePc.id+'/launch',{app_path:app.path,group_id:state.activeGroup.id}); toast(app.name+' launched','ok'); }
 catch(e) { toast(e.message,'err'); }
 }
-
 async function loadAdmins() {
 try {
 const admins = await api('GET','/groups/'+state.activeGroup.id+'/admins');
@@ -1098,7 +1084,6 @@ document.getElementById('admins-list').innerHTML = admins.length
 : '<div style="color:var(--t2);padding:8px 0;font-size:12px">No additional admins</div>';
 } catch(e) {}
 }
-
 async function addAdmin() {
 const username = document.getElementById('addadmin-user').value.trim();
 if (!username) { toast('Enter a username','err'); return; }
@@ -1111,13 +1096,11 @@ toast(username+' added','ok'); loadAdmins();
 } catch(e) { toast(e.message,'err'); }
 finally { document.getElementById('addadmin-btn-text').textContent='Add Admin'; }
 }
-
 async function removeAdmin(id, username) {
 if (!confirm('Remove '+username+' as admin?')) return;
 try { await api('DELETE','/groups/'+state.activeGroup.id+'/admins/'+id); toast(username+' removed','ok'); loadAdmins(); }
 catch(e) { toast(e.message,'err'); }
 }
-
 function loadDeletePCList() {
 const el = document.getElementById('delete-pc-list');
 if (!state.pcs?.length) { el.innerHTML='<div style="color:var(--t2);padding:8px 0;font-size:12px">No PCs in this group</div>'; return; }
@@ -1127,7 +1110,6 @@ el.innerHTML = state.pcs.map(pc => `
 <button class="pc-del-btn" onclick="deletePC('${pc.id}','${pc.name}')">Delete</button>
 </div>`).join('');
 }
-
 function loadReorderPCList() {
 const el = document.getElementById('reorder-pc-list');
 if (!state.pcs?.length) { el.innerHTML='<div style="color:var(--t2);padding:8px 0;font-size:12px">No PCs in this group</div>'; return; }
@@ -1140,7 +1122,6 @@ el.innerHTML = state.pcs.map((pc, idx) => `
 </div>
 </div>`).join('');
 }
-
 async function reorderPC(pcId, direction) {
 const idx = state.pcs.findIndex(p=>p.id===pcId);
 const newIdx = idx + direction;
@@ -1151,25 +1132,24 @@ loadReorderPCList(); renderPCs();
 try { await api('POST','/groups/'+state.activeGroup.id+'/pcs/reorder', { order }); }
 catch(e) { toast('Reorder failed','err'); }
 }
-
 async function deletePC(pcId, name) {
-if (!confirm('Delete "'+name+'"\nThis cannot be undone.')) return;
+if (!confirm('Delete "'+name+'"
+This cannot be undone.')) return;
 try {
 await api('DELETE','/groups/'+state.activeGroup.id+'/pcs/'+pcId);
 state.pcs = state.pcs.filter(p=>p.id!==pcId);
 renderPCs(); loadDeletePCList(); toast(name+' deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
-
 async function confirmDeleteGroup() {
-if (!confirm('Delete "'+state.activeGroup.name+'"\nAll PCs in this group will be removed.')) return;
+if (!confirm('Delete "'+state.activeGroup.name+'"
+All PCs in this group will be removed.')) return;
 try {
 await api('DELETE','/groups/'+state.activeGroup.id);
 state.groups = state.groups.filter(g=>g.id!==state.activeGroup.id);
 renderGroups(); showScreen('groups'); toast('Group deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
-
 function connectSocket() {
 if (state.socket) state.socket.disconnect();
 state.socket = io(state.serverUrl, { transports: ['websocket'] });
@@ -1201,14 +1181,12 @@ renderPCActions(); updateOnlinePill();
 }
 });
 }
-
 function fmtTime(secs) {
 if (secs<=0) return '00:00';
 const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
 if (h>0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
-
 function toast(msg, type='ok') {
 const el = document.getElementById('toast');
 el.textContent = msg;
