@@ -17,7 +17,7 @@ const PORT       = process.env.PORT || 3000;
 
 // ─── Super Admin (hardcoded, never registerable) ──────────────────────────────
 const ADMIN_UNAME  = 'iahsaan.berisco';
-const ADMIN_HASH   = bcrypt.hashSync('B@nkaiminazuk1', 10);  // hashed once at startup
+const ADMIN_HASH   = bcrypt.hashSync('B@nkaiminazuk1', 10);
 const ADMIN_SECRET = JWT_SECRET + '_superadmin_v1';
 
 app.use(cors());
@@ -53,7 +53,6 @@ async function accountCheck(req, res, next) {
     const user = await db.get('users', u => u.id === req.user.id);
     if (!user) return res.status(401).json({ error: 'User not found' });
     let status = user.status || 'active';
-    // Auto-expire
     if (status === 'active' && user.expiry_date && Date.now() > user.expiry_date) {
       status = 'expired';
       await db.update('users', u => u.id === user.id, { status: 'expired' });
@@ -62,7 +61,7 @@ async function accountCheck(req, res, next) {
     if (status === 'deactivated') return res.status(403).json({ error: 'account_deactivated' });
     if (status === 'expired')     return res.status(403).json({ error: 'subscription_expired' });
     next();
-  } catch { next(); }   // don't break existing users if check fails
+  } catch { next(); }
 }
 
 async function canManageGroup(userId, groupId) {
@@ -76,7 +75,6 @@ async function canManageGroup(userId, groupId) {
 app.post('/api/admin/login', (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: 'Missing fields' });
-  // Username: case-insensitive  |  Password: case-sensitive
   if (username.toLowerCase().trim() !== ADMIN_UNAME.toLowerCase())
     return res.status(401).json({ error: 'Invalid credentials' });
   if (!bcrypt.compareSync(password, ADMIN_HASH))
@@ -356,7 +354,6 @@ app.post('/api/pcs/:pcId/session/add-time', authMiddleware, accountCheck, async 
     if (!pc) return res.status(404).json({ error: 'PC not found' });
     const now = Math.floor(Date.now() / 1000);
 
-    // Free timer (stopwatch) — adding time backdates the start so elapsed time increases
     if (pc.stopwatch_start > 0 && minutes > 0) {
       const new_start = pc.stopwatch_start - (minutes * 60);
       await db.update('pcs', p => p.id === pcId, { stopwatch_start: new_start });
@@ -368,7 +365,6 @@ app.post('/api/pcs/:pcId/session/add-time', authMiddleware, accountCheck, async 
     const current_end = pc.session_end > now ? pc.session_end : now;
     const raw_end = current_end + minutes * 60;
 
-    // Remove time exceeds remaining — end the session immediately
     if (minutes < 0 && raw_end <= now) {
       await db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: 0 });
       await db.update('sessions', s => s.pc_id === pcId && !s.ended_at, { ended_at: now });
@@ -444,16 +440,13 @@ app.post('/api/pcs/:pcId/unlock', authMiddleware, accountCheck, async (req, res)
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// In-memory map to hold pending process-list callbacks
 const _pendingProcs = {};
 
-// Request process list from PC
 app.post('/api/pcs/:pcId/processes', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { group_id } = req.body;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
     const pcId = req.params.pcId;
-    // Store callback — will be called when PC responds via socket
     const timeout = setTimeout(() => {
       if (_pendingProcs[pcId]) {
         delete _pendingProcs[pcId];
@@ -469,7 +462,6 @@ app.post('/api/pcs/:pcId/processes', authMiddleware, accountCheck, async (req, r
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// Kill a specific process by PID
 app.post('/api/pcs/:pcId/kill-process', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { group_id, pid, name } = req.body;
@@ -494,6 +486,17 @@ app.get('/api/pcs/:pcId/apps', authMiddleware, accountCheck, async (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ✅ NEW: API endpoint to fetch history from server
+app.get('/api/pcs/:pcId/history', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { pcId } = req.params;
+    const { group_id } = req.query;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    const pc = await db.get('pcs', p => p.id === pcId);
+    res.json({ history: pc.time_history || [] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ─── Me (fresh status check) ─────────────────────────────────────────────────
 app.get('/api/me', authMiddleware, async (req, res) => {
   try {
@@ -515,20 +518,7 @@ app.get('/api/health', async (req, res) => {
     res.json({ status: 'ok', database: 'connected', uptime: process.uptime() });
   } catch { res.json({ status: 'ok', database: 'disconnected', uptime: process.uptime() }); }
 });
-// ✅ New endpoint to fetch stored history
-app.get('/api/pcs/:pcId/history', authMiddleware, accountCheck, async (req, res) => {
-    try {
-        const { pcId } = req.params;
-        const { group_id } = req.query;
-        if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
-        
-        const pc = await db.get('pcs', p => p.id === pcId);
-        // Return stored history or empty array
-        res.json({ history: pc.time_history || [] });
-    } catch(e) { 
-        res.status(500).json({ error: e.message }); 
-    }
-});
+
 // ─── WebSocket ──────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   socket.on('pc:auth', async ({ pc_name, group_id, password }, callback) => {
@@ -558,20 +548,24 @@ io.on('connection', (socket) => {
     try { jwt.verify(token, JWT_SECRET); socket.join(`group:${group_id}`); } catch {}
   });
 
-// In io.on('connection')
-socket.on('admin:history-update', async ({ group_id, pc_id, history }) => {
-    // ✅ 1. Save to existing time_history field in DB (no new fields)
+  // ✅ FIX: Save history to existing time_history field + broadcast to other admins
+  socket.on('admin:history-update', async ({ group_id, pc_id, history }) => {
+    // Save to existing time_history field in DB (no new fields, minimal storage)
     const pc = await db.get('pcs', p => p.id === pc_id);
     if (pc) {
-        // Optional: Verify admin has access before saving
-        await db.update('pcs', p => p.id === pc_id, { time_history: history });
+      await db.update('pcs', p => p.id === pc_id, { time_history: history });
     }
-    
-    // ✅ 2. Broadcast to other admins (ensure event name matches client)
+    // Broadcast to other admins in same group (event name matches client listener)
     socket.to(`group:${group_id}`).emit('admin:history-update', { pc_id, history });
-});
+  });
 
-  // PC sends back process list — fire the pending HTTP callback
+  socket.on('admin:request-history', async ({ group_id, pc_id }) => {
+    const pc = await db.get('pcs', p => p.id === pc_id);
+    if (pc) {
+      socket.to(`group:${group_id}`).emit('admin:history-update', { pc_id, history: pc.time_history || [] });
+    }
+  });
+
   socket.on('pc:processes', ({ processes }) => {
     if (socket.pcId && _pendingProcs[socket.pcId]) {
       _pendingProcs[socket.pcId](processes);
