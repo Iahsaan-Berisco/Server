@@ -8,6 +8,9 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const db = require('./db');
 
+// ✅ FIX #2: In-memory cache for history (reduces DB reads, improves speed)
+const _historyCache = {};
+
 const app    = express();
 const server = http.createServer(app);
 const io     = new Server(server, { cors: { origin: '*' } });
@@ -486,13 +489,22 @@ app.get('/api/pcs/:pcId/apps', authMiddleware, accountCheck, async (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ✅ NEW: API endpoint to fetch history from server
+// ✅ FIX #2: API endpoint to fetch history from server (uses cache for speed)
 app.get('/api/pcs/:pcId/history', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { pcId } = req.params;
     const { group_id } = req.query;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    
+    // ✅ Return from cache if available (fast - no DB read)
+    if (_historyCache[pcId]) {
+      return res.json({ history: _historyCache[pcId] });
+    }
+    
+    // ✅ Fallback to DB (slower, but only on cache miss)
     const pc = await db.get('pcs', p => p.id === pcId);
+    // Populate cache for next request
+    _historyCache[pcId] = pc.time_history || [];
     res.json({ history: pc.time_history || [] });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -548,21 +560,29 @@ io.on('connection', (socket) => {
     try { jwt.verify(token, JWT_SECRET); socket.join(`group:${group_id}`); } catch {}
   });
 
-  // ✅ FIX: Save history to existing time_history field + broadcast to other admins
+  // ✅ FIX #2: Save history to cache + DB (non-blocking) + broadcast to other admins
   socket.on('admin:history-update', async ({ group_id, pc_id, history }) => {
-    // Save to existing time_history field in DB (no new fields, minimal storage)
-    const pc = await db.get('pcs', p => p.id === pc_id);
-    if (pc) {
-      await db.update('pcs', p => p.id === pc_id, { time_history: history });
-    }
-    // Broadcast to other admins in same group (event name matches client listener)
+    // ✅ Update memory cache immediately (fast - no blocking)
+    _historyCache[pc_id] = history;
+    
+    // ✅ Broadcast to other admins immediately (fast)
     socket.to(`group:${group_id}`).emit('admin:history-update', { pc_id, history });
+    
+    // ✅ Save to DB in background (non-blocking - don't await)
+    db.update('pcs', p => p.id === pc_id, { time_history: history })
+        .catch(err => console.error('[History DB Error]', err));
   });
 
   socket.on('admin:request-history', async ({ group_id, pc_id }) => {
-    const pc = await db.get('pcs', p => p.id === pc_id);
-    if (pc) {
-      socket.to(`group:${group_id}`).emit('admin:history-update', { pc_id, history: pc.time_history || [] });
+    // Return from cache if available
+    if (_historyCache[pc_id]) {
+      socket.to(`group:${group_id}`).emit('admin:history-update', { pc_id, history: _historyCache[pc_id] });
+    } else {
+      const pc = await db.get('pcs', p => p.id === pc_id);
+      if (pc) {
+        _historyCache[pc_id] = pc.time_history || [];
+        socket.to(`group:${group_id}`).emit('admin:history-update', { pc_id, history: pc.time_history || [] });
+      }
     }
   });
 
