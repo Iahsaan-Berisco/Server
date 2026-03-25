@@ -199,6 +199,27 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .toast.err{border-color:var(--red-bd);color:var(--red)}
 .spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.1);border-top-color:#fff;border-radius:50%;animation:_spin .6s linear infinite;display:inline-block}
 @keyframes _spin{to{transform:rotate(360deg)}}
+
+/* ✅ FIX: Consistent history refresh button styling */
+.history-refresh-btn{
+background:var(--s3);
+border:1px solid var(--bd2);
+color:var(--t2);
+cursor:pointer;
+font-size:10px;
+font-family:var(--sans);
+display:inline-flex;
+align-items:center;
+gap:5px;
+padding:4px 10px;
+border-radius:var(--r);
+letter-spacing:0;
+text-transform:none;
+font-weight:600;
+transition:all .15s;
+}
+.history-refresh-btn:hover{color:var(--t1);background:var(--s4);}
+.history-refresh-btn i{font-size:10px;}
 </style>
 </head>
 <body>
@@ -448,6 +469,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 </div>
 <div class="sheet-bg" id="bg-killtasks" onclick="closeSheet('sheet-killtasks')"></div>
 <div class="sheet" id="sheet-killtasks">
+<div class="sheet-handle"></div>
 <div class="sheet-title-row">
 <div class="sheet-title">Kill Task</div>
 <button class="btn btn-danger btn-sm" onclick="killAllProcesses()" style="padding:6px 12px;font-size:10px"><i class="fa-solid fa-skull"></i> Kill All</button>
@@ -763,9 +785,10 @@ return;
 grid.innerHTML = state.pcs.map(pc => {
 const left = pc.session_end>now ? pc.session_end-now : 0;
 const isWatch = pc.stopwatch_start>0;
-const col  = !pc.is_online ? 'var(--t3)' : isWatch ? 'var(--blue)' : left>300 ? 'var(--green)' : left>0 ? 'var(--amber)' : 'var(--red)';
-const bg   = !pc.is_online ? 'var(--s3)' : isWatch ? 'var(--blue-bg)' : left>300 ? 'var(--green-bg)' : left>0 ? 'var(--amber-bg)' : 'var(--red-bg)';
-const bd   = !pc.is_online ? 'var(--bd)' : isWatch ? 'var(--blue-bd)' : left>300 ? 'var(--green-bd)' : left>0 ? 'var(--amber-bd)' : 'var(--red-bd)';
+// ✅ FIX #5: Timer color matches PC client (60s green, 30s red)
+const col  = !pc.is_online ? 'var(--t3)' : isWatch ? 'var(--blue)' : left>60 ? 'var(--green)' : left>30 ? 'var(--amber)' : 'var(--red)';
+const bg   = !pc.is_online ? 'var(--s3)' : isWatch ? 'var(--blue-bg)' : left>60 ? 'var(--green-bg)' : left>30 ? 'var(--amber-bg)' : 'var(--red-bg)';
+const bd   = !pc.is_online ? 'var(--bd)' : isWatch ? 'var(--blue-bd)' : left>60 ? 'var(--green-bd)' : left>30 ? 'var(--amber-bd)' : 'var(--red-bd)';
 const hasSession = left>0||isWatch;
 const status = !hasSession ? (pc.is_online ? 'Idle' : 'Offline') : isWatch ? 'Free' : 'Active';
 const elapsed = isWatch ? now-pc.stopwatch_start : 0;
@@ -822,7 +845,8 @@ const isActive = left>0||isWatch;
 const pay = pc.payment_status || null;
 const timerArea = document.getElementById('pc-timer-area');
 if (isActive) {
-const col = isWatch ? 'var(--blue)' : left<300 ? 'var(--amber)' : left<60 ? 'var(--red)' : 'var(--green)';
+// ✅ FIX #5: Timer color matches PC client (60s green, 30s red)
+const col = isWatch ? 'var(--blue)' : left<=30 ? 'var(--red)' : left<=60 ? 'var(--amber)' : 'var(--green)';
 const val = isWatch ? fmtTime(now-pc.stopwatch_start) : fmtTime(left);
 timerArea.innerHTML = `<div class="timer-card">
 <div class="timer-big" style="color:${col}">${val}</div>
@@ -854,9 +878,10 @@ sessionArea.innerHTML = `<div class="section-head">Session Control</div>
 }
 const history = lhGet(pc.id);
 if (history && history.length > 0) {
+// ✅ FIX #6: Use CSS class instead of inline styles
 let hHtml = `<div class="section-head" style="justify-content:space-between;margin-top:20px">Recent Activity
-<button onclick="refreshHistory()" style="margin-left:auto;background:var(--s3);border:1px solid var(--bd2);color:var(--t2);cursor:pointer;font-size:10px;font-family:var(--sans);display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--r);letter-spacing:0;text-transform:none;font-weight:600;transition:all .15s" onmouseover="this.style.color='var(--t1)'" onmouseout="this.style.color='var(--t2)'">
-<i class="fa-solid fa-rotate" style="font-size:10px"></i> Refresh
+<button class="history-refresh-btn" onclick="refreshHistory()">
+<i class="fa-solid fa-rotate"></i> Refresh
 </button></div>
 <div class="action-grid" style="padding-bottom:0;margin-bottom:20px;display:block">
 <div style="background:var(--s1);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">`;
@@ -905,7 +930,6 @@ try {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'session_end',r.session_end);
 updatePcField(state.activePc.id,'stopwatch_start',0);
-// FIX: Add to history
 lhAdd(state.activePc.id, {type:'add',mins:mins,at:Date.now()});
 toast('Session started','ok');
 } catch(e) { toast(e.message,'err'); }
@@ -970,7 +994,7 @@ updatePcField(state.activePc.id,'session_end', r.session_end);
 lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
 toast('+'+mins+'m added','ok');
 }
-// FIX #2: Refresh UI to show history immediately
+// ✅ FIX #4: Refresh UI to show history immediately
 renderPCActions();
 } catch(e) { toast(e.message,'err'); }
 }
@@ -999,7 +1023,7 @@ toast(`Added: ${mins}m`,'ok');
 }
 document.getElementById('add-amount').value = '';
 document.getElementById('add-mins').value = '';
-// FIX #2: Refresh UI to show history immediately
+// ✅ FIX #4: Refresh UI to show history immediately
 renderPCActions();
 } catch(e) { toast(e.message,'err'); }
 }
@@ -1025,7 +1049,7 @@ updatePcField(state.activePc.id,'session_end',r.session_end);
 lhAdd(state.activePc.id, {type:'remove',mins,at:Date.now()});
 toast('-'+mins+'m removed','ok');
 }
-// FIX #2: Refresh UI to show history immediately
+// ✅ FIX #4: Refresh UI to show history immediately
 renderPCActions();
 } catch(e) { toast(e.message,'err'); }
 }
@@ -1116,7 +1140,7 @@ document.getElementById('killtasks-list').innerHTML = '<div style="color:var(--r
 }
 }
 
-// ✅ FIX #4: Kill All now skips Python processes (double protection)
+// ✅ FIX #2: Kill All now skips Python processes (double protection)
 async function killAllProcesses() {
 if (!confirm('Kill ALL running processes on '+state.activePc.name+'?')) return;
 try {
@@ -1138,7 +1162,10 @@ killed++;
 }
 }
 window._procs = [];
-document.getElementById('killtasks-list').innerHTML = `<div style="color:var(--green);text-align:center;padding:28px;font-size:12px">${killed} process(es) killed<br>${skipped > 0 ? skipped + ' Python process(es) protected' : ''}</div>`;
+const msg = skipped > 0 
+? `${killed} process(es) killed<br>${skipped} Python process(es) protected`
+: `${killed} process(es) killed`;
+document.getElementById('killtasks-list').innerHTML = `<div style="color:var(--green);text-align:center;padding:28px;font-size:12px">${msg}</div>`;
 toast(`${killed} process(es) killed`,'ok');
 closeSheet('sheet-killtasks');
 } catch(e) { toast(e.message,'err'); }
@@ -1253,7 +1280,7 @@ renderGroups(); showScreen('groups'); toast('Group deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// ✅ FIX #3 & #6: Socket reconnection feedback + Multi-admin history sync
+// ✅ FIX #3: Socket reconnection feedback + Multi-admin history sync
 function connectSocket() {
 if (state.socket) state.socket.disconnect();
 state.socket = io(state.serverUrl, { 
@@ -1306,7 +1333,6 @@ renderPCActions(); updateOnlinePill();
 // FIX #6: Listen for history updates from other admins
 state.socket.on('admin:history-update', (data) => {
 if (data.group_id === state.activeGroup?.id && data.pc_id === state.activePc?.id) {
-// Update local history with data from other admin
 const h = data.history || [];
 localStorage.setItem('gz_history_' + data.pc_id, JSON.stringify(h.slice(0,5)));
 renderPCActions();
