@@ -157,8 +157,10 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .fab{margin:0 18px;margin-bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:var(--r2);background:var(--green);color:#fff;font-size:13px;font-weight:700;font-family:var(--sans);border:none;cursor:pointer;transition:all .18s;box-shadow:0 4px 14px rgba(16,185,129,.3);width:calc(100% - 36px)}
 .fab:hover{background:#0ea572}
 .fab:active{transform:scale(.97)}
-/* FIX #2: Refresh FAB for groups dashboard */
-.refresh-fab{position:fixed!important;bottom:32px;left:32px;width:50px!important;height:50px!important;margin:0!important;padding:0!important;display:flex!important;align-items:center;justify-content:center;border-radius:50%!important}
+/* FIX #4: Refresh button styled like chips */
+.refresh-chip-btn{position:fixed!important;bottom:32px;right:32px;padding:9px 14px!important;background:var(--green-bg)!important;border:1px solid var(--green-bd)!important;border-radius:var(--r)!important;color:var(--green)!important;font-size:12px!important;font-weight:600!important;cursor:pointer!important;font-family:var(--sans)!important;transition:all .15s!important;display:flex!important;align-items:center!important;gap:5px!important;z-index:90!important;width:auto!important;min-width:auto!important;margin:0!important;box-shadow:none!important}
+.refresh-chip-btn:hover{background:rgba(16,185,129,.2)!important}
+.refresh-chip-btn:active{transform:scale(.95)!important}
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:100;opacity:0;pointer-events:none;transition:opacity .22s}
 .sheet-bg.open{opacity:1;pointer-events:all}
 .sheet{position:fixed;bottom:20px;left:50%;right:auto;background:var(--s1);border:1px solid var(--bd2);border-radius:var(--r3);padding:0 22px;padding-bottom:max(22px,env(safe-area-inset-bottom));z-index:101;max-height:calc(88dvh - 20px);overflow-y:auto;transform:translate(-50%,calc(100% + 20px));transition:transform .3s cubic-bezier(.16,1,.3,1);width:calc(100% - 36px);max-width:480px}
@@ -235,8 +237,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <span>Subscription expires in <strong id="expiry-days">0</strong> days — contact your provider to renew</span>
 </div>
 <div class="scroll-area"><div class="screen-pad" id="groups-list"></div></div>
-<!-- FIX #2: Refresh FAB for groups dashboard -->
-<button class="fab refresh-fab" onclick="loadGroups()"><i class="fa-solid fa-rotate"></i></button>
+<!-- FIX #1: Removed refresh FAB from groups screen -->
 <button class="fab" onclick="openSheet('sheet-newgroup')"><i class="fa-solid fa-plus"></i> New Group</button>
 </div>
 <div class="screen" id="screen-dashboard">
@@ -255,6 +256,8 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="pc-grid" id="pc-grid"></div>
 </div>
 </div>
+<!-- FIX #4: Refresh button styled like chip -->
+<button class="refresh-chip-btn" onclick="loadPCs()"><i class="fa-solid fa-rotate"></i> Refresh</button>
 <button class="fab" onclick="openSheet('sheet-addpc')"><i class="fa-solid fa-plus"></i> Add PC</button>
 </div>
 <div class="screen" id="screen-pccontrol">
@@ -293,7 +296,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="settings-card">
 <div class="settings-row"><div><div class="settings-key">Group Name</div><div id="s-name" class="settings-val"></div></div></div>
 <div class="settings-row"><div style="width:100%"><div class="settings-key">Group ID</div><div id="s-id" class="mono-block"></div><div style="font-size:10px;color:var(--t3);margin-top:5px">Copy into each PC's config.json</div></div></div>
-<!-- FIX #1: Group Rate Setting -->
 <div class="settings-row">
 <div><div class="settings-key">Hourly Rate ($)</div><div class="settings-val">Price per hour for all PCs in this group</div></div>
 <div style="display:flex;align-items:center;gap:8px">
@@ -351,7 +353,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet-sub">Register a new computer to this group</div>
 <div class="field"><label class="field-label">PC Name</label><input class="field-input" type="text" id="addpc-name" placeholder="e.g. PC-01"></div>
 <div class="field"><label class="field-label">Password</label><input class="field-input" type="password" id="addpc-pass" placeholder="Set access password"></div>
-<!-- FIX #1: Removed price_per_hour input from here -->
 <div class="sheet-btns">
 <button class="btn btn-ghost" onclick="closeSheet('sheet-addpc')">Cancel</button>
 <button class="btn btn-primary" onclick="addPC()"><span id="addpc-btn-text">Add PC</span></button>
@@ -369,7 +370,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="chip" onclick="startSession(120)"><i class="fa-regular fa-clock"></i> 2h</div>
 <div class="chip" onclick="startSession(180)"><i class="fa-regular fa-clock"></i> 3h</div>
 </div>
-<!-- FIX #1: Amount input for start session -->
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Or Pay by Amount</div>
 <div class="input-row" style="margin-bottom:16px">
 <span style="font-size:16px;font-weight:700;color:var(--t1)">$</span>
@@ -397,7 +397,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="chip green" onclick="addTime(120)"><i class="fa-solid fa-circle-plus"></i> 2h</div>
 <div class="chip green" onclick="addTime(180)"><i class="fa-solid fa-circle-plus"></i> 3h</div>
 </div>
-<!-- FIX #1: Amount input for add time -->
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Or Pay by Amount</div>
 <div class="input-row" style="margin-bottom:20px">
 <span style="font-size:16px;font-weight:700;color:var(--t1)">$</span>
@@ -405,10 +404,12 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <button class="btn btn-primary" onclick="addTimeByAmount()">Add</button>
 </div>
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom Duration</div>
+<!-- FIX #3: Replaced hrs input with per hour rate display -->
 <div class="input-row" style="margin-bottom:20px">
-<input type="number" id="add-hrs" placeholder="hrs" min="0" max="24">
-<span class="input-row-sep">:</span>
-<input type="number" id="add-mins" placeholder="min" min="0" max="59">
+<input type="text" id="add-mins" placeholder="min" min="0" max="999" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
+<span class="input-row-sep">min</span>
+<span class="input-row-sep">@</span>
+<input type="text" id="add-rate-display" value="$5.00/hr" readonly style="flex:1;max-width:100px;background:var(--s2);color:var(--t2);border:1px solid var(--bd);border-radius:var(--r);padding:11px 13px;font-size:13px;font-family:var(--sans);text-align:center" tabindex="-1">
 <button class="btn btn-primary" onclick="addCustomTime()">Add</button>
 </div>
 </div>
@@ -424,10 +425,10 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="chip red" onclick="removeTime(120)"><i class="fa-solid fa-circle-minus"></i> 2h</div>
 </div>
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
+<!-- FIX #2 & #3: Text input with numbers only, removed hrs -->
 <div class="input-row" style="margin-bottom:20px">
-<input type="number" id="rem-hrs" placeholder="hrs" min="0" max="24">
-<span class="input-row-sep">:</span>
-<input type="number" id="rem-mins" placeholder="min" min="0" max="59">
+<input type="text" id="rem-mins" placeholder="min" min="0" max="999" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
+<span class="input-row-sep">min</span>
 <button class="btn btn-danger" onclick="removeCustomTime()">Remove</button>
 </div>
 </div>
@@ -652,7 +653,7 @@ applyPrefs();
 }
 function applyPrefs() {
 const prefs = getPrefs();
-const addGroupFab = document.querySelector('#screen-groups .fab:not(.refresh-fab)');
+const addGroupFab = document.querySelector('#screen-groups .fab');
 const addPcFab = document.querySelector('#screen-dashboard .fab');
 if (addGroupFab) addGroupFab.style.display = prefs.hideAddGroup ? 'none' : '';
 if (addPcFab)    addPcFab.style.display    = prefs.hideAddPC   ? 'none' : '';
@@ -665,7 +666,7 @@ el.querySelector('div').style.transform = on ? 'translateX(16px)' : 'translateX(
 });
 }
 
-// ── Group Rate (FIX #1) ──────────────────────────────────────────────────────
+// ── Group Rate ──────────────────────────────────────────────────────────────
 function getGroupRate() {
 if (!state.activeGroup) return 5;
 try {
@@ -680,12 +681,18 @@ try {
 const rates = JSON.parse(localStorage.getItem('gz_group_rates') || '{}');
 rates[state.activeGroup.id] = rate;
 localStorage.setItem('gz_group_rates', JSON.stringify(rates));
+updateRateDisplay();
 toast('Rate saved','ok');
 } catch(e) { toast('Failed to save','err'); }
 }
 function loadGroupRate() {
 const rate = getGroupRate();
 document.getElementById('group-rate-input').value = rate.toFixed(2);
+updateRateDisplay();
+}
+function updateRateDisplay() {
+const rate = getGroupRate();
+document.getElementById('add-rate-display').value = '$'+rate.toFixed(2)+'/hr';
 }
 
 function doLogout() {
@@ -779,6 +786,7 @@ state.pcs.forEach((pc,i) => pc.order = i);
 api('POST','/groups/'+state.activeGroup.id+'/pcs/reorder',{order}).catch(()=>{});
 }
 renderPCs();
+toast('Refreshed','ok');
 } catch(e) { toast('Failed to load PCs','err'); }
 }
 
@@ -797,32 +805,10 @@ return;
 grid.innerHTML = state.pcs.map(pc => {
 const left = pc.session_end>now ? pc.session_end-now : 0;
 const isWatch = pc.stopwatch_start>0;
+const col  = !pc.is_online ? 'var(--t3)' : isWatch ? 'var(--blue)' : left>300 ? 'var(--green)' : left>0 ? 'var(--amber)' : 'var(--red)';
+const bg   = !pc.is_online ? 'var(--s3)' : isWatch ? 'var(--blue-bg)' : left>300 ? 'var(--green-bg)' : left>0 ? 'var(--amber-bg)' : 'var(--red-bg)';
+const bd   = !pc.is_online ? 'var(--bd)' : isWatch ? 'var(--blue-bd)' : left>300 ? 'var(--green-bd)' : left>0 ? 'var(--amber-bd)' : 'var(--red-bd)';
 const hasSession = left>0||isWatch;
-
-// FIX #3: Timer color logic - offline devices with session keep offline color
-let col, bg, bd;
-if (!hasSession) {
-// No session - use online/offline status
-col = pc.is_online ? 'var(--t3)' : 'var(--t3)';
-bg = pc.is_online ? 'var(--s3)' : 'var(--s3)';
-bd = pc.is_online ? 'var(--bd)' : 'var(--bd)';
-} else if (!pc.is_online) {
-// FIX #3: Has session but offline - keep offline gray color
-col = 'var(--t3)';
-bg = 'var(--s3)';
-bd = 'var(--bd)';
-} else {
-// Has session AND online - use timer-based colors
-if (isWatch) {
-col = 'var(--blue)'; bg = 'var(--blue-bg)'; bd = 'var(--blue-bd)';
-} else if (left <= 300) {
-// FIX #3: Less than 5 minutes - orange/amber
-col = 'var(--amber)'; bg = 'var(--amber-bg)'; bd = 'var(--amber-bd)';
-} else {
-col = 'var(--green)'; bg = 'var(--green-bg)'; bd = 'var(--green-bd)';
-}
-}
-
 const status = !hasSession ? (pc.is_online ? 'Idle' : 'Offline') : isWatch ? 'Free' : 'Active';
 const elapsed = isWatch ? now-pc.stopwatch_start : 0;
 const timer = !hasSession ? (pc.is_online ? '--:--' : '- - -') : isWatch ? fmtTime(elapsed) : fmtTime(left);
@@ -832,7 +818,6 @@ const payBadge = pay==='paid'
 : pay==='unpaid'
 ? `<span class="pay-badge" style="background:var(--red-bg);color:var(--red)"><i class="fa-solid fa-xmark"></i> Unpaid</span>`
 : '';
-
 return `<div class="pc-card" onclick="openPC('${pc.id}')" style="--pc-color:${col};--pc-bg:${bg};--pc-bd:${bd}">
 <div class="pc-card-top"><div class="pc-card-name"><i class="fa-solid fa-computer"></i>${pc.name}</div><div class="pc-dot"></div></div>
 <div class="pc-timer">${timer}</div>
@@ -844,11 +829,9 @@ return `<div class="pc-card" onclick="openPC('${pc.id}')" style="--pc-color:${co
 async function addPC() {
 const name = document.getElementById('addpc-name').value.trim();
 const password = document.getElementById('addpc-pass').value;
-// FIX #1: Removed price_per_hour from here
 if (!name||!password) { toast('Name and password required','err'); return; }
 document.getElementById('addpc-btn-text').innerHTML='<span class="spin"></span>';
 try {
-// FIX #1: No longer sending price_per_hour
 const pc = await api('POST','/groups/'+state.activeGroup.id+'/pcs',{name,password});
 state.pcs.push(pc); renderPCs();
 closeSheet('sheet-addpc');
@@ -963,7 +946,6 @@ toast('Session started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// FIX #1: Start session by amount
 async function startSessionByAmount() {
 const amount = parseFloat(document.getElementById('session-amount').value);
 if (!amount || amount <= 0) { toast('Enter valid amount','err'); return; }
@@ -1015,7 +997,6 @@ toast('+'+mins+'m added','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// FIX #1: Add time by amount
 async function addTimeByAmount() {
 const amount = parseFloat(document.getElementById('add-amount').value);
 if (!amount || amount <= 0) { toast('Enter valid amount','err'); return; }
@@ -1033,13 +1014,11 @@ toast(`Added: $${amount.toFixed(2)} = ${mins}m (@$${rate}/hr)`,'ok');
 }
 
 function addCustomTime() {
-const hrs=parseInt(document.getElementById('add-hrs').value)||0;
-const mins=parseInt(document.getElementById('add-mins').value)||0;
-const total=hrs*60+mins;
-if (total<1) { toast('Enter duration','err'); return; }
-document.getElementById('add-hrs').value='';
+// FIX #2: Parse from text input
+const mins = parseInt(document.getElementById('add-mins').value)||0;
+if (mins<1) { toast('Enter duration','err'); return; }
 document.getElementById('add-mins').value='';
-addTime(total);
+addTime(mins);
 }
 
 async function removeTime(mins) {
@@ -1058,13 +1037,11 @@ toast('-'+mins+'m removed','ok');
 }
 
 function removeCustomTime() {
-const hrs=parseInt(document.getElementById('rem-hrs').value)||0;
-const mins=parseInt(document.getElementById('rem-mins').value)||0;
-const total=hrs*60+mins;
-if (total<1) { toast('Enter duration','err'); return; }
-document.getElementById('rem-hrs').value='';
+// FIX #2: Parse from text input
+const mins = parseInt(document.getElementById('rem-mins').value)||0;
+if (mins<1) { toast('Enter duration','err'); return; }
 document.getElementById('rem-mins').value='';
-removeTime(total);
+removeTime(mins);
 }
 
 function confirmEndSession() {
