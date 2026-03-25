@@ -154,22 +154,15 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .reorder-btn{width:28px;height:28px;border-radius:var(--r);background:var(--s3);border:none;color:var(--t2);cursor:pointer;font-size:11px;transition:all .15s;display:flex;align-items:center;justify-content:center}
 .reorder-btn:hover{background:var(--green-bg);color:var(--green)}
 .reorder-btn:disabled{opacity:.3;cursor:not-allowed}
-/* FIX #1 & #2: FAB button styles */
 .fab{margin:0 18px;margin-bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:var(--r2);background:var(--green);color:#fff;font-size:13px;font-weight:700;font-family:var(--sans);border:none;cursor:pointer;transition:all .18s;box-shadow:0 4px 14px rgba(16,185,129,.3);width:calc(100% - 36px)}
 .fab:hover{background:#0ea572}
 .fab:active{transform:scale(.97)}
-/* FIX #2: Desktop - Add PC button bottom-right */
-@media(min-width:1024px){
-#screen-dashboard .fab{position:fixed!important;bottom:32px;right:32px;width:auto!important;min-width:140px;margin:0!important;padding:13px 20px!important}
-}
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:100;opacity:0;pointer-events:none;transition:opacity .22s}
 .sheet-bg.open{opacity:1;pointer-events:all}
 .sheet{position:fixed;bottom:20px;left:50%;right:auto;background:var(--s1);border:1px solid var(--bd2);border-radius:var(--r3);padding:0 22px;padding-bottom:max(22px,env(safe-area-inset-bottom));z-index:101;max-height:calc(88dvh - 20px);overflow-y:auto;transform:translate(-50%,calc(100% + 20px));transition:transform .3s cubic-bezier(.16,1,.3,1);width:calc(100% - 36px);max-width:480px}
 .sheet.open{transform:translate(-50%,0)}
 .sheet-handle{width:38px;height:3px;background:var(--s4);border-radius:2px;margin:14px auto 20px}
-/* FIX #3: Sheet title with kill all button */
-.sheet-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-.sheet-title{font-size:18px;font-weight:800;letter-spacing:-.3px}
+.sheet-title{font-size:18px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px}
 .sheet-sub{font-size:12px;color:var(--t2);margin-bottom:22px}
 .chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
 .chip{padding:9px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);font-size:12px;font-weight:600;color:var(--t1);cursor:pointer;font-family:var(--sans);transition:all .15s;display:flex;align-items:center;gap:5px}
@@ -177,10 +170,10 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .chip:active{transform:scale(.95)}
 .chip.green{background:var(--green-bg);border-color:var(--green-bd);color:var(--green)}
 .chip.red{background:var(--red-bg);border-color:var(--red-bd);color:var(--red)}
-.input-row{display:flex;gap:8px;align-items:center}
-.input-row input{flex:1;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:11px 13px;font-size:13px;color:var(--t1);font-family:var(--sans);outline:none;transition:border-color .18s}
+.input-row{display:flex;gap:8px;align-items:center;flex-wrap:nowrap}
+.input-row input{flex:1;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:11px 13px;font-size:13px;color:var(--t1);font-family:var(--sans);outline:none;transition:border-color .18s;min-width:0}
 .input-row input:focus{border-color:var(--green)}
-.input-row-sep{color:var(--t3);font-weight:600;font-size:14px}
+.input-row-sep{color:var(--t3);font-weight:600;font-size:14px;flex-shrink:0}
 .sheet-btns{display:flex;gap:8px;margin-top:20px}
 .sheet-btns .btn{flex:1}
 .app-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--bd)}
@@ -240,7 +233,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <span>Subscription expires in <strong id="expiry-days">0</strong> days — contact your provider to renew</span>
 </div>
 <div class="scroll-area"><div class="screen-pad" id="groups-list"></div></div>
-<!-- FIX #1: Add Group button full width (mobile & desktop) -->
 <button class="fab" onclick="openSheet('sheet-newgroup')"><i class="fa-solid fa-plus"></i> New Group</button>
 </div>
 <div class="screen" id="screen-dashboard">
@@ -259,7 +251,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="pc-grid" id="pc-grid"></div>
 </div>
 </div>
-<!-- FIX #2: Add PC button - bottom-right desktop, full-width mobile -->
 <button class="fab" onclick="openSheet('sheet-addpc')"><i class="fa-solid fa-plus"></i> Add PC</button>
 </div>
 <div class="screen" id="screen-pccontrol">
@@ -298,6 +289,13 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="settings-card">
 <div class="settings-row"><div><div class="settings-key">Group Name</div><div id="s-name" class="settings-val"></div></div></div>
 <div class="settings-row"><div style="width:100%"><div class="settings-key">Group ID</div><div id="s-id" class="mono-block"></div><div style="font-size:10px;color:var(--t3);margin-top:5px">Copy into each PC's config.json</div></div></div>
+<div class="settings-row">
+<div><div class="settings-key">Hourly Rate ($)</div><div class="settings-val">Price per hour for all PCs in this group</div></div>
+<div style="display:flex;align-items:center;gap:8px">
+<input type="text" id="group-rate-input" placeholder="5.00" inputmode="decimal" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" style="width:80px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:8px 10px;font-size:13px;color:var(--t1);outline:none">
+<button class="btn btn-primary btn-sm" onclick="saveGroupRate()" style="padding:8px 14px;font-size:11px">Save</button>
+</div>
+</div>
 </div>
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:12px">Administrators</div>
 <div id="admins-list"></div>
@@ -348,7 +346,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet-sub">Register a new computer to this group</div>
 <div class="field"><label class="field-label">PC Name</label><input class="field-input" type="text" id="addpc-name" placeholder="e.g. PC-01"></div>
 <div class="field"><label class="field-label">Password</label><input class="field-input" type="password" id="addpc-pass" placeholder="Set access password"></div>
-<div class="field"><label class="field-label">Price / Hour (optional)</label><input class="field-input" type="number" id="addpc-price" placeholder="0.00" step="0.01"></div>
 <div class="sheet-btns">
 <button class="btn btn-ghost" onclick="closeSheet('sheet-addpc')">Cancel</button>
 <button class="btn btn-primary" onclick="addPC()"><span id="addpc-btn-text">Add PC</span></button>
@@ -358,7 +355,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet" id="sheet-startsession">
 <div class="sheet-handle"></div>
 <div class="sheet-title">Start Session</div>
-<div class="sheet-sub">Choose a duration or use the free timer</div>
+<div class="sheet-sub">Choose duration or enter amount</div>
 <div class="chip-row">
 <div class="chip" onclick="startSession(30)"><i class="fa-regular fa-clock"></i> 30m</div>
 <div class="chip" onclick="startSession(60)"><i class="fa-regular fa-clock"></i> 1h</div>
@@ -366,11 +363,16 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="chip" onclick="startSession(120)"><i class="fa-regular fa-clock"></i> 2h</div>
 <div class="chip" onclick="startSession(180)"><i class="fa-regular fa-clock"></i> 3h</div>
 </div>
-<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
+<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Or Pay by Amount</div>
 <div class="input-row" style="margin-bottom:16px">
-<input type="number" id="custom-hrs" placeholder="hrs" min="0" max="24">
+<input type="text" id="session-amount" placeholder="Enter amount" inputmode="decimal" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" style="flex:1">
+<button class="btn btn-primary" onclick="startSessionByAmount()">Start</button>
+</div>
+<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom Duration</div>
+<div class="input-row" style="margin-bottom:16px">
+<input type="text" id="custom-hrs" placeholder="hrs" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
 <span class="input-row-sep">:</span>
-<input type="number" id="custom-mins" placeholder="min" min="0" max="59">
+<input type="text" id="custom-mins" placeholder="min" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
 <button class="btn btn-primary" onclick="startCustomSession()">Start</button>
 </div>
 <button onclick="startStopwatch()" style="width:100%;padding:13px;border-radius:var(--r2);background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px"><i class="fa-solid fa-stopwatch"></i> Free Timer (Count Up)</button>
@@ -379,7 +381,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet" id="sheet-addtime">
 <div class="sheet-handle"></div>
 <div class="sheet-title">Add Time</div>
-<div class="sheet-sub">Extend the current session</div>
+<div class="sheet-sub">Extend by duration or amount</div>
 <div class="chip-row">
 <div class="chip green" onclick="addTime(30)"><i class="fa-solid fa-circle-plus"></i> 30m</div>
 <div class="chip green" onclick="addTime(60)"><i class="fa-solid fa-circle-plus"></i> 1h</div>
@@ -387,12 +389,11 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="chip green" onclick="addTime(120)"><i class="fa-solid fa-circle-plus"></i> 2h</div>
 <div class="chip green" onclick="addTime(180)"><i class="fa-solid fa-circle-plus"></i> 3h</div>
 </div>
-<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
+<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Add Time</div>
 <div class="input-row" style="margin-bottom:20px">
-<input type="number" id="add-hrs" placeholder="hrs" min="0" max="24">
-<span class="input-row-sep">:</span>
-<input type="number" id="add-mins" placeholder="min" min="0" max="59">
-<button class="btn btn-primary" onclick="addCustomTime()">Add</button>
+<input type="text" id="add-amount" placeholder="Amount ($)" inputmode="decimal" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" style="flex:1">
+<input type="text" id="add-mins" placeholder="Minutes" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1">
+<button class="btn btn-primary" onclick="addTimeByAmount()">Add</button>
 </div>
 </div>
 <div class="sheet-bg" id="bg-removetime" onclick="closeSheet('sheet-removetime')"></div>
@@ -406,11 +407,9 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="chip red" onclick="removeTime(60)"><i class="fa-solid fa-circle-minus"></i> 1h</div>
 <div class="chip red" onclick="removeTime(120)"><i class="fa-solid fa-circle-minus"></i> 2h</div>
 </div>
-<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
+<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Remove Time</div>
 <div class="input-row" style="margin-bottom:20px">
-<input type="number" id="rem-hrs" placeholder="hrs" min="0" max="24">
-<span class="input-row-sep">:</span>
-<input type="number" id="rem-mins" placeholder="min" min="0" max="59">
+<input type="text" id="rem-mins" placeholder="Minutes to remove" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1">
 <button class="btn btn-danger" onclick="removeCustomTime()">Remove</button>
 </div>
 </div>
@@ -449,11 +448,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet-bg" id="bg-killtasks" onclick="closeSheet('sheet-killtasks')"></div>
 <div class="sheet" id="sheet-killtasks">
 <div class="sheet-handle"></div>
-<!-- FIX #3: Kill All button next to title -->
-<div class="sheet-title-row">
 <div class="sheet-title">Kill Task</div>
-<button class="btn btn-danger btn-sm" onclick="killAllProcesses()" style="padding:6px 12px;font-size:10px"><i class="fa-solid fa-skull"></i> Kill All</button>
-</div>
 <div class="sheet-sub" id="killtasks-pc-name"></div>
 <div id="killtasks-list"><div style="text-align:center;padding:28px"><span class="spin"></span></div></div>
 </div>
@@ -463,6 +458,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 const state = { token:null, user:null, serverUrl:null, groups:[], activeGroup:null, pcs:[], activePc:null, socket:null };
 let currentScreen = 'login';
 let _toastT;
+
 window.addEventListener('load', () => {
 state.token = localStorage.getItem('gz_token');
 state.user = JSON.parse(localStorage.getItem('gz_user') || 'null');
@@ -495,6 +491,7 @@ if (timerBig) timerBig.textContent = isWatch ? fmtTime(elapsed) : fmtTime(left);
 }
 }, 1000);
 });
+
 const MAIN_SCREENS = ['screen-dashboard','screen-pccontrol','screen-settings'];
 function showScreen(name) {
 const isDesktop = window.innerWidth >= 1024;
@@ -517,9 +514,11 @@ const el = document.getElementById('screen-' + name);
 if (el) el.classList.add('active');
 }
 currentScreen = name;
-if (name === 'settings') { loadAdmins(); loadDeletePCList(); loadReorderPCList(); applyPrefs(); }
+if (name === 'settings') { loadAdmins(); loadDeletePCList(); loadReorderPCList(); applyPrefs(); loadGroupRate(); }
 }
+
 function goBack(to) { showScreen(to); }
+
 function openSheet(id) {
 document.getElementById(id).classList.add('open');
 document.getElementById('bg-' + id.replace('sheet-','')).classList.add('open');
@@ -528,6 +527,7 @@ function closeSheet(id) {
 document.getElementById(id).classList.remove('open');
 document.getElementById('bg-' + id.replace('sheet-','')).classList.remove('open');
 }
+
 async function api(method, path, body) {
 const res = await fetch(state.serverUrl+'/api'+path, {
 method,
@@ -540,18 +540,21 @@ const data = await res.json();
 if (!res.ok) throw new Error(data.error||'Request failed');
 return data;
 }
+
 function switchTab(tab) {
 document.getElementById('tab-login').classList.toggle('active', tab==='login');
 document.getElementById('tab-register').classList.toggle('active', tab==='register');
 document.getElementById('login-form').style.display = tab==='login'?'block':'none';
 document.getElementById('register-form').style.display = tab==='register'?'block':'none';
 }
+
 async function fetchWithTimeout(url, options, timeout=10000) {
 const controller = new AbortController();
 const id = setTimeout(() => controller.abort(), timeout);
 try { const res = await fetch(url, { ...options, signal: controller.signal }); return res; }
 finally { clearTimeout(id); }
 }
+
 async function doLogin() {
 const server = document.getElementById('login-server').value.trim().replace(/\/$/,'');
 const username = document.getElementById('login-user').value.trim();
@@ -574,6 +577,7 @@ if (e.name==='AbortError') toast('Connection timed out','err');
 else toast(e.message||'Login failed','err');
 } finally { btn.disabled=false; document.getElementById('login-btn-text').textContent='Sign In'; }
 }
+
 async function doRegister() {
 const server = document.getElementById('reg-server').value.trim().replace(/\/$/,'');
 const username = document.getElementById('reg-user').value.trim();
@@ -594,6 +598,7 @@ if (e.name==='AbortError') toast('Connection timed out','err');
 else toast(e.message||'Registration failed','err');
 } finally { btn.disabled=false; document.getElementById('reg-btn-text').textContent='Create Account'; }
 }
+
 function saveAuth(server, token, user, status, expiry_date) {
 state.token = token;
 state.user = { ...user, status: status||'active', expiry_date: expiry_date||null };
@@ -602,6 +607,7 @@ localStorage.setItem('gz_token', token);
 localStorage.setItem('gz_user', JSON.stringify(state.user));
 localStorage.setItem('gz_server', server);
 }
+
 function checkExpiryWarning() {
 const expiry = state.user?.expiry_date;
 const banner = document.getElementById('expiry-banner');
@@ -615,6 +621,7 @@ document.getElementById('expiry-days').textContent = daysLeft;
 banner.style.display = 'none';
 }
 }
+
 // ── Preferences ──────────────────────────────────────────────────────────────
 function getPrefs() {
 try { return JSON.parse(localStorage.getItem('gz_prefs') || '{}'); } catch { return {}; }
@@ -639,6 +646,30 @@ el.style.background = on ? 'var(--green)' : 'var(--s4)';
 el.querySelector('div').style.transform = on ? 'translateX(16px)' : 'translateX(0)';
 });
 }
+
+// ── Group Rate ──────────────────────────────────────────────────────────────
+function getGroupRate() {
+if (!state.activeGroup) return 5;
+try {
+const rates = JSON.parse(localStorage.getItem('gz_group_rates') || '{}');
+return rates[state.activeGroup.id] || 5;
+} catch { return 5; }
+}
+function saveGroupRate() {
+const rate = parseFloat(document.getElementById('group-rate-input').value);
+if (!rate || rate < 0) { toast('Enter valid rate','err'); return; }
+try {
+const rates = JSON.parse(localStorage.getItem('gz_group_rates') || '{}');
+rates[state.activeGroup.id] = rate;
+localStorage.setItem('gz_group_rates', JSON.stringify(rates));
+toast('Rate saved','ok');
+} catch(e) { toast('Failed to save','err'); }
+}
+function loadGroupRate() {
+const rate = getGroupRate();
+document.getElementById('group-rate-input').value = rate.toFixed(2);
+}
+
 function doLogout() {
 if (!confirm('Logout?')) return;
 state.token=null; state.user=null;
@@ -646,6 +677,7 @@ localStorage.removeItem('gz_token'); localStorage.removeItem('gz_user');
 if (state.socket) state.socket.disconnect();
 showScreen('login');
 }
+
 async function loadGroups() {
 try {
 const me = await api('GET', '/me');
@@ -666,6 +698,7 @@ else if (e.message==='account_deactivated') { if(state.user) state.user.status='
 else toast('Failed to load groups','err');
 }
 }
+
 function renderGroups() {
 const el = document.getElementById('groups-list');
 const status = state.user?.status || 'active';
@@ -695,6 +728,7 @@ el.innerHTML = state.groups.map(g =>
 </div>`
 ).join('');
 }
+
 async function createGroup() {
 const name = document.getElementById('newgroup-name').value.trim();
 if (!name) { toast('Enter a name','err'); return; }
@@ -708,6 +742,7 @@ toast('Group created','ok');
 } catch(e) { toast(e.message,'err'); }
 finally { document.getElementById('newgroup-btn-text').textContent='Create'; }
 }
+
 function openGroup(id) {
 state.activeGroup = state.groups.find(g=>g.id===id);
 document.getElementById('dash-title').textContent = state.activeGroup.name;
@@ -715,6 +750,7 @@ document.getElementById('s-name').textContent = state.activeGroup.name;
 document.getElementById('s-id').textContent = state.activeGroup.id;
 showScreen('dashboard'); loadPCs(); connectSocket();
 }
+
 async function loadPCs() {
 try {
 state.pcs = await api('GET','/groups/'+state.activeGroup.id+'/pcs');
@@ -725,8 +761,10 @@ state.pcs.forEach((pc,i) => pc.order = i);
 api('POST','/groups/'+state.activeGroup.id+'/pcs/reorder',{order}).catch(()=>{});
 }
 renderPCs();
+toast('Refreshed','ok');
 } catch(e) { toast('Failed to load PCs','err'); }
 }
+
 function renderPCs() {
 const now = Math.floor(Date.now()/1000);
 const online = state.pcs.filter(p=>p.is_online).length;
@@ -762,26 +800,28 @@ return `<div class="pc-card" onclick="openPC('${pc.id}')" style="--pc-color:${co
 </div>`;
 }).join('');
 }
+
 async function addPC() {
 const name = document.getElementById('addpc-name').value.trim();
 const password = document.getElementById('addpc-pass').value;
-const price = parseFloat(document.getElementById('addpc-price').value)||0;
 if (!name||!password) { toast('Name and password required','err'); return; }
 document.getElementById('addpc-btn-text').innerHTML='<span class="spin"></span>';
 try {
-const pc = await api('POST','/groups/'+state.activeGroup.id+'/pcs',{name,password,price_per_hour:price});
+const pc = await api('POST','/groups/'+state.activeGroup.id+'/pcs',{name,password});
 state.pcs.push(pc); renderPCs();
 closeSheet('sheet-addpc');
-['addpc-name','addpc-pass','addpc-price'].forEach(id=>document.getElementById(id).value='');
+['addpc-name','addpc-pass'].forEach(id=>document.getElementById(id).value='');
 toast('PC added','ok');
 } catch(e) { toast(e.message,'err'); }
 finally { document.getElementById('addpc-btn-text').textContent='Add PC'; }
 }
+
 function openPC(id) {
 state.activePc = state.pcs.find(p=>p.id===id);
 document.getElementById('pc-title').textContent = state.activePc.name;
 updateOnlinePill(); renderPCActions(); showScreen('pccontrol');
 }
+
 function updateOnlinePill() {
 const pc = state.activePc; if(!pc) return;
 const pill = document.getElementById('pc-pill');
@@ -793,6 +833,7 @@ pill.innerHTML = '<span class="dot" style="background:var(--t3)"></span> Offline
 pill.style.cssText = '';
 }
 }
+
 function renderPCActions() {
 const pc = state.activePc; if(!pc) return;
 const now = Math.floor(Date.now()/1000);
@@ -832,7 +873,31 @@ sessionArea.innerHTML = `<div class="section-head">Session Control</div>
 </div>
 </div>`;
 }
+// FIX #1: Restore history/activity section
+const history = lhGet(pc.id);
+if (history && history.length > 0) {
+let hHtml = `<div class="section-head" style="justify-content:space-between;margin-top:20px">Recent Activity
+<button onclick="refreshHistory()" style="margin-left:auto;background:var(--s3);border:1px solid var(--bd2);color:var(--t2);cursor:pointer;font-size:10px;font-family:var(--sans);display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--r);letter-spacing:0;text-transform:none;font-weight:600;transition:all .15s" onmouseover="this.style.color='var(--t1)'" onmouseout="this.style.color='var(--t2)'">
+<i class="fa-solid fa-rotate" style="font-size:10px"></i> Refresh
+</button></div>
+<div class="action-grid" style="padding-bottom:0;margin-bottom:20px;display:block">
+<div style="background:var(--s1);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">`;
+history.forEach(entry => {
+const isFree = entry.type === 'free';
+const isAdd  = entry.type === 'add';
+const col    = isFree ? 'var(--blue)' : isAdd ? 'var(--green)' : 'var(--red)';
+const valStr = isFree ? 'FREE' : (isAdd?'+':'-') + Math.abs(entry.mins) + 'm';
+const label  = isFree ? 'Free Timer' : isAdd ? 'Added' : 'Removed';
+hHtml += `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--bd)">
+<span style="font-size:13px;font-weight:700;color:${col};font-family:var(--mono)">${valStr}</span>
+<span style="font-size:11px;color:var(--t3)">${label}</span>
+</div>`;
+});
+hHtml += '</div></div>';
+sessionArea.innerHTML += hHtml;
 }
+}
+
 async function togglePay(status) {
 if (!state.activePc) return;
 const id = state.activePc.id;
@@ -846,6 +911,7 @@ renderPCActions(); renderPCs();
 toast(newStatus ? 'Marked '+newStatus : 'Payment cleared','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 async function startSession(mins) {
 closeSheet('sheet-startsession');
 try {
@@ -855,6 +921,24 @@ updatePcField(state.activePc.id,'stopwatch_start',0);
 toast('Session started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
+async function startSessionByAmount() {
+const amount = parseFloat(document.getElementById('session-amount').value);
+if (!amount || amount <= 0) { toast('Enter valid amount','err'); return; }
+const rate = getGroupRate();
+const hours = amount / rate;
+const mins = Math.floor(hours * 60);
+if (mins < 1) { toast('Amount too low for minimum 1 minute','err'); return; }
+closeSheet('sheet-startsession');
+try {
+const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
+updatePcField(state.activePc.id,'session_end',r.session_end);
+updatePcField(state.activePc.id,'stopwatch_start',0);
+document.getElementById('session-amount').value = '';
+toast(`Session started: $${amount.toFixed(2)} = ${mins}m (@$${rate}/hr)`,'ok');
+} catch(e) { toast(e.message,'err'); }
+}
+
 function startCustomSession() {
 const hrs=parseInt(document.getElementById('custom-hrs').value)||0;
 const mins=parseInt(document.getElementById('custom-mins').value)||0;
@@ -864,37 +948,68 @@ document.getElementById('custom-hrs').value='';
 document.getElementById('custom-mins').value='';
 startSession(total);
 }
+
 async function startStopwatch() {
 closeSheet('sheet-startsession');
 try {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/stopwatch',{group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'stopwatch_start',r.started_at);
 updatePcField(state.activePc.id,'session_end',0);
+lhAdd(state.activePc.id, {type:'free',mins:0,at:Date.now()});
 toast('Free timer started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 async function addTime(mins) {
 closeSheet('sheet-addtime');
 try {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
 if (r.stopwatch_start !== undefined) {
 updatePcField(state.activePc.id,'stopwatch_start', r.stopwatch_start);
+lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
 toast('+'+mins+'m added to free timer','ok');
 } else {
 updatePcField(state.activePc.id,'session_end', r.session_end);
+lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
 toast('+'+mins+'m added','ok');
 }
 } catch(e) { toast(e.message,'err'); }
 }
-function addCustomTime() {
-const hrs=parseInt(document.getElementById('add-hrs').value)||0;
-const mins=parseInt(document.getElementById('add-mins').value)||0;
-const total=hrs*60+mins;
-if (total<1) { toast('Enter duration','err'); return; }
-document.getElementById('add-hrs').value='';
-document.getElementById('add-mins').value='';
-addTime(total);
+
+async function addTimeByAmount() {
+const amount = parseFloat(document.getElementById('add-amount').value);
+const mins = parseInt(document.getElementById('add-mins').value)||0;
+if (!amount && !mins) { toast('Enter amount or minutes','err'); return; }
+closeSheet('sheet-addtime');
+try {
+if (amount && amount > 0) {
+const rate = getGroupRate();
+const hours = amount / rate;
+const calcMins = Math.floor(hours * 60);
+if (calcMins < 1) { toast('Amount too low for minimum 1 minute','err'); return; }
+const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:calcMins,group_id:state.activeGroup.id});
+updatePcField(state.activePc.id,'session_end', r.session_end);
+lhAdd(state.activePc.id, {type:'add',mins:calcMins,at:Date.now()});
+toast(`Added: $${amount.toFixed(2)} = ${calcMins}m`,'ok');
 }
+else if (mins && mins > 0) {
+const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
+updatePcField(state.activePc.id,'session_end', r.session_end);
+lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
+toast(`Added: ${mins}m`,'ok');
+}
+document.getElementById('add-amount').value = '';
+document.getElementById('add-mins').value = '';
+} catch(e) { toast(e.message,'err'); }
+}
+
+function addCustomTime() {
+const mins = parseInt(document.getElementById('add-mins').value)||0;
+if (mins<1) { toast('Enter duration','err'); return; }
+document.getElementById('add-mins').value='';
+addTime(mins);
+}
+
 async function removeTime(mins) {
 closeSheet('sheet-removetime');
 try {
@@ -902,40 +1017,44 @@ const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minute
 if (r.session_ended) {
 updatePcField(state.activePc.id,'session_end',0);
 updatePcField(state.activePc.id,'stopwatch_start',0);
+lhAdd(state.activePc.id, {type:'remove',mins,at:Date.now()});
 toast('Session ended — time exceeded','ok');
 } else {
 updatePcField(state.activePc.id,'session_end',r.session_end);
+lhAdd(state.activePc.id, {type:'remove',mins,at:Date.now()});
 toast('-'+mins+'m removed','ok');
 }
 } catch(e) { toast(e.message,'err'); }
 }
+
 function removeCustomTime() {
-const hrs=parseInt(document.getElementById('rem-hrs').value)||0;
-const mins=parseInt(document.getElementById('rem-mins').value)||0;
-const total=hrs*60+mins;
-if (total<1) { toast('Enter duration','err'); return; }
-document.getElementById('rem-hrs').value='';
+const mins = parseInt(document.getElementById('rem-mins').value)||0;
+if (mins<1) { toast('Enter duration','err'); return; }
 document.getElementById('rem-mins').value='';
-removeTime(total);
+removeTime(mins);
 }
+
 function confirmEndSession() {
 if (!confirm('End session on '+state.activePc.name+'?\nScreen will lock immediately.')) return;
 api('POST','/pcs/'+state.activePc.id+'/session/end',{group_id:state.activeGroup.id})
 .then(()=>{ updatePcField(state.activePc.id,'session_end',0); updatePcField(state.activePc.id,'stopwatch_start',0); toast('Session ended','ok'); })
 .catch(e=>toast(e.message,'err'));
 }
+
 async function pcCmd(action) {
 try {
 await api('POST','/pcs/'+state.activePc.id+'/'+action,{group_id:state.activeGroup.id});
 toast(action==='lock'?'Screen locked':'Screen unlocked','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 function updatePcField(pcId, field, value) {
 const pc = state.pcs.find(p=>p.id===pcId);
 if (pc) pc[field]=value;
 if (state.activePc?.id===pcId) { state.activePc[field]=value; renderPCActions(); }
 renderPCs();
 }
+
 async function openApps() {
 document.getElementById('apps-pc-name').textContent = 'on '+state.activePc.name;
 document.getElementById('apps-list').innerHTML = '<div style="text-align:center;padding:28px"><span class="spin"></span></div>';
@@ -947,6 +1066,7 @@ if (!apps.length) { document.getElementById('apps-list').innerHTML='<div style="
 document.getElementById('apps-list').innerHTML = apps.map((a,i)=>`<div class="app-row"><div class="app-name"><i class="fa-solid fa-file"></i>${a.name}</div><button class="launch-btn" onclick="launchApp(${i})"><i class="fa-solid fa-play"></i> Launch</button></div>`).join('');
 } catch(e) { document.getElementById('apps-list').innerHTML='<div style="color:var(--red);text-align:center;padding:20px">Failed to load apps</div>'; }
 }
+
 async function openKillSheet() {
 document.getElementById('killtasks-pc-name').textContent = 'on '+state.activePc.name;
 document.getElementById('killtasks-list').innerHTML = '<div style="text-align:center;padding:28px"><span class="spin"></span><div style="color:var(--t3);font-size:11px;margin-top:10px">Fetching running processes...</div></div>';
@@ -975,22 +1095,6 @@ document.getElementById('killtasks-list').innerHTML = procs.map((p,i) => `
 } catch(e) {
 document.getElementById('killtasks-list').innerHTML = '<div style="color:var(--red);text-align:center;padding:20px">Failed to fetch processes</div>';
 }
-}
-
-// FIX #3: Kill all processes function
-async function killAllProcesses() {
-if (!confirm('Kill ALL running processes on '+state.activePc.name+'?')) return;
-try {
-for (let i = window._procs.length - 1; i >= 0; i--) {
-const proc = window._procs[i];
-if (proc && proc.pid) {
-await api('POST','/pcs/'+state.activePc.id+'/kill-process',{pid:proc.pid,name:proc.name,group_id:state.activeGroup.id});
-}
-}
-window._procs = [];
-document.getElementById('killtasks-list').innerHTML = '<div style="color:var(--green);text-align:center;padding:28px;font-size:12px">All processes killed</div>';
-toast('All processes killed','ok');
-} catch(e) { toast(e.message,'err'); }
 }
 
 async function killProcess(i) {
@@ -1124,6 +1228,38 @@ renderPCActions(); updateOnlinePill();
 }
 }
 });
+}
+
+// ── Local Time History (localStorage + socket broadcast, never saved to DB) ───
+const _LH_KEY = 'gz_history_';
+function lhGet(pcId) {
+try { return JSON.parse(localStorage.getItem(_LH_KEY+pcId) || '[]'); } catch { return []; }
+}
+function lhSet(pcId, entries) {
+localStorage.setItem(_LH_KEY+pcId, JSON.stringify(entries.slice(0,5)));
+}
+function lhAdd(pcId, entry) {
+const h = lhGet(pcId);
+h.unshift(entry);
+lhSet(pcId, h);
+if (state.socket && state.activeGroup) {
+state.socket.emit('admin:history-update', {
+group_id: state.activeGroup.id,
+pc_id: pcId,
+history: h.slice(0,5)
+});
+}
+}
+function refreshHistory() {
+if (!state.activePc) return;
+if (state.socket && state.activeGroup) {
+state.socket.emit('admin:request-history', {
+group_id: state.activeGroup.id,
+pc_id: state.activePc.id
+});
+}
+renderPCActions();
+toast('Refreshed','ok');
 }
 
 function fmtTime(secs) {
