@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0f0f0f">
 <title>GameZone Manager</title>
-<!-- FIX #1: Favicon links restored -->
+<!-- FIX #5: Favicon links restored -->
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="shortcut icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/favicon.png">
@@ -158,9 +158,13 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .reorder-btn{width:28px;height:28px;border-radius:var(--r);background:var(--s3);border:none;color:var(--t2);cursor:pointer;font-size:11px;transition:all .15s;display:flex;align-items:center;justify-content:center}
 .reorder-btn:hover{background:var(--green-bg);color:var(--green)}
 .reorder-btn:disabled{opacity:.3;cursor:not-allowed}
+/* FIX #2: FAB button - full width mobile, bottom-right desktop */
 .fab{margin:0 18px;margin-bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:var(--r2);background:var(--green);color:#fff;font-size:13px;font-weight:700;font-family:var(--sans);border:none;cursor:pointer;transition:all .18s;box-shadow:0 4px 14px rgba(16,185,129,.3);width:calc(100% - 36px)}
 .fab:hover{background:#0ea572}
 .fab:active{transform:scale(.97)}
+@media(min-width:1024px){
+#screen-dashboard .fab{position:fixed!important;bottom:32px!important;right:32px!important;width:auto!important;min-width:140px!important;margin:0!important;padding:13px 20px!important}
+}
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:100;opacity:0;pointer-events:none;transition:opacity .22s}
 .sheet-bg.open{opacity:1;pointer-events:all}
 .sheet{position:fixed;bottom:20px;left:50%;right:auto;background:var(--s1);border:1px solid var(--bd2);border-radius:var(--r3);padding:0 22px;padding-bottom:max(22px,env(safe-area-inset-bottom));z-index:101;max-height:calc(88dvh - 20px);overflow-y:auto;transform:translate(-50%,calc(100% + 20px));transition:transform .3s cubic-bezier(.16,1,.3,1);width:calc(100% - 36px);max-width:480px}
@@ -368,17 +372,11 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="chip" onclick="startSession(120)"><i class="fa-regular fa-clock"></i> 2h</div>
 <div class="chip" onclick="startSession(180)"><i class="fa-regular fa-clock"></i> 3h</div>
 </div>
+<!-- FIX #1: Start time by rate (like add time sheet) -->
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Or Pay by Amount</div>
 <div class="input-row" style="margin-bottom:16px">
 <input type="text" id="session-amount" placeholder="Amount ($)" inputmode="decimal" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" style="flex:1">
 <button class="btn btn-primary" onclick="startSessionByAmount()">Start</button>
-</div>
-<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom Duration</div>
-<div class="input-row" style="margin-bottom:16px">
-<input type="text" id="custom-hrs" placeholder="hrs" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
-<span class="input-row-sep">:</span>
-<input type="text" id="custom-mins" placeholder="min" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
-<button class="btn btn-primary" onclick="startCustomSession()">Start</button>
 </div>
 <button onclick="startStopwatch()" style="width:100%;padding:13px;border-radius:var(--r2);background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px"><i class="fa-solid fa-stopwatch"></i> Free Timer (Count Up)</button>
 </div>
@@ -466,7 +464,8 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 const state = { token:null, user:null, serverUrl:null, groups:[], activeGroup:null, pcs:[], activePc:null, socket:null };
 let currentScreen = 'login';
 let _toastT;
-let _freeTimerStart = 0; // FIX #2: Track free timer start time
+let _freeTimerStart = 0; // FIX #4: Track free timer start time
+let _freeTimerAdded = 0; // FIX #4: Track time added during free session
 
 window.addEventListener('load', () => {
 state.token = localStorage.getItem('gz_token');
@@ -895,7 +894,7 @@ history.forEach(entry => {
 const isFree = entry.type === 'free';
 const isAdd  = entry.type === 'add';
 const col    = isFree ? 'var(--blue)' : isAdd ? 'var(--green)' : 'var(--red)';
-// FIX #2: Show actual time for ended free sessions
+// FIX #4: Show actual time for ended free sessions
 let valStr, label;
 if (isFree && entry.elapsed) {
 valStr = fmtTime(entry.elapsed);
@@ -953,6 +952,8 @@ try {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'session_end',r.session_end);
 updatePcField(state.activePc.id,'stopwatch_start',0);
+// FIX #3: Add to history when starting session by amount
+lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
 document.getElementById('session-amount').value = '';
 toast(`Session started: $${amount.toFixed(2)} = ${mins}m (@$${rate}/hr)`,'ok');
 } catch(e) { toast(e.message,'err'); }
@@ -974,7 +975,8 @@ try {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/stopwatch',{group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'stopwatch_start',r.started_at);
 updatePcField(state.activePc.id,'session_end',0);
-_freeTimerStart = r.started_at; // FIX #2: Track start time
+_freeTimerStart = r.started_at; // FIX #4: Track start time
+_freeTimerAdded = 0; // FIX #4: Reset added time
 lhAdd(state.activePc.id, {type:'free',mins:0,at:Date.now()});
 toast('Free timer started','ok');
 } catch(e) { toast(e.message,'err'); }
@@ -985,8 +987,9 @@ closeSheet('sheet-addtime');
 try {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
 if (r.stopwatch_start !== undefined) {
-// FIX #2: Free timer — don't add to history, just update server
+// FIX #4: Free timer — track added time but don't create separate history entry
 updatePcField(state.activePc.id,'stopwatch_start', r.stopwatch_start);
+_freeTimerAdded += mins;
 toast('+'+mins+'m added to free timer','ok');
 } else {
 updatePcField(state.activePc.id,'session_end', r.session_end);
@@ -1058,19 +1061,21 @@ function confirmEndSession() {
 if (!confirm('End session on '+state.activePc.name+'?\nScreen will lock immediately.')) return;
 const pc = state.activePc;
 const now = Math.floor(Date.now()/1000);
-// FIX #2: Calculate elapsed time for free timer before ending
+// FIX #4: Calculate elapsed time for free timer before ending
 if (pc.stopwatch_start > 0 && _freeTimerStart > 0) {
-const elapsed = now - _freeTimerStart;
+const baseElapsed = now - _freeTimerStart;
+const totalElapsed = baseElapsed + (_freeTimerAdded * 60); // Include added time
 // Update the last free entry with actual elapsed time
 const history = lhGet(pc.id);
 for (let i = 0; i < history.length; i++) {
 if (history[i].type === 'free' && !history[i].elapsed) {
-history[i].elapsed = elapsed;
+history[i].elapsed = totalElapsed;
 break;
 }
 }
 lhSet(pc.id, history);
 _freeTimerStart = 0;
+_freeTimerAdded = 0;
 }
 api('POST','/pcs/'+state.activePc.id+'/session/end',{group_id:state.activeGroup.id})
 .then(()=>{ updatePcField(state.activePc.id,'session_end',0); updatePcField(state.activePc.id,'stopwatch_start',0); toast('Session ended','ok'); renderPCActions(); })
