@@ -419,7 +419,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet-handle"></div>
 <div class="sheet-title-row">
 <div class="sheet-title">Launch App</div>
-<!-- ✅ FIX: Added refresh button back -->
 <button class="btn btn-ghost btn-sm" onclick="openApps()" style="padding:6px 12px;font-size:10px"><i class="fa-solid fa-rotate"></i> Refresh</button>
 </div>
 <div class="sheet-sub" id="apps-pc-name"></div>
@@ -468,8 +467,6 @@ let currentScreen = 'login';
 let _toastT;
 let _freeTimerStart = 0;
 let _freeTimerAdded = 0;
-// ✅ FIX: Click debouncing to prevent stacked API calls
-let _clickLock = false;
 
 window.addEventListener('load', () => {
 state.token = localStorage.getItem('gz_token');
@@ -503,6 +500,7 @@ if (timerBig) timerBig.textContent = isWatch ? fmtTime(elapsed) : (left>0 ? fmtT
 }
 }, 1000);
 });
+
 const MAIN_SCREENS = ['screen-dashboard','screen-pccontrol','screen-settings'];
 function showScreen(name) {
 const isDesktop = window.innerWidth >= 1024;
@@ -537,11 +535,8 @@ document.getElementById(id).classList.remove('open');
 document.getElementById('bg-' + id.replace('sheet-','')).classList.remove('open');
 }
 
-// ✅ FIX: Added click debouncing to api() function
+// ✅ FIX: Removed click debouncing - was blocking API calls
 async function api(method, path, body) {
-if (_clickLock) throw new Error('Please wait...');
-_clickLock = true;
-try {
 const res = await fetch(state.serverUrl+'/api'+path, {
 method,
 headers:{'Content-Type':'application/json',...(state.token?{Authorization:'Bearer '+state.token}:{})},
@@ -552,9 +547,6 @@ if (!contentType || !contentType.includes('application/json')) throw new Error('
 const data = await res.json();
 if (!res.ok) throw new Error(data.error||'Request failed');
 return data;
-} finally {
-setTimeout(() => { _clickLock = false; }, 500);  // 500ms cooldown
-}
 }
 
 function switchTab(tab) {
@@ -683,26 +675,38 @@ localStorage.removeItem('gz_token'); localStorage.removeItem('gz_user');
 if (state.socket) state.socket.disconnect();
 showScreen('login');
 }
+
+// ✅ FIX: Better error logging for debugging
 async function loadGroups() {
 try {
+console.log('[DEBUG] Loading groups...');
 const me = await api('GET', '/me');
 if (state.user) {
 state.user.status = me.status;
 state.user.expiry_date = me.expiry_date;
 localStorage.setItem('gz_user', JSON.stringify(state.user));
 }
-} catch(e) { }
+} catch(e) { 
+console.error('[DEBUG] /me failed:', e);
+}
 checkExpiryWarning();
 const status = state.user?.status || 'active';
 if (status !== 'active') { renderGroups(); return; }
-try { state.groups = await api('GET','/groups'); renderGroups(); }
+try { 
+console.log('[DEBUG] Fetching /api/groups...');
+state.groups = await api('GET','/groups'); 
+console.log('[DEBUG] Groups loaded:', state.groups.length);
+renderGroups(); 
+}
 catch(e) {
+console.error('[DEBUG] /groups failed:', e);
 if (e.message==='account_pending')          { if(state.user) state.user.status='pending';     renderGroups(); }
 else if (e.message==='subscription_expired')  { if(state.user) state.user.status='expired';      renderGroups(); }
 else if (e.message==='account_deactivated') { if(state.user) state.user.status='deactivated'; renderGroups(); }
-else toast('Failed to load groups','err');
+else toast('Failed to load groups: '+e.message,'err');
 }
 }
+
 function renderGroups() {
 const el = document.getElementById('groups-list');
 const status = state.user?.status || 'active';
@@ -909,7 +913,6 @@ hHtml += `<div style="text-align:center;padding:28px;color:var(--t3);font-size:1
 hHtml += '</div></div>';
 sessionArea.innerHTML += hHtml;
 }
-
 async function togglePay(status) {
 if (!state.activePc) return;
 const id = state.activePc.id;
@@ -989,7 +992,6 @@ updatePcField(state.activePc.id,'session_end', r.session_end);
 lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
 toast('+'+mins+'m added','ok');
 }
-// ✅ FIX: Removed duplicate renderPCActions() - updatePcField already calls it
 } catch(e) { toast(e.message,'err'); }
 }
 async function addTimeByAmount() {
@@ -1016,7 +1018,6 @@ toast(`Added: ${mins}m`,'ok');
 }
 document.getElementById('add-amount').value = '';
 document.getElementById('add-mins').value = '';
-// ✅ FIX: Removed duplicate renderPCActions()
 } catch(e) { toast(e.message,'err'); }
 }
 function addCustomTime() {
@@ -1039,7 +1040,6 @@ updatePcField(state.activePc.id,'session_end',r.session_end);
 lhAdd(state.activePc.id, {type:'remove',mins,at:Date.now()});
 toast('-'+mins+'m removed','ok');
 }
-// ✅ FIX: Removed duplicate renderPCActions()
 } catch(e) { toast(e.message,'err'); }
 }
 function removeCustomTime() {
@@ -1077,15 +1077,15 @@ toast(action==='lock'?'Screen locked':'Screen unlocked','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// ✅ FIX: Removed renderPCs() call - causes double render
+// ✅ FIX: Restored renderPCs() call - needed for dashboard updates
 function updatePcField(pcId, field, value) {
 const pc = state.pcs.find(p=>p.id===pcId);
 if (pc) pc[field]=value;
 if (state.activePc?.id===pcId) { 
 state.activePc[field]=value; 
-renderPCActions();  // ✅ Only render active PC view
-// ❌ Removed: renderPCs() - dashboard updates via socket anyway
+renderPCActions();
 }
+renderPCs();  // ✅ Restored - dashboard needs this
 }
 
 async function openApps() {
@@ -1269,13 +1269,12 @@ renderPCActions(); updateOnlinePill();
 }
 });
 
-// ✅ FIX: Listen for history updates from other admins (real-time sync)
+// ✅ Listen for history updates from other admins (real-time sync)
 state.socket.on('admin:history-update', (data) => {
 if (data.group_id === state.activeGroup?.id && data.pc_id === state.activePc?.id) {
 const h = data.history || [];
 localStorage.setItem('gz_history_' + data.pc_id, JSON.stringify(h.slice(0,5)));
-renderPCActions();  // ✅ Re-render to show updated history
-toast('History updated','ok');
+renderPCActions();
 }
 });
 }
