@@ -547,7 +547,7 @@ io.on('connection', (socket) => {
 
   // Admin broadcasts history update to other admins in same group
   socket.on('admin:history-update', ({ group_id, pc_id, history }) => {
-    socket.to(`group:${group_id}`).emit('admin:history-sync', { pc_id, history });
+    socket.to(`group:${group_id}`).emit('admin:history-update', { pc_id, history });
   });
 
   // Admin requests history from other devices in same group
