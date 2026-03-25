@@ -161,7 +161,8 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .sheet{position:fixed;bottom:20px;left:50%;right:auto;background:var(--s1);border:1px solid var(--bd2);border-radius:var(--r3);padding:0 22px;padding-bottom:max(22px,env(safe-area-inset-bottom));z-index:101;max-height:calc(88dvh - 20px);overflow-y:auto;transform:translate(-50%,calc(100% + 20px));transition:transform .3s cubic-bezier(.16,1,.3,1);width:calc(100% - 36px);max-width:480px}
 .sheet.open{transform:translate(-50%,0)}
 .sheet-handle{width:38px;height:3px;background:var(--s4);border-radius:2px;margin:14px auto 20px}
-.sheet-title{font-size:18px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px}
+.sheet-title{font-size:18px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
+.sheet-title-left{display:flex;align-items:center;gap:8px}
 .sheet-sub{font-size:12px;color:var(--t2);margin-bottom:22px}
 .chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
 .chip{padding:9px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);font-size:12px;font-weight:600;color:var(--t1);cursor:pointer;font-family:var(--sans);transition:all .15s;display:flex;align-items:center;gap:5px}
@@ -249,8 +250,11 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 </div>
 <div class="pc-grid" id="pc-grid"></div>
 
-<!-- Activity Section -->
-<div class="section-head" style="margin-top:8px"><i class="fa-solid fa-clock-rotate-left"></i> Recent Activity</div>
+<!-- Activity Section with Refresh Button -->
+<div class="section-head">
+<i class="fa-solid fa-clock-rotate-left"></i> Recent Activity
+<button class="icon-btn" onclick="refreshActivity()" title="Refresh" style="margin-left:auto;width:28px;height:28px;font-size:12px"><i class="fa-solid fa-rotate"></i></button>
+</div>
 <div class="settings-card" style="margin:0 18px 18px">
 <div id="activity-list"><div style="text-align:center;padding:20px;color:var(--t2);font-size:12px">No recent activity</div></div>
 <button class="btn btn-ghost" style="margin:18px;width:calc(100% - 36px)" onclick="openSheet('sheet-activity')"><i class="fa-solid fa-list"></i> View Full History</button>
@@ -339,7 +343,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet-bg" id="bg-newgroup" onclick="closeSheet('sheet-newgroup')"></div>
 <div class="sheet" id="sheet-newgroup">
 <div class="sheet-handle"></div>
-<div class="sheet-title">New Group</div>
+<div class="sheet-title"><span class="sheet-title-left">New Group</span></div>
 <div class="sheet-sub">Create a management group</div>
 <div class="field"><label class="field-label">Name</label><input class="field-input" type="text" id="newgroup-name" placeholder="e.g. Main Cafe"></div>
 <div class="sheet-btns">
@@ -350,7 +354,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet-bg" id="bg-addpc" onclick="closeSheet('sheet-addpc')"></div>
 <div class="sheet" id="sheet-addpc">
 <div class="sheet-handle"></div>
-<div class="sheet-title">Add PC</div>
+<div class="sheet-title"><span class="sheet-title-left">Add PC</span></div>
 <div class="sheet-sub">Register a new computer to this group</div>
 <div class="field"><label class="field-label">PC Name</label><input class="field-input" type="text" id="addpc-name" placeholder="e.g. PC-01"></div>
 <div class="field"><label class="field-label">Password</label><input class="field-input" type="password" id="addpc-pass" placeholder="Set access password"></div>
@@ -362,7 +366,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet-bg" id="bg-startsession" onclick="closeSheet('sheet-startsession')"></div>
 <div class="sheet" id="sheet-startsession">
 <div class="sheet-handle"></div>
-<div class="sheet-title">Start Session</div>
+<div class="sheet-title"><span class="sheet-title-left">Start Session</span></div>
 <div class="sheet-sub">Choose duration or enter amount</div>
 <div class="chip-row">
 <div class="chip" onclick="startSession(30)"><i class="fa-regular fa-clock"></i> 30m</div>
@@ -388,7 +392,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet-bg" id="bg-addtime" onclick="closeSheet('sheet-addtime')"></div>
 <div class="sheet" id="sheet-addtime">
 <div class="sheet-handle"></div>
-<div class="sheet-title">Add Time</div>
+<div class="sheet-title"><span class="sheet-title-left">Add Time</span></div>
 <div class="sheet-sub">Extend by duration or amount</div>
 <div class="chip-row">
 <div class="chip green" onclick="addTime(30)"><i class="fa-solid fa-circle-plus"></i> 30m</div>
@@ -407,7 +411,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet-bg" id="bg-removetime" onclick="closeSheet('sheet-removetime')"></div>
 <div class="sheet" id="sheet-removetime">
 <div class="sheet-handle"></div>
-<div class="sheet-title" style="color:var(--red)">Remove Time</div>
+<div class="sheet-title"><span class="sheet-title-left" style="color:var(--red)">Remove Time</span></div>
 <div class="sheet-sub">Reduce remaining session time</div>
 <div class="chip-row">
 <div class="chip red" onclick="removeTime(15)"><i class="fa-solid fa-circle-minus"></i> 15m</div>
@@ -424,14 +428,13 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet-bg" id="bg-apps" onclick="closeSheet('sheet-apps')"></div>
 <div class="sheet" id="sheet-apps">
 <div class="sheet-handle"></div>
-<div class="sheet-title">Launch App</div>
-<div class="sheet-sub" id="apps-pc-name"></div>
+<div class="sheet-title"><span class="sheet-title-left">Launch App</span><span id="apps-pc-name" style="font-size:12px;color:var(--t2);font-weight:400"></span></div>
 <div id="apps-list"><div style="text-align:center;padding:28px"><span class="spin"></span></div></div>
 </div>
 <div class="sheet-bg" id="bg-addadmin" onclick="closeSheet('sheet-addadmin')"></div>
 <div class="sheet" id="sheet-addadmin">
 <div class="sheet-handle"></div>
-<div class="sheet-title">Add Admin</div>
+<div class="sheet-title"><span class="sheet-title-left">Add Admin</span></div>
 <div class="sheet-sub">Grant access to another user</div>
 <div class="field"><label class="field-label">Username</label><input class="field-input" type="text" id="addadmin-user" placeholder="Username" autocapitalize="none"></div>
 <div class="sheet-btns">
@@ -442,29 +445,30 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet-bg" id="bg-reorderpc" onclick="closeSheet('sheet-reorderpc')"></div>
 <div class="sheet" id="sheet-reorderpc">
 <div class="sheet-handle"></div>
-<div class="sheet-title">Reorder PCs</div>
+<div class="sheet-title"><span class="sheet-title-left">Reorder PCs</span></div>
 <div class="sheet-sub">Use arrows to change display order</div>
 <div id="reorder-pc-list"><div style="text-align:center;padding:20px"><span class="spin"></span></div></div>
 </div>
 <div class="sheet-bg" id="bg-deletepc" onclick="closeSheet('sheet-deletepc')"></div>
 <div class="sheet" id="sheet-deletepc">
 <div class="sheet-handle"></div>
-<div class="sheet-title">Delete PC</div>
+<div class="sheet-title"><span class="sheet-title-left">Delete PC</span></div>
 <div class="sheet-sub">Select a PC to remove permanently</div>
 <div id="delete-pc-list"><div style="text-align:center;padding:20px"><span class="spin"></span></div></div>
 </div>
 <div class="sheet-bg" id="bg-killtasks" onclick="closeSheet('sheet-killtasks')"></div>
 <div class="sheet" id="sheet-killtasks">
 <div class="sheet-handle"></div>
-<div class="sheet-title">Kill Task</div>
-<div class="sheet-sub" id="killtasks-pc-name"></div>
-<button class="btn btn-danger btn-full" style="margin-bottom:16px" onclick="killAllProcesses()"><i class="fa-solid fa-skull"></i> Kill All Tasks</button>
+<div class="sheet-title">
+<span class="sheet-title-left">Kill Task<span id="killtasks-pc-name" style="font-size:12px;color:var(--t2);font-weight:400;margin-left:6px"></span></span>
+<button class="btn btn-danger" style="padding:6px 12px;font-size:10px" onclick="killAllProcesses()"><i class="fa-solid fa-skull"></i> Kill All</button>
+</div>
 <div id="killtasks-list"><div style="text-align:center;padding:28px"><span class="spin"></span></div></div>
 </div>
 <div class="sheet-bg" id="bg-activity" onclick="closeSheet('sheet-activity')"></div>
 <div class="sheet" id="sheet-activity">
 <div class="sheet-handle"></div>
-<div class="sheet-title">Activity History</div>
+<div class="sheet-title"><span class="sheet-title-left">Activity History</span><button class="icon-btn" onclick="refreshActivity();closeSheet('sheet-activity')" title="Refresh" style="width:28px;height:28px;font-size:12px"><i class="fa-solid fa-rotate"></i></button></div>
 <div class="sheet-sub" id="activity-group-name"></div>
 <div id="activity-full-list"><div style="text-align:center;padding:28px"><span class="spin"></span></div></div>
 </div>
@@ -783,7 +787,7 @@ function openGroup(id) {
     document.getElementById('s-name').textContent = state.activeGroup.name;
     document.getElementById('s-id').textContent = state.activeGroup.id;
     document.getElementById('activity-group-name').textContent = state.activeGroup.name;
-    showScreen('dashboard'); loadPCs(); loadActivity(); connectSocket();
+    showScreen('dashboard'); loadPCs(); connectSocket();
 }
 
 async function loadPCs() {
@@ -796,6 +800,7 @@ async function loadPCs() {
             api('POST','/groups/'+state.activeGroup.id+'/pcs/reorder',{order}).catch(()=>{});
         }
         renderPCs();
+        loadActivity(); // Load activity after PCs are loaded
         toast('Refreshed','ok');
     } catch(e) { toast('Failed to load PCs','err'); }
 }
@@ -1073,7 +1078,7 @@ async function openApps() {
 }
 
 async function openKillSheet() {
-    document.getElementById('killtasks-pc-name').textContent = 'on '+state.activePc.name;
+    document.getElementById('killtasks-pc-name').textContent = ' on '+state.activePc.name;
     document.getElementById('killtasks-list').innerHTML = '<div style="text-align:center;padding:28px"><span class="spin"></span><div style="color:var(--t3);font-size:11px;margin-top:10px">Fetching running processes...</div></div>';
     openSheet('sheet-killtasks');
     try {
@@ -1120,57 +1125,76 @@ async function killAllProcesses() {
     if (!state.activePc) return;
     if (!confirm('Kill ALL running processes on '+state.activePc.name+'?\n\nThis will close all user applications.')) return;
     try {
-        await api('POST','/pcs/'+state.activePc.id+'/kill-all-processes',{group_id:state.activeGroup.id});
+        await api('POST','/pcs/'+state.activePc.id+'/kill-process',{pid:'ALL',name:'all',group_id:state.activeGroup.id});
         toast('All tasks killed','ok');
         closeSheet('sheet-killtasks');
     } catch(e) { toast(e.message,'err'); }
 }
 
-async function loadActivity() {
-    try {
-        const activity = await api('GET','/groups/'+state.activeGroup.id+'/activity');
-        const recentList = document.getElementById('activity-list');
-        const fullList = document.getElementById('activity-full-list');
-        if (!activity || !activity.length) {
-            recentList.innerHTML = '<div style="text-align:center;padding:20px;color:var(--t2);font-size:12px">No recent activity</div>';
-            if (fullList) fullList.innerHTML = '<div style="text-align:center;padding:20px;color:var(--t2);font-size:12px">No activity history</div>';
-            return;
+// ── Activity/History Section ─────────────────────────────────────────────────
+function refreshActivity() {
+    loadPCs(); // Reload PCs to get fresh time_history data
+}
+
+function loadActivity() {
+    const recentList = document.getElementById('activity-list');
+    const fullList = document.getElementById('activity-full-list');
+    
+    // Collect all time_history entries from all PCs in the group
+    let allHistory = [];
+    state.pcs.forEach(pc => {
+        if (pc.time_history && pc.time_history.length) {
+            pc.time_history.forEach(h => {
+                allHistory.push({
+                    pc_name: pc.name,
+                    type: h.type === 'add' ? 'time_added' : 'time_removed',
+                    timestamp: h.at,
+                    mins: h.mins
+                });
+            });
         }
-        const recent = activity.slice(0, 3);
+    });
+    
+    // Sort by timestamp descending (newest first)
+    allHistory.sort((a,b) => b.timestamp - a.timestamp);
+    
+    if (!allHistory.length) {
+        if (recentList) recentList.innerHTML = '<div style="text-align:center;padding:20px;color:var(--t2);font-size:12px">No recent activity</div>';
+        if (fullList) fullList.innerHTML = '<div style="text-align:center;padding:20px;color:var(--t2);font-size:12px">No activity history</div>';
+        return;
+    }
+    
+    const recent = allHistory.slice(0, 3);
+    if (recentList) {
         recentList.innerHTML = recent.map(a => `
         <div class="settings-row">
         <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:32px;height:32px;border-radius:8px;background:${a.type==='session_start'?'var(--green-bg)':a.type==='session_end'?'var(--red-bg)':'var(--blue-bg)'};display:flex;align-items:center;justify-content:center">
-        <i class="fa-solid ${a.type==='session_start'?'fa-play':a.type==='session_end'?'fa-stop':'fa-clock'}" style="color:${a.type==='session_start'?'var(--green)':a.type==='session_end'?'var(--red)':'var(--blue)'}"></i>
+        <div style="width:32px;height:32px;border-radius:8px;background:${a.type==='time_added'?'var(--green-bg)':'var(--red-bg)'};display:flex;align-items:center;justify-content:center">
+        <i class="fa-solid ${a.type==='time_added'?'fa-circle-plus':'fa-circle-minus'}" style="color:${a.type==='time_added'?'var(--green)':'var(--red)'}"></i>
         </div>
         <div>
         <div style="font-size:13px;font-weight:600">${a.pc_name || 'Unknown PC'}</div>
-        <div style="font-size:10px;color:var(--t2)">${formatActivityTime(a.timestamp)} • ${formatActivityType(a.type)}</div>
+        <div style="font-size:10px;color:var(--t2)">${formatActivityTime(a.timestamp)} • ${a.mins>0?'+':'-'}${Math.abs(a.mins)}m</div>
         </div>
         </div>
         </div>
         `).join('');
-        if (fullList) {
-            fullList.innerHTML = activity.map(a => `
-            <div class="settings-row">
-            <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:32px;height:32px;border-radius:8px;background:${a.type==='session_start'?'var(--green-bg)':a.type==='session_end'?'var(--red-bg)':'var(--blue-bg)'};display:flex;align-items:center;justify-content:center">
-            <i class="fa-solid ${a.type==='session_start'?'fa-play':a.type==='session_end'?'fa-stop':'fa-clock'}" style="color:${a.type==='session_start'?'var(--green)':a.type==='session_end'?'var(--red)':'var(--blue)'}"></i>
-            </div>
-            <div style="flex:1">
-            <div style="font-size:13px;font-weight:600">${a.pc_name || 'Unknown PC'}</div>
-            <div style="font-size:10px;color:var(--t2)">${formatActivityTime(a.timestamp)} • ${formatActivityType(a.type)}</div>
-            </div>
-            </div>
-            </div>
-            `).join('');
-        }
-    } catch(e) {
-        console.log('Activity load error:', e);
-        const recentList = document.getElementById('activity-list');
-        const fullList = document.getElementById('activity-full-list');
-        if(recentList) recentList.innerHTML = '<div style="text-align:center;padding:20px;color:var(--t2);font-size:12px">Activity log unavailable</div>';
-        if(fullList) fullList.innerHTML = '<div style="text-align:center;padding:20px;color:var(--t2);font-size:12px">Activity log unavailable</div>';
+    }
+    
+    if (fullList) {
+        fullList.innerHTML = allHistory.map(a => `
+        <div class="settings-row">
+        <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border-radius:8px;background:${a.type==='time_added'?'var(--green-bg)':'var(--red-bg)'};display:flex;align-items:center;justify-content:center">
+        <i class="fa-solid ${a.type==='time_added'?'fa-circle-plus':'fa-circle-minus'}" style="color:${a.type==='time_added'?'var(--green)':'var(--red)'}"></i>
+        </div>
+        <div style="flex:1">
+        <div style="font-size:13px;font-weight:600">${a.pc_name || 'Unknown PC'}</div>
+        <div style="font-size:10px;color:var(--t2)">${formatActivityTime(a.timestamp)} • ${a.mins>0?'+':'-'}${Math.abs(a.mins)}m</div>
+        </div>
+        </div>
+        </div>
+        `).join('');
     }
 }
 
@@ -1184,20 +1208,7 @@ function formatActivityTime(timestamp) {
     if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
     return date.toLocaleDateString();
 }
-
-function formatActivityType(type) {
-    const types = {
-        'session_start': 'Session Started',
-        'session_end': 'Session Ended',
-        'time_added': 'Time Added',
-        'time_removed': 'Time Removed',
-        'pc_locked': 'PC Locked',
-        'pc_unlocked': 'PC Unlocked',
-        'payment_paid': 'Payment Marked Paid',
-        'payment_unpaid': 'Payment Marked Unpaid'
-    };
-    return types[type] || type;
-}
+// ── END Activity Section ─────────────────────────────────────────────────────
 
 async function launchApp(i) {
     const app = window._apps?.[i]; if(!app) return;
@@ -1315,6 +1326,11 @@ function connectSocket() {
                 renderPCActions(); updateOnlinePill();
             }
         }
+    });
+    // Listen for history sync from other devices
+    state.socket.on('admin:history-sync', ({ pc_id, history }) => {
+        const pc = state.pcs.find(p=>p.id===pc_id);
+        if (pc) { pc.time_history = history; loadActivity(); }
     });
 }
 
