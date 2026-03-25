@@ -8,7 +8,6 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const db = require('./db');
 
-// ✅ FIX: In-memory cache for history (eliminates DB reads on hot path)
 const _historyCache = {};
 
 const app    = express();
@@ -18,7 +17,6 @@ const io     = new Server(server, { cors: { origin: '*' } });
 const JWT_SECRET = process.env.JWT_SECRET || 'gamezone-secret-2024';
 const PORT       = process.env.PORT || 3000;
 
-// ─── Super Admin (hardcoded, never registerable) ──────────────────────────────
 const ADMIN_UNAME  = 'iahsaan.berisco';
 const ADMIN_HASH   = bcrypt.hashSync('B@nkaiminazuk1', 10);
 const ADMIN_SECRET = JWT_SECRET + '_superadmin_v1';
@@ -26,14 +24,12 @@ const ADMIN_SECRET = JWT_SECRET + '_superadmin_v1';
 app.use(cors());
 app.use(express.json());
 
-// Admin panel — must be BEFORE static middleware
 app.get('/connect', (_req, res) =>
   res.sendFile(path.join(__dirname, 'admin.html'))
 );
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ─── Middleware ────────────────────────────────────────────────────────────────
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token' });
@@ -74,7 +70,6 @@ async function canManageGroup(userId, groupId) {
   return !!(await db.get('group_members', m => m.group_id === groupId && m.user_id === userId));
 }
 
-// ─── Super Admin Login ─────────────────────────────────────────────────────────
 app.post('/api/admin/login', (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: 'Missing fields' });
@@ -86,7 +81,6 @@ app.post('/api/admin/login', (req, res) => {
   res.json({ token, username: ADMIN_UNAME });
 });
 
-// ─── Super Admin Account Management ───────────────────────────────────────────
 app.get('/api/admin/accounts', adminAuth, async (req, res) => {
   try {
     const users = await db.filter('users', () => true);
@@ -98,7 +92,7 @@ app.get('/api/admin/accounts', adminAuth, async (req, res) => {
         pcCount += pcs.length;
       }
       let status = u.status || 'active';
-      if (status === 'active' && u.expiry_date && Date.now() > user.expiry_date) {
+      if (status === 'active' && u.expiry_date && Date.now() > u.expiry_date) {
         status = 'expired';
         await db.update('users', x => x.id === u.id, { status: 'expired' });
       }
@@ -153,7 +147,6 @@ app.delete('/api/admin/accounts/:id', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── Auth ──────────────────────────────────────────────────────────────────────
 app.post('/api/register', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -191,7 +184,6 @@ app.post('/api/login', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── Groups ────────────────────────────────────────────────────────────────────
 app.post('/api/groups', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { name } = req.body;
@@ -262,7 +254,6 @@ app.delete('/api/groups/:groupId/admins/:userId', authMiddleware, accountCheck, 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── PCs ───────────────────────────────────────────────────────────────────────
 app.get('/api/groups/:groupId/pcs', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { groupId } = req.params;
@@ -318,7 +309,6 @@ app.post('/api/groups/:groupId/pcs/reorder', authMiddleware, accountCheck, async
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── Payment ───────────────────────────────────────────────────────────────────
 app.post('/api/pcs/:pcId/payment', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { pcId } = req.params;
@@ -330,7 +320,6 @@ app.post('/api/pcs/:pcId/payment', authMiddleware, accountCheck, async (req, res
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── Sessions ──────────────────────────────────────────────────────────────────
 app.post('/api/pcs/:pcId/session/start', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { pcId } = req.params;
@@ -426,7 +415,6 @@ app.post('/api/pcs/:pcId/session/stopwatch-end', authMiddleware, accountCheck, a
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── PC Control ────────────────────────────────────────────────────────────────
 app.post('/api/pcs/:pcId/lock', authMiddleware, accountCheck, async (req, res) => {
   try {
     if (!await canManageGroup(req.user.id, req.body.group_id)) return res.status(403).json({ error: 'Forbidden' });
@@ -489,27 +477,20 @@ app.get('/api/pcs/:pcId/apps', authMiddleware, accountCheck, async (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ✅ FIX: API endpoint to fetch history from server (uses cache for speed)
 app.get('/api/pcs/:pcId/history', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { pcId } = req.params;
     const { group_id } = req.query;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
-    
-    // ✅ Return from cache if available (fast - no DB read)
     if (_historyCache[pcId]) {
       return res.json({ history: _historyCache[pcId] });
     }
-    
-    // ✅ Fallback to DB (slower, but only on cache miss)
     const pc = await db.get('pcs', p => p.id === pcId);
-    // Populate cache for next request
     _historyCache[pcId] = pc.time_history || [];
     res.json({ history: pc.time_history || [] });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── Me (fresh status check) ─────────────────────────────────────────────────
 app.get('/api/me', authMiddleware, async (req, res) => {
   try {
     const user = await db.get('users', u => u.id === req.user.id);
@@ -523,7 +504,6 @@ app.get('/api/me', authMiddleware, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ─── Health ─────────────────────────────────────────────────────────────────────
 app.get('/api/health', async (req, res) => {
   try {
     await db._ready;
@@ -531,7 +511,6 @@ app.get('/api/health', async (req, res) => {
   } catch { res.json({ status: 'ok', database: 'disconnected', uptime: process.uptime() }); }
 });
 
-// ─── WebSocket ──────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   socket.on('pc:auth', async ({ pc_name, group_id, password }, callback) => {
     const pc = await db.get('pcs', p => p.name === pc_name && p.group_id === group_id);
@@ -560,27 +539,25 @@ io.on('connection', (socket) => {
     try { jwt.verify(token, JWT_SECRET); socket.join(`group:${group_id}`); } catch {}
   });
 
-  // ✅ FIX: Save history to cache ONLY (no DB write - eliminates blocking)
+  // ✅ FIX: Include group_id in broadcast so client can validate
   socket.on('admin:history-update', async ({ group_id, pc_id, history }) => {
-    // ✅ Update memory cache immediately (instant - no blocking)
     _historyCache[pc_id] = history;
-    
-    // ✅ Broadcast to ALL other admins in same group (instant sync)
-    socket.to(`group:${group_id}`).emit('admin:history-update', { pc_id, history });
-    
-    // ❌ REMOVED: DB write (causes queue buildup and slow response)
-    // History is ephemeral - if server restarts, it's not critical
+    // ✅ Include group_id in broadcast
+    socket.to(`group:${group_id}`).emit('admin:history-update', { 
+        group_id,  // ✅ THIS WAS MISSING!
+        pc_id, 
+        history 
+    });
   });
 
   socket.on('admin:request-history', async ({ group_id, pc_id }) => {
-    // Return from cache if available
     if (_historyCache[pc_id]) {
-      socket.to(`group:${group_id}`).emit('admin:history-update', { pc_id, history: _historyCache[pc_id] });
+      socket.to(`group:${group_id}`).emit('admin:history-update', { group_id, pc_id, history: _historyCache[pc_id] });
     } else {
       const pc = await db.get('pcs', p => p.id === pc_id);
       if (pc) {
         _historyCache[pc_id] = pc.time_history || [];
-        socket.to(`group:${group_id}`).emit('admin:history-update', { pc_id, history: pc.time_history || [] });
+        socket.to(`group:${group_id}`).emit('admin:history-update', { group_id, pc_id, history: pc.time_history || [] });
       }
     }
   });
@@ -599,7 +576,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// ─── Start ──────────────────────────────────────────────────────────────────────
 db._ready.then(() => {
   server.listen(PORT, () => {
     console.log(`\n🎮 GameZone Server running on port ${PORT}`);
