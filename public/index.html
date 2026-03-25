@@ -44,7 +44,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .stats-row{padding:24px 32px 20px}
 .topbar{padding:0 32px}
 .scroll-inner{max-width:860px;margin:0 auto}
-.fab{position:fixed!important;bottom:32px;right:32px;width:auto!important;min-width:140px;margin:0!important;padding:13px 20px!important}
 .desktop-only{display:flex!important}
 }
 .desktop-only{display:none!important}
@@ -154,15 +153,10 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .reorder-btn{width:28px;height:28px;border-radius:var(--r);background:var(--s3);border:none;color:var(--t2);cursor:pointer;font-size:11px;transition:all .15s;display:flex;align-items:center;justify-content:center}
 .reorder-btn:hover{background:var(--green-bg);color:var(--green)}
 .reorder-btn:disabled{opacity:.3;cursor:not-allowed}
-/* FIX #3: Button container for refresh + add device with wrap */
-.dashboard-actions{position:fixed!important;bottom:32px;right:32px;display:flex;flex-direction:column;gap:10px;align-items:flex-end;z-index:90!important}
-.fab{margin:0!important;margin-bottom:0!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;padding:13px!important;border-radius:var(--r2)!important;background:var(--green)!important;color:#fff!important;font-size:13px!important;font-weight:700!important;font-family:var(--sans)!important;border:none!important;cursor:pointer!important;transition:all .18s!important;box-shadow:0 4px 14px rgba(16,185,129,.3)!important;width:calc(100% - 36px)!important}
-.fab:hover{background:#0ea572!important}
-.fab:active{transform:scale(.97)!important}
-/* FIX #3: Refresh button styled like chip */
-.refresh-chip-btn{padding:9px 14px!important;background:var(--green-bg)!important;border:1px solid var(--green-bd)!important;border-radius:var(--r)!important;color:var(--green)!important;font-size:12px!important;font-weight:600!important;cursor:pointer!important;font-family:var(--sans)!important;transition:all .15s!important;display:flex!important;align-items:center!important;gap:5px!important;width:auto!important;min-width:auto!important;box-shadow:none!important;white-space:nowrap!important}
-.refresh-chip-btn:hover{background:rgba(16,185,129,.2)!important}
-.refresh-chip-btn:active{transform:scale(.95)!important}
+/* FIX: Original FAB button style restored */
+.fab{margin:0 18px;margin-bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:var(--r2);background:var(--green);color:#fff;font-size:13px;font-weight:700;font-family:var(--sans);border:none;cursor:pointer;transition:all .18s;box-shadow:0 4px 14px rgba(16,185,129,.3);width:calc(100% - 36px)}
+.fab:hover{background:#0ea572}
+.fab:active{transform:scale(.97)}
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:100;opacity:0;pointer-events:none;transition:opacity .22s}
 .sheet-bg.open{opacity:1;pointer-events:all}
 .sheet{position:fixed;bottom:20px;left:50%;right:auto;background:var(--s1);border:1px solid var(--bd2);border-radius:var(--r3);padding:0 22px;padding-bottom:max(22px,env(safe-area-inset-bottom));z-index:101;max-height:calc(88dvh - 20px);overflow-y:auto;transform:translate(-50%,calc(100% + 20px));transition:transform .3s cubic-bezier(.16,1,.3,1);width:calc(100% - 36px);max-width:480px}
@@ -176,7 +170,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .chip:active{transform:scale(.95)}
 .chip.green{background:var(--green-bg);border-color:var(--green-bd);color:var(--green)}
 .chip.red{background:var(--red-bg);border-color:var(--red-bd);color:var(--red)}
-/* FIX #1: Input row with no-wrap and full-width inputs */
+/* FIX: Input row with no-wrap and full-width inputs */
 .input-row{display:flex;gap:8px;align-items:center;flex-wrap:nowrap}
 .input-row input{flex:1;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:11px 13px;font-size:13px;color:var(--t1);font-family:var(--sans);outline:none;transition:border-color .18s;min-width:0}
 .input-row input:focus{border-color:var(--green)}
@@ -258,11 +252,8 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="pc-grid" id="pc-grid"></div>
 </div>
 </div>
-<!-- FIX #3: Button container with wrap for refresh + add device -->
-<div class="dashboard-actions">
-<button class="refresh-chip-btn" onclick="loadPCs()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+<!-- FIX: Refresh button removed, only Add PC FAB remains -->
 <button class="fab" onclick="openSheet('sheet-addpc')"><i class="fa-solid fa-plus"></i> Add PC</button>
-</div>
 </div>
 <div class="screen" id="screen-pccontrol">
 <div class="topbar">
@@ -418,7 +409,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="chip red" onclick="removeTime(60)"><i class="fa-solid fa-circle-minus"></i> 1h</div>
 <div class="chip red" onclick="removeTime(120)"><i class="fa-solid fa-circle-minus"></i> 2h</div>
 </div>
-<!-- FIX #2: Full-width input for remove time -->
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Remove Time</div>
 <div class="input-row" style="margin-bottom:20px">
 <input type="text" id="rem-mins" placeholder="Minutes to remove" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1">
@@ -674,17 +664,12 @@ try {
 const rates = JSON.parse(localStorage.getItem('gz_group_rates') || '{}');
 rates[state.activeGroup.id] = rate;
 localStorage.setItem('gz_group_rates', JSON.stringify(rates));
-updateRateDisplay();
 toast('Rate saved','ok');
 } catch(e) { toast('Failed to save','err'); }
 }
 function loadGroupRate() {
 const rate = getGroupRate();
 document.getElementById('group-rate-input').value = rate.toFixed(2);
-updateRateDisplay();
-}
-function updateRateDisplay() {
-const rate = getGroupRate();
 }
 
 function doLogout() {
