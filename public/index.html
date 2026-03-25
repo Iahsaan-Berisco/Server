@@ -157,7 +157,8 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .fab{margin:0 18px;margin-bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:var(--r2);background:var(--green);color:#fff;font-size:13px;font-weight:700;font-family:var(--sans);border:none;cursor:pointer;transition:all .18s;box-shadow:0 4px 14px rgba(16,185,129,.3);width:calc(100% - 36px)}
 .fab:hover{background:#0ea572}
 .fab:active{transform:scale(.97)}
-.refresh-chip-btn{position:fixed!important;bottom:32px;right:32px;padding:9px 14px!important;background:var(--green-bg)!important;border:1px solid var(--green-bd)!important;border-radius:var(--r)!important;color:var(--green)!important;font-size:12px!important;font-weight:600!important;cursor:pointer!important;font-family:var(--sans)!important;transition:all .15s!important;display:flex!important;align-items:center!important;gap:5px!important;z-index:90!important;width:auto!important;min-width:auto!important;margin:0!important;box-shadow:none!important}
+/* FIX #4: Refresh button positioned above FAB to prevent overlap */
+.refresh-chip-btn{position:fixed!important;bottom:100px;right:32px;padding:9px 14px!important;background:var(--green-bg)!important;border:1px solid var(--green-bd)!important;border-radius:var(--r)!important;color:var(--green)!important;font-size:12px!important;font-weight:600!important;cursor:pointer!important;font-family:var(--sans)!important;transition:all .15s!important;display:flex!important;align-items:center!important;gap:5px!important;z-index:89!important;width:auto!important;min-width:auto!important;margin:0!important;box-shadow:none!important}
 .refresh-chip-btn:hover{background:rgba(16,185,129,.2)!important}
 .refresh-chip-btn:active{transform:scale(.95)!important}
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:100;opacity:0;pointer-events:none;transition:opacity .22s}
@@ -173,10 +174,11 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .chip:active{transform:scale(.95)}
 .chip.green{background:var(--green-bg);border-color:var(--green-bd);color:var(--green)}
 .chip.red{background:var(--red-bg);border-color:var(--red-bd);color:var(--red)}
-.input-row{display:flex;gap:8px;align-items:center}
-.input-row input{flex:1;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:11px 13px;font-size:13px;color:var(--t1);font-family:var(--sans);outline:none;transition:border-color .18s}
+/* FIX #1: Input row with no-wrap and full-width inputs */
+.input-row{display:flex;gap:8px;align-items:center;flex-wrap:nowrap}
+.input-row input{flex:1;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:11px 13px;font-size:13px;color:var(--t1);font-family:var(--sans);outline:none;transition:border-color .18s;min-width:0}
 .input-row input:focus{border-color:var(--green)}
-.input-row-sep{color:var(--t3);font-weight:600;font-size:14px}
+.input-row-sep{color:var(--t3);font-weight:600;font-size:14px;flex-shrink:0}
 .sheet-btns{display:flex;gap:8px;margin-top:20px}
 .sheet-btns .btn{flex:1}
 .app-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--bd)}
@@ -254,6 +256,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="pc-grid" id="pc-grid"></div>
 </div>
 </div>
+<!-- FIX #4: Refresh button positioned above FAB -->
 <button class="refresh-chip-btn" onclick="loadPCs()"><i class="fa-solid fa-rotate"></i> Refresh</button>
 <button class="fab" onclick="openSheet('sheet-addpc')"><i class="fa-solid fa-plus"></i> Add PC</button>
 </div>
@@ -296,7 +299,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="settings-row">
 <div><div class="settings-key">Hourly Rate ($)</div><div class="settings-val">Price per hour for all PCs in this group</div></div>
 <div style="display:flex;align-items:center;gap:8px">
-<input type="number" id="group-rate-input" placeholder="5.00" step="0.01" min="0" style="width:80px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:8px 10px;font-size:13px;color:var(--t1);outline:none">
+<input type="text" id="group-rate-input" placeholder="5.00" inputmode="decimal" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" style="width:80px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:8px 10px;font-size:13px;color:var(--t1);outline:none">
 <button class="btn btn-primary btn-sm" onclick="saveGroupRate()" style="padding:8px 14px;font-size:11px">Save</button>
 </div>
 </div>
@@ -370,14 +373,14 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Or Pay by Amount</div>
 <div class="input-row" style="margin-bottom:16px">
 <span style="font-size:16px;font-weight:700;color:var(--t1)">$</span>
-<input type="number" id="session-amount" placeholder="Enter amount" min="1" step="0.01" style="flex:1">
+<input type="text" id="session-amount" placeholder="Enter amount" inputmode="decimal" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" style="flex:1">
 <button class="btn btn-primary" onclick="startSessionByAmount()">Start</button>
 </div>
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom Duration</div>
 <div class="input-row" style="margin-bottom:16px">
-<input type="number" id="custom-hrs" placeholder="hrs" min="0" max="24">
+<input type="text" id="custom-hrs" placeholder="hrs" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
 <span class="input-row-sep">:</span>
-<input type="number" id="custom-mins" placeholder="min" min="0" max="59">
+<input type="text" id="custom-mins" placeholder="min" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
 <button class="btn btn-primary" onclick="startCustomSession()">Start</button>
 </div>
 <button onclick="startStopwatch()" style="width:100%;padding:13px;border-radius:var(--r2);background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px"><i class="fa-solid fa-stopwatch"></i> Free Timer (Count Up)</button>
@@ -394,12 +397,12 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="chip green" onclick="addTime(120)"><i class="fa-solid fa-circle-plus"></i> 2h</div>
 <div class="chip green" onclick="addTime(180)"><i class="fa-solid fa-circle-plus"></i> 3h</div>
 </div>
-<!-- FIX: Merged amount and minutes into single row with same Add button -->
+<!-- FIX #1 & #3: Full-width inputs, either amount OR minutes works -->
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Add Time</div>
 <div class="input-row" style="margin-bottom:20px">
 <span style="font-size:16px;font-weight:700;color:var(--t1)">$</span>
-<input type="number" id="add-amount" placeholder="Amount" min="1" step="0.01" style="flex:1;max-width:120px">
-<input type="text" id="add-mins" placeholder="Minutes" min="0" max="999" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:120px">
+<input type="text" id="add-amount" placeholder="Amount ($)" inputmode="decimal" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" style="flex:1">
+<input type="text" id="add-mins" placeholder="Minutes" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1">
 <button class="btn btn-primary" onclick="addTimeByAmount()">Add</button>
 </div>
 </div>
@@ -416,7 +419,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 </div>
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
 <div class="input-row" style="margin-bottom:20px">
-<input type="text" id="rem-mins" placeholder="min" min="0" max="999" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
+<input type="text" id="rem-mins" placeholder="min" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
 <span class="input-row-sep">min</span>
 <button class="btn btn-danger" onclick="removeCustomTime()">Remove</button>
 </div>
@@ -681,7 +684,6 @@ updateRateDisplay();
 }
 function updateRateDisplay() {
 const rate = getGroupRate();
-document.getElementById('add-rate-display').value = '$'+rate.toFixed(2)+'/hr';
 }
 
 function doLogout() {
@@ -887,28 +889,6 @@ sessionArea.innerHTML = `<div class="section-head">Session Control</div>
 </div>
 </div>`;
 }
-const history = lhGet(pc.id);
-if (history && history.length > 0) {
-let hHtml = `<div class="section-head" style="justify-content:space-between">Recent Activity
-<button onclick="refreshHistory()" style="margin-left:auto;background:var(--s3);border:1px solid var(--bd2);color:var(--t2);cursor:pointer;font-size:10px;font-family:var(--sans);display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--r);letter-spacing:0;text-transform:none;font-weight:600;transition:all .15s" onmouseover="this.style.color='var(--t1)'" onmouseout="this.style.color='var(--t2)'">
-<i class="fa-solid fa-rotate" style="font-size:10px"></i> Refresh
-</button></div>
-<div class="action-grid" style="padding-bottom:0;margin-bottom:20px;display:block">
-<div style="background:var(--s1);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">`;
-history.forEach(entry => {
-const isFree = entry.type === 'free';
-const isAdd  = entry.type === 'add';
-const col    = isFree ? 'var(--blue)' : isAdd ? 'var(--green)' : 'var(--red)';
-const valStr = isFree ? 'FREE' : (isAdd?'+':'-') + Math.abs(entry.mins) + 'm';
-const label  = isFree ? 'Free Timer' : isAdd ? 'Added' : 'Removed';
-hHtml += `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--bd)">
-<span style="font-size:13px;font-weight:700;color:${col};font-family:var(--mono)">${valStr}</span>
-<span style="font-size:11px;color:var(--t3)">${label}</span>
-</div>`;
-});
-hHtml += '</div></div>';
-sessionArea.innerHTML += hHtml;
-}
 }
 
 async function togglePay(status) {
@@ -986,19 +966,34 @@ toast('+'+mins+'m added','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// FIX: Updated to read from merged input row
+// FIX #3: Either amount OR minutes works independently
 async function addTimeByAmount() {
 const amount = parseFloat(document.getElementById('add-amount').value);
 const mins = parseInt(document.getElementById('add-mins').value)||0;
-if (!amount || amount <= 0) { toast('Enter valid amount','err'); return; }
-if (mins < 1) { toast('Enter valid minutes','err'); return; }
+
+// FIX #3: Allow either amount OR minutes, not both required
+if (!amount && !mins) { toast('Enter amount or minutes','err'); return; }
+
 closeSheet('sheet-addtime');
 try {
+// If amount provided, calculate minutes from rate
+if (amount && amount > 0) {
+const rate = getGroupRate();
+const hours = amount / rate;
+const calcMins = Math.floor(hours * 60);
+if (calcMins < 1) { toast('Amount too low for minimum 1 minute','err'); return; }
+const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:calcMins,group_id:state.activeGroup.id});
+updatePcField(state.activePc.id,'session_end', r.session_end);
+toast(`Added: $${amount.toFixed(2)} = ${calcMins}m`,'ok');
+}
+// If minutes provided directly
+else if (mins && mins > 0) {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'session_end', r.session_end);
+toast(`Added: ${mins}m`,'ok');
+}
 document.getElementById('add-amount').value = '';
 document.getElementById('add-mins').value = '';
-toast(`Added: $${amount.toFixed(2)} = ${mins}m`,'ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
@@ -1209,22 +1204,6 @@ renderPCs();
 if (state.activePc?.id===pc_id) { state.activePc.is_online=pc.is_online; updateOnlinePill(); }
 }
 });
-state.socket.on('admin:history-sync', ({ pc_id, history }) => {
-lhSet(pc_id, history);
-const pc = state.pcs.find(p => p.id === pc_id);
-if (pc) pc._history_updated = Date.now();
-if (state.activePc?.id === pc_id) renderPCActions();
-});
-state.socket.on('admin:request-history', ({ pc_id }) => {
-const h = lhGet(pc_id);
-if (h.length > 0 && state.activeGroup) {
-state.socket.emit('admin:history-update', {
-group_id: state.activeGroup.id,
-pc_id,
-history: h
-});
-}
-});
 state.socket.on('group:'+state.activeGroup.id+':pc-session', (data) => {
 const { pc_id } = data;
 const pc = state.pcs.find(p=>p.id===pc_id);
@@ -1241,37 +1220,6 @@ renderPCActions(); updateOnlinePill();
 }
 }
 });
-}
-
-const _LH_KEY = 'gz_history_';
-function lhGet(pcId) {
-try { return JSON.parse(localStorage.getItem(_LH_KEY+pcId) || '[]'); } catch { return []; }
-}
-function lhSet(pcId, entries) {
-localStorage.setItem(_LH_KEY+pcId, JSON.stringify(entries.slice(0,5)));
-}
-function lhAdd(pcId, entry) {
-const h = lhGet(pcId);
-h.unshift(entry);
-lhSet(pcId, h);
-if (state.socket && state.activeGroup) {
-state.socket.emit('admin:history-update', {
-group_id: state.activeGroup.id,
-pc_id: pcId,
-history: h.slice(0,5)
-});
-}
-}
-function refreshHistory() {
-if (!state.activePc) return;
-if (state.socket && state.activeGroup) {
-state.socket.emit('admin:request-history', {
-group_id: state.activeGroup.id,
-pc_id: state.activePc.id
-});
-}
-renderPCActions();
-toast('Refreshed','ok');
 }
 
 function fmtTime(secs) {
