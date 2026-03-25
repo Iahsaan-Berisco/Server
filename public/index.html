@@ -5,10 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0f0f0f">
 <title>GameZone Manager</title>
-<!-- FIX: Favicon links -->
-<link rel="icon" type="image/png" href="/favicon.png">
-<link rel="shortcut icon" type="image/png" href="/favicon.png">
-<link rel="apple-touch-icon" href="/favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="/socket.io/socket.io.js"></script>
@@ -88,7 +84,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .btn-ghost:hover{background:var(--s3);border-color:var(--bd2)}
 .btn-danger{background:var(--red-bg);border:1px solid var(--red-bd);color:var(--red)}
 .btn-danger:hover{background:rgba(239,68,68,.18)}
-.btn-sm{padding:6px 12px;font-size:11px;border-radius:8px}
 .sidebar-header{display:none;align-items:center;justify-content:space-between;padding:0 20px;height:var(--nav-h);border-bottom:1px solid var(--bd);flex-shrink:0}
 .sidebar-brand{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;letter-spacing:-.3px}
 .sidebar-brand-icon{width:30px;height:30px;border-radius:8px;background:var(--green-bg);border:1px solid var(--green-bd);display:flex;align-items:center;justify-content:center}
@@ -158,15 +153,105 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .reorder-btn{width:28px;height:28px;border-radius:var(--r);background:var(--s3);border:none;color:var(--t2);cursor:pointer;font-size:11px;transition:all .15s;display:flex;align-items:center;justify-content:center}
 .reorder-btn:hover{background:var(--green-bg);color:var(--green)}
 .reorder-btn:disabled{opacity:.3;cursor:not-allowed}
-/* FIX #1 & #2: FAB button styles */
+/* FIX: FAB button styles */
 .fab{margin:0 18px;margin-bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:var(--r2);background:var(--green);color:#fff;font-size:13px;font-weight:700;font-family:var(--sans);border:none;cursor:pointer;transition:all .18s;box-shadow:0 4px 14px rgba(16,185,129,.3);width:calc(100% - 36px)}
 .fab:hover{background:#0ea572}
 .fab:active{transform:scale(.97)}
-/* FIX #2: Desktop - Add PC button bottom-right */
+/* FIX: Desktop FAB overrides */
 @media(min-width:1024px){
-#screen-dashboard .fab{position:fixed!important;bottom:32px;right:32px;width:auto!important;min-width:140px;margin:0!important;padding:13px 20px!important}
+/* Add PC button: bottom-right corner on desktop */
+#screen-dashboard .fab{
+position:fixed!important;
+bottom:32px!important;
+right:32px!important;
+width:auto!important;
+min-width:140px!important;
+margin:0!important;
+padding:13px 20px!important;
 }
-
+/* Add Group button: full-width at bottom of sidebar on desktop */
+#screen-groups .fab{
+position:static!important;
+bottom:auto!important;
+right:auto!important;
+width:100%!important;
+min-width:auto!important;
+margin:0!important;
+padding:13px!important;
+}
+}
+/* FIX: Responsive sheets - no scroll, fits viewport */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:100;opacity:0;pointer-events:none;transition:opacity .22s}
+.sheet-bg.open{opacity:1;pointer-events:all}
+.sheet{
+position:fixed;
+bottom:0;
+left:50%;
+transform:translateX(-50%) translateY(100%);
+background:var(--s1);
+border:1px solid var(--bd2);
+border-radius:var(--r3) var(--r3) 0 0;
+padding:0;
+z-index:101;
+width:100%;
+max-width:600px;
+max-height:85vh;
+display:flex;
+flex-direction:column;
+transition:transform .3s cubic-bezier(.16,1,.3,1);
+overflow:hidden;
+}
+.sheet.open{transform:translateX(-50%) translateY(0)}
+.sheet-handle{width:38px;height:3px;background:var(--s4);border-radius:2px;margin:14px auto;flex-shrink:0}
+.sheet-content{
+flex:1;
+overflow-y:auto;
+overflow-x:hidden;
+padding:0 22px 22px;
+-webkit-overflow-scrolling:touch;
+}
+.sheet-content::-webkit-scrollbar{width:0px}
+.sheet-title{font-size:18px;font-weight:800;letter-spacing:-.3px;margin:0 0 4px}
+.sheet-sub{font-size:12px;color:var(--t2);margin-bottom:22px}
+/* Desktop sheet adjustments */
+@media(min-width:1024px){
+.sheet{
+border-radius:var(--r3);
+bottom:50%;
+transform:translate(-50%, calc(50% + 100%));
+}
+.sheet.open{
+transform:translate(-50%, -50%);
+}
+}
+.chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.chip{padding:9px 14px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);font-size:12px;font-weight:600;color:var(--t1);cursor:pointer;font-family:var(--sans);transition:all .15s;display:flex;align-items:center;gap:5px}
+.chip:hover{background:var(--s3);border-color:var(--bd2)}
+.chip:active{transform:scale(.95)}
+.chip.green{background:var(--green-bg);border-color:var(--green-bd);color:var(--green)}
+.chip.red{background:var(--red-bg);border-color:var(--red-bd);color:var(--red)}
+.input-row{display:flex;gap:8px;align-items:center;flex-wrap:nowrap}
+.input-row input{flex:1;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:11px 13px;font-size:13px;color:var(--t1);font-family:var(--sans);outline:none;transition:border-color .18s;min-width:0}
+.input-row input:focus{border-color:var(--green)}
+.input-row-sep{color:var(--t3);font-weight:600;font-size:14px;flex-shrink:0}
+.sheet-btns{display:flex;gap:8px;margin-top:20px;flex-shrink:0}
+.sheet-btns .btn{flex:1}
+.app-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--bd)}
+.app-row:last-child{border-bottom:none}
+.app-name{font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;color:var(--t1)}
+.app-name i{color:var(--t3)}
+.launch-btn{background:var(--green-bg);border:1px solid var(--green-bd);color:var(--green);font-size:10px;font-weight:700;padding:6px 12px;border-radius:var(--r);cursor:pointer;font-family:var(--sans);text-transform:uppercase;letter-spacing:.4px;transition:background .15s}
+.launch-btn:hover{background:rgba(16,185,129,.18)}
+.empty{text-align:center;padding:56px 20px}
+.empty-ico{font-size:32px;color:var(--t3);margin-bottom:14px}
+.empty-h{font-size:15px;font-weight:700;margin-bottom:4px}
+.empty-p{font-size:12px;color:var(--t2)}
+.toast{position:fixed;bottom:max(22px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(70px);background:var(--s2);border:1px solid var(--bd2);border-radius:var(--r2);padding:11px 18px;font-size:12px;font-weight:600;z-index:300;white-space:nowrap;box-shadow:0 8px 28px rgba(0,0,0,.5);transition:transform .28s cubic-bezier(.16,1,.3,1);display:flex;align-items:center;gap:8px}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:var(--green-bd);color:var(--green)}
+.toast.err{border-color:var(--red-bd);color:var(--red)}
+.spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.1);border-top-color:#fff;border-radius:50%;animation:_spin .6s linear infinite;display:inline-block}
+@keyframes _spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -208,7 +293,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <span>Subscription expires in <strong id="expiry-days">0</strong> days — contact your provider to renew</span>
 </div>
 <div class="scroll-area"><div class="screen-pad" id="groups-list"></div></div>
-<!-- FIX #1: Add Group button - full width on both mobile & desktop -->
 <button class="fab" onclick="openSheet('sheet-newgroup')"><i class="fa-solid fa-plus"></i> New Group</button>
 </div>
 <div class="screen" id="screen-dashboard">
@@ -227,7 +311,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="pc-grid" id="pc-grid"></div>
 </div>
 </div>
-<!-- FIX #2: Add PC button - full width mobile, bottom-right desktop -->
 <button class="fab" onclick="openSheet('sheet-addpc')"><i class="fa-solid fa-plus"></i> Add PC</button>
 </div>
 <div class="screen" id="screen-pccontrol">
@@ -308,6 +391,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet-bg" id="bg-newgroup" onclick="closeSheet('sheet-newgroup')"></div>
 <div class="sheet" id="sheet-newgroup">
 <div class="sheet-handle"></div>
+<div class="sheet-content">
 <div class="sheet-title">New Group</div>
 <div class="sheet-sub">Create a management group</div>
 <div class="field"><label class="field-label">Name</label><input class="field-input" type="text" id="newgroup-name" placeholder="e.g. Main Cafe"></div>
@@ -316,9 +400,11 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <button class="btn btn-primary" onclick="createGroup()"><span id="newgroup-btn-text">Create</span></button>
 </div>
 </div>
+</div>
 <div class="sheet-bg" id="bg-addpc" onclick="closeSheet('sheet-addpc')"></div>
 <div class="sheet" id="sheet-addpc">
 <div class="sheet-handle"></div>
+<div class="sheet-content">
 <div class="sheet-title">Add PC</div>
 <div class="sheet-sub">Register a new computer to this group</div>
 <div class="field"><label class="field-label">PC Name</label><input class="field-input" type="text" id="addpc-name" placeholder="e.g. PC-01"></div>
@@ -328,9 +414,11 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <button class="btn btn-primary" onclick="addPC()"><span id="addpc-btn-text">Add PC</span></button>
 </div>
 </div>
+</div>
 <div class="sheet-bg" id="bg-startsession" onclick="closeSheet('sheet-startsession')"></div>
 <div class="sheet" id="sheet-startsession">
 <div class="sheet-handle"></div>
+<div class="sheet-content">
 <div class="sheet-title">Start Session</div>
 <div class="sheet-sub">Choose duration or enter amount</div>
 <div class="chip-row">
@@ -354,9 +442,11 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 </div>
 <button onclick="startStopwatch()" style="width:100%;padding:13px;border-radius:var(--r2);background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px"><i class="fa-solid fa-stopwatch"></i> Free Timer (Count Up)</button>
 </div>
+</div>
 <div class="sheet-bg" id="bg-addtime" onclick="closeSheet('sheet-addtime')"></div>
 <div class="sheet" id="sheet-addtime">
 <div class="sheet-handle"></div>
+<div class="sheet-content">
 <div class="sheet-title">Add Time</div>
 <div class="sheet-sub">Extend by duration or amount</div>
 <div class="chip-row">
@@ -373,9 +463,11 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <button class="btn btn-primary" onclick="addTimeByAmount()">Add</button>
 </div>
 </div>
+</div>
 <div class="sheet-bg" id="bg-removetime" onclick="closeSheet('sheet-removetime')"></div>
 <div class="sheet" id="sheet-removetime">
 <div class="sheet-handle"></div>
+<div class="sheet-content">
 <div class="sheet-title" style="color:var(--red)">Remove Time</div>
 <div class="sheet-sub">Reduce remaining session time</div>
 <div class="chip-row">
@@ -390,16 +482,20 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <button class="btn btn-danger" onclick="removeCustomTime()">Remove</button>
 </div>
 </div>
+</div>
 <div class="sheet-bg" id="bg-apps" onclick="closeSheet('sheet-apps')"></div>
 <div class="sheet" id="sheet-apps">
 <div class="sheet-handle"></div>
+<div class="sheet-content">
 <div class="sheet-title">Launch App</div>
 <div class="sheet-sub" id="apps-pc-name"></div>
 <div id="apps-list"><div style="text-align:center;padding:28px"><span class="spin"></span></div></div>
 </div>
+</div>
 <div class="sheet-bg" id="bg-addadmin" onclick="closeSheet('sheet-addadmin')"></div>
 <div class="sheet" id="sheet-addadmin">
 <div class="sheet-handle"></div>
+<div class="sheet-content">
 <div class="sheet-title">Add Admin</div>
 <div class="sheet-sub">Grant access to another user</div>
 <div class="field"><label class="field-label">Username</label><input class="field-input" type="text" id="addadmin-user" placeholder="Username" autocapitalize="none"></div>
@@ -408,26 +504,33 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <button class="btn btn-primary" onclick="addAdmin()"><span id="addadmin-btn-text">Add Admin</span></button>
 </div>
 </div>
+</div>
 <div class="sheet-bg" id="bg-reorderpc" onclick="closeSheet('sheet-reorderpc')"></div>
 <div class="sheet" id="sheet-reorderpc">
 <div class="sheet-handle"></div>
+<div class="sheet-content">
 <div class="sheet-title">Reorder PCs</div>
 <div class="sheet-sub">Use arrows to change display order</div>
 <div id="reorder-pc-list"><div style="text-align:center;padding:20px"><span class="spin"></span></div></div>
 </div>
+</div>
 <div class="sheet-bg" id="bg-deletepc" onclick="closeSheet('sheet-deletepc')"></div>
 <div class="sheet" id="sheet-deletepc">
 <div class="sheet-handle"></div>
+<div class="sheet-content">
 <div class="sheet-title">Delete PC</div>
 <div class="sheet-sub">Select a PC to remove permanently</div>
 <div id="delete-pc-list"><div style="text-align:center;padding:20px"><span class="spin"></span></div></div>
 </div>
+</div>
 <div class="sheet-bg" id="bg-killtasks" onclick="closeSheet('sheet-killtasks')"></div>
 <div class="sheet" id="sheet-killtasks">
 <div class="sheet-handle"></div>
+<div class="sheet-content">
 <div class="sheet-title">Kill Task</div>
 <div class="sheet-sub" id="killtasks-pc-name"></div>
 <div id="killtasks-list"><div style="text-align:center;padding:28px"><span class="spin"></span></div></div>
+</div>
 </div>
 <div class="toast" id="toast"></div>
 </div>
@@ -507,10 +610,13 @@ function goBack(to) { showScreen(to); }
 function openSheet(id) {
   document.getElementById(id).classList.add('open');
   document.getElementById('bg-' + id.replace('sheet-','')).classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
+
 function closeSheet(id) {
   document.getElementById(id).classList.remove('open');
   document.getElementById('bg-' + id.replace('sheet-','')).classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 async function api(method, path, body) {
@@ -557,7 +663,6 @@ async function doLogin() {
     }, 15000);
     const d = await res.json();
     if (d.error) throw new Error(d.error);
-    // FIX: Simplified saveAuth call
     saveAuth(server, d.token, d.user);
     showScreen('groups'); 
     loadGroups();
@@ -613,7 +718,6 @@ function saveAuth(server, token, user) {
 }
 
 function checkExpiryWarning() {
-  // FIX: Simplified - just check if user exists
   const banner = document.getElementById('expiry-banner');
   if (!banner) return;
   banner.style.display = 'none';
@@ -676,7 +780,6 @@ function doLogout() {
 }
 
 async function loadGroups() {
-  // FIX: Removed /api/me call that doesn't exist
   try { 
     state.groups = await api('GET','/groups'); 
     renderGroups(); 
