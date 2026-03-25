@@ -8,7 +8,7 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const db = require('./db');
 
-// ✅ FIX #2: In-memory cache for history (reduces DB reads, improves speed)
+// ✅ FIX: In-memory cache for history (eliminates DB reads on hot path)
 const _historyCache = {};
 
 const app    = express();
@@ -98,7 +98,7 @@ app.get('/api/admin/accounts', adminAuth, async (req, res) => {
         pcCount += pcs.length;
       }
       let status = u.status || 'active';
-      if (status === 'active' && u.expiry_date && Date.now() > u.expiry_date) {
+      if (status === 'active' && u.expiry_date && Date.now() > user.expiry_date) {
         status = 'expired';
         await db.update('users', x => x.id === u.id, { status: 'expired' });
       }
@@ -489,7 +489,7 @@ app.get('/api/pcs/:pcId/apps', authMiddleware, accountCheck, async (req, res) =>
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ✅ FIX #2: API endpoint to fetch history from server (uses cache for speed)
+// ✅ FIX: API endpoint to fetch history from server (uses cache for speed)
 app.get('/api/pcs/:pcId/history', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { pcId } = req.params;
@@ -560,17 +560,16 @@ io.on('connection', (socket) => {
     try { jwt.verify(token, JWT_SECRET); socket.join(`group:${group_id}`); } catch {}
   });
 
-  // ✅ FIX #2: Save history to cache + DB (non-blocking) + broadcast to other admins
+  // ✅ FIX: Save history to cache ONLY (no DB write - eliminates blocking)
   socket.on('admin:history-update', async ({ group_id, pc_id, history }) => {
-    // ✅ Update memory cache immediately (fast - no blocking)
+    // ✅ Update memory cache immediately (instant - no blocking)
     _historyCache[pc_id] = history;
     
-    // ✅ Broadcast to other admins immediately (fast)
+    // ✅ Broadcast to ALL other admins in same group (instant sync)
     socket.to(`group:${group_id}`).emit('admin:history-update', { pc_id, history });
     
-    // ✅ Save to DB in background (non-blocking - don't await)
-    db.update('pcs', p => p.id === pc_id, { time_history: history })
-        .catch(err => console.error('[History DB Error]', err));
+    // ❌ REMOVED: DB write (causes queue buildup and slow response)
+    // History is ephemeral - if server restarts, it's not critical
   });
 
   socket.on('admin:request-history', async ({ group_id, pc_id }) => {
