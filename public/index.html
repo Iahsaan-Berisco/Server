@@ -157,7 +157,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .fab{margin:0 18px;margin-bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px));display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border-radius:var(--r2);background:var(--green);color:#fff;font-size:13px;font-weight:700;font-family:var(--sans);border:none;cursor:pointer;transition:all .18s;box-shadow:0 4px 14px rgba(16,185,129,.3);width:calc(100% - 36px)}
 .fab:hover{background:#0ea572}
 .fab:active{transform:scale(.97)}
-/* FIX #4: Refresh button styled like chips */
 .refresh-chip-btn{position:fixed!important;bottom:32px;right:32px;padding:9px 14px!important;background:var(--green-bg)!important;border:1px solid var(--green-bd)!important;border-radius:var(--r)!important;color:var(--green)!important;font-size:12px!important;font-weight:600!important;cursor:pointer!important;font-family:var(--sans)!important;transition:all .15s!important;display:flex!important;align-items:center!important;gap:5px!important;z-index:90!important;width:auto!important;min-width:auto!important;margin:0!important;box-shadow:none!important}
 .refresh-chip-btn:hover{background:rgba(16,185,129,.2)!important}
 .refresh-chip-btn:active{transform:scale(.95)!important}
@@ -237,7 +236,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <span>Subscription expires in <strong id="expiry-days">0</strong> days — contact your provider to renew</span>
 </div>
 <div class="scroll-area"><div class="screen-pad" id="groups-list"></div></div>
-<!-- FIX #1: Removed refresh FAB from groups screen -->
 <button class="fab" onclick="openSheet('sheet-newgroup')"><i class="fa-solid fa-plus"></i> New Group</button>
 </div>
 <div class="screen" id="screen-dashboard">
@@ -256,7 +254,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="pc-grid" id="pc-grid"></div>
 </div>
 </div>
-<!-- FIX #4: Refresh button styled like chip -->
 <button class="refresh-chip-btn" onclick="loadPCs()"><i class="fa-solid fa-rotate"></i> Refresh</button>
 <button class="fab" onclick="openSheet('sheet-addpc')"><i class="fa-solid fa-plus"></i> Add PC</button>
 </div>
@@ -397,20 +394,13 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="chip green" onclick="addTime(120)"><i class="fa-solid fa-circle-plus"></i> 2h</div>
 <div class="chip green" onclick="addTime(180)"><i class="fa-solid fa-circle-plus"></i> 3h</div>
 </div>
-<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Or Pay by Amount</div>
+<!-- FIX: Merged amount and minutes into single row with same Add button -->
+<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Add Time</div>
 <div class="input-row" style="margin-bottom:20px">
 <span style="font-size:16px;font-weight:700;color:var(--t1)">$</span>
-<input type="number" id="add-amount" placeholder="Enter amount" min="1" step="0.01" style="flex:1">
+<input type="number" id="add-amount" placeholder="Amount" min="1" step="0.01" style="flex:1;max-width:120px">
+<input type="text" id="add-mins" placeholder="Minutes" min="0" max="999" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:120px">
 <button class="btn btn-primary" onclick="addTimeByAmount()">Add</button>
-</div>
-<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom Duration</div>
-<!-- FIX #3: Replaced hrs input with per hour rate display -->
-<div class="input-row" style="margin-bottom:20px">
-<input type="text" id="add-mins" placeholder="min" min="0" max="999" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
-<span class="input-row-sep">min</span>
-<span class="input-row-sep">@</span>
-<input type="text" id="add-rate-display" value="$5.00/hr" readonly style="flex:1;max-width:100px;background:var(--s2);color:var(--t2);border:1px solid var(--bd);border-radius:var(--r);padding:11px 13px;font-size:13px;font-family:var(--sans);text-align:center" tabindex="-1">
-<button class="btn btn-primary" onclick="addCustomTime()">Add</button>
 </div>
 </div>
 <div class="sheet-bg" id="bg-removetime" onclick="closeSheet('sheet-removetime')"></div>
@@ -425,7 +415,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="chip red" onclick="removeTime(120)"><i class="fa-solid fa-circle-minus"></i> 2h</div>
 </div>
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px">Custom</div>
-<!-- FIX #2 & #3: Text input with numbers only, removed hrs -->
 <div class="input-row" style="margin-bottom:20px">
 <input type="text" id="rem-mins" placeholder="min" min="0" max="999" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1;max-width:100px">
 <span class="input-row-sep">min</span>
@@ -997,24 +986,23 @@ toast('+'+mins+'m added','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
+// FIX: Updated to read from merged input row
 async function addTimeByAmount() {
 const amount = parseFloat(document.getElementById('add-amount').value);
+const mins = parseInt(document.getElementById('add-mins').value)||0;
 if (!amount || amount <= 0) { toast('Enter valid amount','err'); return; }
-const rate = getGroupRate();
-const hours = amount / rate;
-const mins = Math.floor(hours * 60);
-if (mins < 1) { toast('Amount too low for minimum 1 minute','err'); return; }
+if (mins < 1) { toast('Enter valid minutes','err'); return; }
 closeSheet('sheet-addtime');
 try {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'session_end', r.session_end);
 document.getElementById('add-amount').value = '';
-toast(`Added: $${amount.toFixed(2)} = ${mins}m (@$${rate}/hr)`,'ok');
+document.getElementById('add-mins').value = '';
+toast(`Added: $${amount.toFixed(2)} = ${mins}m`,'ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
 function addCustomTime() {
-// FIX #2: Parse from text input
 const mins = parseInt(document.getElementById('add-mins').value)||0;
 if (mins<1) { toast('Enter duration','err'); return; }
 document.getElementById('add-mins').value='';
@@ -1037,7 +1025,6 @@ toast('-'+mins+'m removed','ok');
 }
 
 function removeCustomTime() {
-// FIX #2: Parse from text input
 const mins = parseInt(document.getElementById('rem-mins').value)||0;
 if (mins<1) { toast('Enter duration','err'); return; }
 document.getElementById('rem-mins').value='';
