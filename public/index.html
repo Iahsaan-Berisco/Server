@@ -200,7 +200,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.1);border-top-color:#fff;border-radius:50%;animation:_spin .6s linear infinite;display:inline-block}
 @keyframes _spin{to{transform:rotate(360deg)}}
 
-/* ✅ FIX: Consistent history refresh button styling */
+/* ✅ FIX #6: Consistent history refresh button styling */
 .history-refresh-btn{
 background:var(--s3);
 border:1px solid var(--bd2);
@@ -438,7 +438,11 @@ transition:all .15s;
 <div class="sheet-bg" id="bg-apps" onclick="closeSheet('sheet-apps')"></div>
 <div class="sheet" id="sheet-apps">
 <div class="sheet-handle"></div>
+<div class="sheet-title-row">
 <div class="sheet-title">Launch App</div>
+<!-- ✅ FIX #2: Add refresh button to re-fetch apps -->
+<button class="btn btn-ghost btn-sm" onclick="openApps()" style="padding:6px 12px;font-size:10px"><i class="fa-solid fa-rotate"></i> Refresh</button>
+</div>
 <div class="sheet-sub" id="apps-pc-name"></div>
 <div id="apps-list"><div style="text-align:center;padding:28px"><span class="spin"></span></div></div>
 </div>
@@ -501,6 +505,14 @@ const left = pc.session_end>now ? pc.session_end-now : 0;
 const isWatch = pc.stopwatch_start>0;
 const elapsed = isWatch ? now-pc.stopwatch_start : 0;
 timerEl.textContent = isWatch ? fmtTime(elapsed) : left>0 ? fmtTime(left) : '--:--';
+// ✅ FIX #4: Update timer colors in real-time on dashboard
+const hasSession = left>0||isWatch;
+if (hasSession) {
+const col = isWatch ? 'var(--blue)' : left<=30 ? 'var(--red)' : left<=60 ? 'var(--amber)' : 'var(--green)';
+timerEl.style.color = col;
+} else {
+timerEl.style.color = pc.is_online ? 'var(--t3)' : 'var(--t3)';
+}
 }
 });
 }
@@ -512,7 +524,12 @@ const left = pc.session_end>now ? pc.session_end-now : 0;
 const isWatch = pc.stopwatch_start>0;
 const elapsed = isWatch ? now-pc.stopwatch_start : 0;
 const timerBig = document.querySelector('.timer-big');
-if (timerBig) timerBig.textContent = isWatch ? fmtTime(elapsed) : fmtTime(left);
+if (timerBig) {
+timerBig.textContent = isWatch ? fmtTime(elapsed) : (left>0 ? fmtTime(left) : '--:--');
+// ✅ FIX #4: Update timer color in real-time on PC control
+const col = isWatch ? 'var(--blue)' : left<=30 ? 'var(--red)' : left<=60 ? 'var(--amber)' : (left>0 ? 'var(--green)' : 'var(--t3)');
+timerBig.style.color = col;
+}
 }
 }
 }, 1000);
@@ -785,7 +802,7 @@ return;
 grid.innerHTML = state.pcs.map(pc => {
 const left = pc.session_end>now ? pc.session_end-now : 0;
 const isWatch = pc.stopwatch_start>0;
-// ✅ FIX #5: Timer color matches PC client (60s green, 30s red)
+// ✅ FIX #4: Timer color matches PC client (60s green, 30s red)
 const col  = !pc.is_online ? 'var(--t3)' : isWatch ? 'var(--blue)' : left>60 ? 'var(--green)' : left>30 ? 'var(--amber)' : 'var(--red)';
 const bg   = !pc.is_online ? 'var(--s3)' : isWatch ? 'var(--blue-bg)' : left>60 ? 'var(--green-bg)' : left>30 ? 'var(--amber-bg)' : 'var(--red-bg)';
 const bd   = !pc.is_online ? 'var(--bd)' : isWatch ? 'var(--blue-bd)' : left>60 ? 'var(--green-bd)' : left>30 ? 'var(--amber-bd)' : 'var(--red-bd)';
@@ -844,20 +861,24 @@ const isWatch = pc.stopwatch_start>0;
 const isActive = left>0||isWatch;
 const pay = pc.payment_status || null;
 const timerArea = document.getElementById('pc-timer-area');
-if (isActive) {
-// ✅ FIX #5: Timer color matches PC client (60s green, 30s red)
-const col = isWatch ? 'var(--blue)' : left<=30 ? 'var(--red)' : left<=60 ? 'var(--amber)' : 'var(--green)';
-const val = isWatch ? fmtTime(now-pc.stopwatch_start) : fmtTime(left);
+
+// ✅ FIX #3: Show timer section even when no session (display "--:--")
+const col = isActive 
+? (isWatch ? 'var(--blue)' : left<=30 ? 'var(--red)' : left<=60 ? 'var(--amber)' : 'var(--green)')
+: 'var(--t3)';
+const val = isActive 
+? (isWatch ? fmtTime(now-pc.stopwatch_start) : fmtTime(left))
+: '--:--';
+
 timerArea.innerHTML = `<div class="timer-card">
 <div class="timer-big" style="color:${col}">${val}</div>
+${isActive ? `
 <div class="pay-col">
 <button class="pay-btn ${pay==='paid'?'paid':''}" onclick="togglePay('paid')"><i class="fa-solid fa-check"></i> Paid</button>
 <button class="pay-btn ${pay==='unpaid'?'unpaid':''}" onclick="togglePay('unpaid')"><i class="fa-solid fa-xmark"></i> Unpaid</button>
-</div>
+</div>` : ''}
 </div>`;
-} else {
-timerArea.innerHTML = '';
-}
+
 const sessionArea = document.getElementById('pc-session-area');
 if (isActive) {
 sessionArea.innerHTML = `<div class="section-head">Session Control</div>
@@ -876,15 +897,17 @@ sessionArea.innerHTML = `<div class="section-head">Session Control</div>
 </div>
 </div>`;
 }
+
+// ✅ FIX #5: Show Recent Activity section even when empty
 const history = lhGet(pc.id);
-if (history && history.length > 0) {
-// ✅ FIX #6: Use CSS class instead of inline styles
 let hHtml = `<div class="section-head" style="justify-content:space-between;margin-top:20px">Recent Activity
 <button class="history-refresh-btn" onclick="refreshHistory()">
 <i class="fa-solid fa-rotate"></i> Refresh
 </button></div>
 <div class="action-grid" style="padding-bottom:0;margin-bottom:20px;display:block">
 <div style="background:var(--s1);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">`;
+
+if (history && history.length > 0) {
 history.forEach(entry => {
 const isFree = entry.type === 'free';
 const isAdd  = entry.type === 'add';
@@ -905,9 +928,13 @@ hHtml += `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px
 <span style="font-size:11px;color:var(--t3)">${label}</span>
 </div>`;
 });
+} else {
+// ✅ FIX #5: Show "No recent activity" when empty
+hHtml += `<div style="text-align:center;padding:28px;color:var(--t3);font-size:12px">No recent activity</div>`;
+}
+
 hHtml += '</div></div>';
 sessionArea.innerHTML += hHtml;
-}
 }
 async function togglePay(status) {
 if (!state.activePc) return;
@@ -923,7 +950,6 @@ toast(newStatus ? 'Marked '+newStatus : 'Payment cleared','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// ✅ FIX #1: Start Session Chips now log to Recent Activity
 async function startSession(mins) {
 closeSheet('sheet-startsession');
 try {
@@ -994,7 +1020,6 @@ updatePcField(state.activePc.id,'session_end', r.session_end);
 lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
 toast('+'+mins+'m added','ok');
 }
-// ✅ FIX #4: Refresh UI to show history immediately
 renderPCActions();
 } catch(e) { toast(e.message,'err'); }
 }
@@ -1023,7 +1048,6 @@ toast(`Added: ${mins}m`,'ok');
 }
 document.getElementById('add-amount').value = '';
 document.getElementById('add-mins').value = '';
-// ✅ FIX #4: Refresh UI to show history immediately
 renderPCActions();
 } catch(e) { toast(e.message,'err'); }
 }
@@ -1049,7 +1073,6 @@ updatePcField(state.activePc.id,'session_end',r.session_end);
 lhAdd(state.activePc.id, {type:'remove',mins,at:Date.now()});
 toast('-'+mins+'m removed','ok');
 }
-// ✅ FIX #4: Refresh UI to show history immediately
 renderPCActions();
 } catch(e) { toast(e.message,'err'); }
 }
@@ -1140,7 +1163,6 @@ document.getElementById('killtasks-list').innerHTML = '<div style="color:var(--r
 }
 }
 
-// ✅ FIX #2: Kill All now skips Python processes (double protection)
 async function killAllProcesses() {
 if (!confirm('Kill ALL running processes on '+state.activePc.name+'?')) return;
 try {
@@ -1149,7 +1171,6 @@ let skipped = 0;
 for (let i = window._procs.length - 1; i >= 0; i--) {
 const proc = window._procs[i];
 if (proc && proc.pid) {
-// Double-check: Skip Python processes even if PC client missed them
 const nameLower = proc.name.toLowerCase();
 const baseName = nameLower.endsWith('.exe') ? nameLower.slice(0, -4) : nameLower;
 const isPython = baseName === 'py' || baseName === 'pyw' || baseName.startsWith('python') || nameLower.includes('python');
@@ -1173,7 +1194,6 @@ closeSheet('sheet-killtasks');
 
 async function killProcess(i) {
 const proc = window._procs?.[i]; if (!proc) return;
-// Double-check: Skip Python processes
 const nameLower = proc.name.toLowerCase();
 const baseName = nameLower.endsWith('.exe') ? nameLower.slice(0, -4) : nameLower;
 const isPython = baseName === 'py' || baseName === 'pyw' || baseName.startsWith('python') || nameLower.includes('python');
@@ -1280,7 +1300,7 @@ renderGroups(); showScreen('groups'); toast('Group deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// ✅ FIX #3: Socket reconnection feedback + Multi-admin history sync
+// ✅ FIX #1: Socket reconnection feedback + Multi-admin history sync
 function connectSocket() {
 if (state.socket) state.socket.disconnect();
 state.socket = io(state.serverUrl, { 
@@ -1295,7 +1315,6 @@ state.socket.emit('admin:subscribe', { group_id: state.activeGroup.id, token: st
 toast('Connected to server','ok');
 });
 
-// FIX #3: Show toast on disconnect/reconnect
 state.socket.on('disconnect', () => {
 toast('Disconnected from server','err');
 });
@@ -1330,7 +1349,7 @@ renderPCActions(); updateOnlinePill();
 }
 });
 
-// FIX #6: Listen for history updates from other admins
+// ✅ FIX #1: Listen for history updates from other admins
 state.socket.on('admin:history-update', (data) => {
 if (data.group_id === state.activeGroup?.id && data.pc_id === state.activePc?.id) {
 const h = data.history || [];
