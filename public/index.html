@@ -799,7 +799,7 @@ toast('PC added','ok');
 finally { document.getElementById('addpc-btn-text').textContent='Add PC'; }
 }
 
-// ✅ FIX: openPC now fetches history from server for sync
+// ✅ FIX #1: openPC now fetches history from server for sync
 async function openPC(id) {
 state.activePc = state.pcs.find(p=>p.id===id);
 document.getElementById('pc-title').textContent = state.activePc.name;
@@ -831,7 +831,6 @@ pill.style.cssText = '';
 }
 }
 
-// ✅ FIX: Timer + payment buttons ALWAYS visible, Recent Activity ALWAYS shown
 function renderPCActions() {
 const pc = state.activePc; if(!pc) return;
 const now = Math.floor(Date.now()/1000);
@@ -840,17 +839,9 @@ const isWatch = pc.stopwatch_start>0;
 const isActive = left>0||isWatch;
 const pay = pc.payment_status || null;
 const timerArea = document.getElementById('pc-timer-area');
-
-// ✅ Timer color: active session uses gradient, idle uses gray
-const col = isActive 
-    ? (isWatch ? 'var(--blue)' : left<=30 ? 'var(--red)' : left<=60 ? 'var(--amber)' : 'var(--green)')
-    : 'var(--t3)';
-// ✅ Timer value: shows "--:--" when idle
-const val = isActive 
-    ? (isWatch ? fmtTime(now-pc.stopwatch_start) : fmtTime(left))
-    : '--:--';
-
-// ✅ Timer card ALWAYS rendered with payment buttons
+if (isActive) {
+const col = isWatch ? 'var(--blue)' : left<300 ? 'var(--amber)' : left<60 ? 'var(--red)' : 'var(--green)';
+const val = isWatch ? fmtTime(now-pc.stopwatch_start) : fmtTime(left);
 timerArea.innerHTML = `<div class="timer-card">
 <div class="timer-big" style="color:${col}">${val}</div>
 <div class="pay-col">
@@ -858,7 +849,15 @@ timerArea.innerHTML = `<div class="timer-card">
 <button class="pay-btn ${pay==='unpaid'?'unpaid':''}" onclick="togglePay('unpaid')"><i class="fa-solid fa-xmark"></i> Unpaid</button>
 </div>
 </div>`;
-
+} else {
+timerArea.innerHTML = `<div class="timer-card">
+<div class="timer-big" style="color:var(--t3)">--:--</div>
+<div class="pay-col">
+<button class="pay-btn ${pay==='paid'?'paid':''}" onclick="togglePay('paid')"><i class="fa-solid fa-check"></i> Paid</button>
+<button class="pay-btn ${pay==='unpaid'?'unpaid':''}" onclick="togglePay('unpaid')"><i class="fa-solid fa-xmark"></i> Unpaid</button>
+</div>
+</div>`;
+}
 const sessionArea = document.getElementById('pc-session-area');
 if (isActive) {
 sessionArea.innerHTML = `<div class="section-head">Session Control</div>
@@ -877,8 +876,6 @@ sessionArea.innerHTML = `<div class="section-head">Session Control</div>
 </div>
 </div>`;
 }
-
-// ✅ Recent Activity section ALWAYS shown (even when empty)
 const history = lhGet(pc.id);
 let hHtml = `<div class="section-head" style="justify-content:space-between;margin-top:20px">Recent Activity
 <button onclick="refreshHistory()" style="margin-left:auto;background:var(--s3);border:1px solid var(--bd2);color:var(--t2);cursor:pointer;font-size:10px;font-family:var(--sans);display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--r);letter-spacing:0;text-transform:none;font-weight:600;transition:all .15s" onmouseover="this.style.color='var(--t1)'" onmouseout="this.style.color='var(--t2)'">
@@ -886,7 +883,6 @@ let hHtml = `<div class="section-head" style="justify-content:space-between;marg
 </button></div>
 <div class="action-grid" style="padding-bottom:0;margin-bottom:20px;display:block">
 <div style="background:var(--s1);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">`;
-
 if (history && history.length > 0) {
 history.forEach(entry => {
 const isFree = entry.type === 'free';
@@ -909,10 +905,8 @@ hHtml += `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px
 </div>`;
 });
 } else {
-// ✅ Show "No recent activity" when empty
 hHtml += `<div style="text-align:center;padding:28px;color:var(--t3);font-size:12px">No recent activity</div>`;
 }
-
 hHtml += '</div></div>';
 sessionArea.innerHTML += hHtml;
 }
@@ -930,16 +924,20 @@ renderPCActions(); renderPCs();
 toast(newStatus ? 'Marked '+newStatus : 'Payment cleared','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
+// ✅ FIX #1: startSession now calls lhAdd() for sync
 async function startSession(mins) {
 closeSheet('sheet-startsession');
 try {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'session_end',r.session_end);
 updatePcField(state.activePc.id,'stopwatch_start',0);
+// ✅ ADD THIS: Log to history for sync
 lhAdd(state.activePc.id, {type:'add',mins:mins,at:Date.now()});
 toast('Session started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 async function startSessionByAmount() {
 const amount = parseFloat(document.getElementById('session-amount').value);
 const mins = parseInt(document.getElementById('session-mins').value)||0;
@@ -962,6 +960,7 @@ document.getElementById('session-mins').value = '';
 toast(`Session started: ${totalMins}m`,'ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 function startCustomSession() {
 const hrs=parseInt(document.getElementById('custom-hrs').value)||0;
 const mins=parseInt(document.getElementById('custom-mins').value)||0;
@@ -971,6 +970,7 @@ document.getElementById('custom-hrs').value='';
 document.getElementById('custom-mins').value='';
 startSession(total);
 }
+
 async function startStopwatch() {
 closeSheet('sheet-startsession');
 try {
@@ -983,6 +983,7 @@ lhAdd(state.activePc.id, {type:'free',mins:0,at:Date.now()});
 toast('Free timer started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 async function addTime(mins) {
 closeSheet('sheet-addtime');
 try {
@@ -999,6 +1000,7 @@ toast('+'+mins+'m added','ok');
 renderPCActions();
 } catch(e) { toast(e.message,'err'); }
 }
+
 async function addTimeByAmount() {
 const amount = parseFloat(document.getElementById('add-amount').value);
 const mins = parseInt(document.getElementById('add-mins').value)||0;
@@ -1026,12 +1028,14 @@ document.getElementById('add-mins').value = '';
 renderPCActions();
 } catch(e) { toast(e.message,'err'); }
 }
+
 function addCustomTime() {
 const mins = parseInt(document.getElementById('add-mins').value)||0;
 if (mins<1) { toast('Enter duration','err'); return; }
 document.getElementById('add-mins').value='';
 addTime(mins);
 }
+
 async function removeTime(mins) {
 closeSheet('sheet-removetime');
 try {
@@ -1049,12 +1053,14 @@ toast('-'+mins+'m removed','ok');
 renderPCActions();
 } catch(e) { toast(e.message,'err'); }
 }
+
 function removeCustomTime() {
 const mins = parseInt(document.getElementById('rem-mins').value)||0;
 if (mins<1) { toast('Enter duration','err'); return; }
 document.getElementById('rem-mins').value='';
 removeTime(mins);
 }
+
 function confirmEndSession() {
 if (!confirm('End session on '+state.activePc.name+'?\nScreen will lock immediately.')) return;
 const pc = state.activePc;
@@ -1077,18 +1083,21 @@ api('POST','/pcs/'+state.activePc.id+'/session/end',{group_id:state.activeGroup.
 .then(()=>{ updatePcField(state.activePc.id,'session_end',0); updatePcField(state.activePc.id,'stopwatch_start',0); toast('Session ended','ok'); renderPCActions(); })
 .catch(e=>toast(e.message,'err'));
 }
+
 async function pcCmd(action) {
 try {
 await api('POST','/pcs/'+state.activePc.id+'/'+action,{group_id:state.activeGroup.id});
 toast(action==='lock'?'Screen locked':'Screen unlocked','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 function updatePcField(pcId, field, value) {
 const pc = state.pcs.find(p=>p.id===pcId);
 if (pc) pc[field]=value;
 if (state.activePc?.id===pcId) { state.activePc[field]=value; renderPCActions(); }
 renderPCs();
 }
+
 async function openApps() {
 document.getElementById('apps-pc-name').textContent = 'on '+state.activePc.name;
 document.getElementById('apps-list').innerHTML = '<div style="text-align:center;padding:28px"><span class="spin"></span></div>';
@@ -1100,6 +1109,7 @@ if (!apps.length) { document.getElementById('apps-list').innerHTML='<div style="
 document.getElementById('apps-list').innerHTML = apps.map((a,i)=>`<div class="app-row"><div class="app-name"><i class="fa-solid fa-file"></i>${a.name}</div><button class="launch-btn" onclick="launchApp(${i})"><i class="fa-solid fa-play"></i> Launch</button></div>`).join('');
 } catch(e) { document.getElementById('apps-list').innerHTML='<div style="color:var(--red);text-align:center;padding:20px">Failed to load apps</div>'; }
 }
+
 async function openKillSheet() {
 document.getElementById('killtasks-pc-name').textContent = 'on '+state.activePc.name;
 document.getElementById('killtasks-list').innerHTML = '<div style="text-align:center;padding:28px"><span class="spin"></span><div style="color:var(--t3);font-size:11px;margin-top:10px">Fetching running processes...</div></div>';
@@ -1129,6 +1139,7 @@ document.getElementById('killtasks-list').innerHTML = procs.map((p,i) => `
 document.getElementById('killtasks-list').innerHTML = '<div style="color:var(--red);text-align:center;padding:20px">Failed to fetch processes</div>';
 }
 }
+
 async function killAllProcesses() {
 if (!confirm('Kill ALL running processes on '+state.activePc.name+'?')) return;
 try {
@@ -1143,6 +1154,7 @@ document.getElementById('killtasks-list').innerHTML = '<div style="color:var(--g
 toast('All processes killed','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 async function killProcess(i) {
 const proc = window._procs?.[i]; if (!proc) return;
 try {
@@ -1156,12 +1168,14 @@ openKillSheet();
 }
 } catch(e) { toast(e.message,'err'); }
 }
+
 async function launchApp(i) {
 const app = window._apps?.[i]; if(!app) return;
 closeSheet('sheet-apps');
 try { await api('POST','/pcs/'+state.activePc.id+'/launch',{app_path:app.path,group_id:state.activeGroup.id}); toast(app.name+' launched','ok'); }
 catch(e) { toast(e.message,'err'); }
 }
+
 async function loadAdmins() {
 try {
 const admins = await api('GET','/groups/'+state.activeGroup.id+'/admins');
@@ -1170,6 +1184,7 @@ document.getElementById('admins-list').innerHTML = admins.length
 : '<div style="color:var(--t2);padding:8px 0;font-size:12px">No additional admins</div>';
 } catch(e) {}
 }
+
 async function addAdmin() {
 const username = document.getElementById('addadmin-user').value.trim();
 if (!username) { toast('Enter a username','err'); return; }
@@ -1182,11 +1197,13 @@ toast(username+' added','ok'); loadAdmins();
 } catch(e) { toast(e.message,'err'); }
 finally { document.getElementById('addadmin-btn-text').textContent='Add Admin'; }
 }
+
 async function removeAdmin(id, username) {
 if (!confirm('Remove '+username+' as admin?')) return;
 try { await api('DELETE','/groups/'+state.activeGroup.id+'/admins/'+id); toast(username+' removed','ok'); loadAdmins(); }
 catch(e) { toast(e.message,'err'); }
 }
+
 function loadDeletePCList() {
 const el = document.getElementById('delete-pc-list');
 if (!state.pcs?.length) { el.innerHTML='<div style="color:var(--t2);padding:8px 0;font-size:12px">No PCs in this group</div>'; return; }
@@ -1196,6 +1213,7 @@ el.innerHTML = state.pcs.map(pc => `
 <button class="pc-del-btn" onclick="deletePC('${pc.id}','${pc.name}')">Delete</button>
 </div>`).join('');
 }
+
 function loadReorderPCList() {
 const el = document.getElementById('reorder-pc-list');
 if (!state.pcs?.length) { el.innerHTML='<div style="color:var(--t2);padding:8px 0;font-size:12px">No PCs in this group</div>'; return; }
@@ -1208,6 +1226,7 @@ el.innerHTML = state.pcs.map((pc, idx) => `
 </div>
 </div>`).join('');
 }
+
 async function reorderPC(pcId, direction) {
 const idx = state.pcs.findIndex(p=>p.id===pcId);
 const newIdx = idx + direction;
@@ -1218,6 +1237,7 @@ loadReorderPCList(); renderPCs();
 try { await api('POST','/groups/'+state.activeGroup.id+'/pcs/reorder', { order }); }
 catch(e) { toast('Reorder failed','err'); }
 }
+
 async function deletePC(pcId, name) {
 if (!confirm('Delete "'+name+'"\nThis cannot be undone.')) return;
 try {
@@ -1226,6 +1246,7 @@ state.pcs = state.pcs.filter(p=>p.id!==pcId);
 renderPCs(); loadDeletePCList(); toast(name+' deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
+
 async function confirmDeleteGroup() {
 if (!confirm('Delete "'+state.activeGroup.name+'"\nAll PCs in this group will be removed.')) return;
 try {
@@ -1235,7 +1256,7 @@ renderGroups(); showScreen('groups'); toast('Group deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// ✅ FIX: Socket now listens for history updates from other admins
+// ✅ FIX #1: Socket now listens for history updates from other admins
 function connectSocket() {
 if (state.socket) state.socket.disconnect();
 state.socket = io(state.serverUrl, { transports: ['websocket'] });
