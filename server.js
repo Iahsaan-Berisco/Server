@@ -315,11 +315,13 @@ app.post('/api/pcs/:pcId/payment', authMiddleware, accountCheck, async (req, res
     const { payment_status, group_id } = req.body;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
     await db.update('pcs', p => p.id === pcId, { payment_status });
+    // ✅ FIX: Use io.to() for proper room broadcasting
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, payment_status });
     res.json({ success: true, payment_status });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ✅ FIX: Optimistic UI - Respond immediately, save DB in background
 app.post('/api/pcs/:pcId/session/start', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { pcId } = req.params;
@@ -328,11 +330,18 @@ app.post('/api/pcs/:pcId/session/start', authMiddleware, accountCheck, async (re
     const pc = await db.get('pcs', p => p.id === pcId);
     if (!pc) return res.status(404).json({ error: 'PC not found' });
     const session_end = Math.floor(Date.now() / 1000) + duration_minutes * 60;
-    await db.update('pcs', p => p.id === pcId, { session_end, stopwatch_start: 0 });
-    await db.insert('sessions', { id: uuidv4(), pc_id: pcId, started_at: Math.floor(Date.now() / 1000), duration_minutes, price: (duration_minutes / 60) * pc.price_per_hour, ended_at: null });
+    
+    // ✅ Update DB but don't wait for it to respond
+    db.update('pcs', p => p.id === pcId, { session_end, stopwatch_start: 0 }).catch(console.error);
+    db.insert('sessions', { id: uuidv4(), pc_id: pcId, started_at: Math.floor(Date.now() / 1000), duration_minutes, price: (duration_minutes / 60) * pc.price_per_hour, ended_at: null }).catch(console.error);
+    
     const remaining = duration_minutes * 60;
+    // ✅ Notify PC immediately
     io.to(`pc:${pcId}`).emit('session:start', { session_end, duration_minutes, remaining_seconds: remaining });
+    // ✅ Notify admins immediately
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end, stopwatch_start: 0, payment_status: pc.payment_status });
+    
+    // ✅ Respond immediately (optimistic)
     res.json({ success: true, session_end, remaining_seconds: remaining });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -348,30 +357,34 @@ app.post('/api/pcs/:pcId/session/add-time', authMiddleware, accountCheck, async 
 
     if (pc.stopwatch_start > 0 && minutes > 0) {
       const new_start = pc.stopwatch_start - (minutes * 60);
-      await db.update('pcs', p => p.id === pcId, { stopwatch_start: new_start });
+      db.update('pcs', p => p.id === pcId, { stopwatch_start: new_start }).catch(console.error);
       io.to(`pc:${pcId}`).emit('session:stopwatch', { started_at: new_start });
       io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: 0, stopwatch_start: new_start, payment_status: pc.payment_status });
       return res.json({ success: true, stopwatch_start: new_start });
     }
 
     const current_end = pc.session_end > now ? pc.session_end : now;
-    const raw_end = current_end + minutes * 60;
+    const new_end = current_end + minutes * 60;
 
-    if (minutes < 0 && raw_end <= now) {
-      await db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: 0 });
-      await db.update('sessions', s => s.pc_id === pcId && !s.ended_at, { ended_at: now });
+    if (minutes < 0 && new_end <= now) {
+      db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: 0 }).catch(console.error);
+      db.update('sessions', s => s.pc_id === pcId && !s.ended_at, { ended_at: now }).catch(console.error);
       io.to(`pc:${pcId}`).emit('session:end', {});
       io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: 0, stopwatch_start: 0 });
       return res.json({ success: true, session_ended: true });
     }
 
-    const new_end = raw_end;
     const history = pc.time_history || [];
     const newHistory = [{ mins: minutes, at: Date.now(), type: minutes > 0 ? 'add' : 'remove' }, ...history].slice(0, 5);
-    await db.update('pcs', p => p.id === pcId, { session_end: new_end, time_history: newHistory });
+    
+    // ✅ Update DB in background
+    db.update('pcs', p => p.id === pcId, { session_end: new_end, time_history: newHistory }).catch(console.error);
+    
     const rem = new_end - now;
     io.to(`pc:${pcId}`).emit('session:add-time', { session_end: new_end, added_minutes: minutes, remaining_seconds: rem });
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: new_end, stopwatch_start: 0, payment_status: pc.payment_status });
+    
+    // ✅ Respond immediately
     res.json({ success: true, session_end: new_end, remaining_seconds: rem });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -381,10 +394,15 @@ app.post('/api/pcs/:pcId/session/end', authMiddleware, accountCheck, async (req,
     const { pcId } = req.params;
     const { group_id } = req.body;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
-    await db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: 0 });
-    await db.update('sessions', s => s.pc_id === pcId && !s.ended_at, { ended_at: Math.floor(Date.now() / 1000) });
+    
+    // ✅ Update DB in background
+    db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: 0 }).catch(console.error);
+    db.update('sessions', s => s.pc_id === pcId && !s.ended_at, { ended_at: Math.floor(Date.now() / 1000) }).catch(console.error);
+    
     io.to(`pc:${pcId}`).emit('session:end', {});
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: 0, stopwatch_start: 0 });
+    
+    // ✅ Respond immediately
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -395,9 +413,12 @@ app.post('/api/pcs/:pcId/session/stopwatch', authMiddleware, accountCheck, async
     const { group_id } = req.body;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
     const started_at = Math.floor(Date.now() / 1000);
-    await db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: started_at });
+    
+    db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: started_at }).catch(console.error);
+    
     io.to(`pc:${pcId}`).emit('session:stopwatch', { started_at });
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: 0, stopwatch_start: started_at });
+    
     res.json({ success: true, started_at });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -407,10 +428,13 @@ app.post('/api/pcs/:pcId/session/stopwatch-end', authMiddleware, accountCheck, a
     const { pcId } = req.params;
     const { group_id } = req.body;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
-    await db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: 0 });
+    
+    db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: 0 }).catch(console.error);
+    
     io.to(`pc:${pcId}`).emit('session:stopwatch-end', {});
     io.to(`pc:${pcId}`).emit('command:lock', {});
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: 0, stopwatch_start: 0 });
+    
     res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -520,7 +544,8 @@ io.on('connection', (socket) => {
     socket.pcId = pc.id;
     socket.groupId = group_id;
     await db.update('pcs', p => p.id === pc.id, { is_online: 1 });
-    io.emit(`group:${group_id}:pc-status`, { pc_id: pc.id, is_online: true });
+    // ✅ FIX: Use io.to() for proper room broadcasting
+    io.to(`group:${group_id}`).emit(`group:${group_id}:pc-status`, { pc_id: pc.id, is_online: true });
     console.log(`[+] PC "${pc_name}" connected`);
     const now = Math.floor(Date.now()/1000);
     const swStart = (pc.stopwatch_start && pc.stopwatch_start < now) ? pc.stopwatch_start : 0;
@@ -536,28 +561,31 @@ io.on('connection', (socket) => {
   });
 
   socket.on('admin:subscribe', ({ group_id, token }) => {
-    try { jwt.verify(token, JWT_SECRET); socket.join(`group:${group_id}`); } catch {}
+    try { 
+      jwt.verify(token, JWT_SECRET); 
+      socket.join(`group:${group_id}`);  // ✅ Admin joins group room
+      console.log(`[+] Admin subscribed to group:${group_id}`);
+    } catch {}
   });
 
-  // ✅ FIX: Include group_id in broadcast so client can validate
   socket.on('admin:history-update', async ({ group_id, pc_id, history }) => {
     _historyCache[pc_id] = history;
-    // ✅ Include group_id in broadcast
-    socket.to(`group:${group_id}`).emit('admin:history-update', { 
-        group_id,  // ✅ THIS WAS MISSING!
-        pc_id, 
-        history 
+    // ✅ FIX: Include group_id in broadcast
+    io.to(`group:${group_id}`).emit('admin:history-update', { 
+      group_id,
+      pc_id, 
+      history 
     });
   });
 
   socket.on('admin:request-history', async ({ group_id, pc_id }) => {
     if (_historyCache[pc_id]) {
-      socket.to(`group:${group_id}`).emit('admin:history-update', { group_id, pc_id, history: _historyCache[pc_id] });
+      io.to(`group:${group_id}`).emit('admin:history-update', { group_id, pc_id, history: _historyCache[pc_id] });
     } else {
       const pc = await db.get('pcs', p => p.id === pc_id);
       if (pc) {
         _historyCache[pc_id] = pc.time_history || [];
-        socket.to(`group:${group_id}`).emit('admin:history-update', { group_id, pc_id, history: pc.time_history || [] });
+        io.to(`group:${group_id}`).emit('admin:history-update', { group_id, pc_id, history: pc.time_history || [] });
       }
     }
   });
@@ -571,7 +599,10 @@ io.on('connection', (socket) => {
   socket.on('disconnect', async () => {
     if (socket.pcId) {
       await db.update('pcs', p => p.id === socket.pcId, { is_online: 0 });
-      if (socket.groupId) io.emit(`group:${socket.groupId}:pc-status`, { pc_id: socket.pcId, is_online: false });
+      if (socket.groupId) {
+        // ✅ FIX: Use io.to() for proper room broadcasting
+        io.to(`group:${socket.groupId}`).emit(`group:${socket.groupId}:pc-status`, { pc_id: socket.pcId, is_online: false });
+      }
     }
   });
 });
