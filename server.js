@@ -320,47 +320,21 @@ app.post('/api/pcs/:pcId/payment', authMiddleware, accountCheck, async (req, res
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// In server.js POST /api/pcs/:pcId/session/start:
-app.post('/api/pcs/:pcId/session/start', async (req, res) => {
-    try {
-        const { pcId } = req.params;
-        const { duration_minutes, group_id } = req.body;
-        if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
-        
-        const pc = await db.get('pcs', p => p.id === pcId);
-        if (!pc) return res.status(404).json({ error: 'PC not found' });
-        
-        const session_end = Math.floor(Date.now() / 1000) + duration_minutes * 60;
-        const remaining = duration_minutes * 60;
-        
-        // ✅ Emit to PC FIRST for immediate response
-        io.to(`pc:${pcId}`).emit('session:start', { 
-            session_end, 
-            duration_minutes, 
-            remaining_seconds: remaining 
-        });
-        
-        // Then update database (non-blocking for PC response)
-        await db.update('pcs', p => p.id === pcId, { session_end, stopwatch_start: 0 });
-        await db.insert('sessions', { 
-            id: uuidv4(), 
-            pc_id: pcId, 
-            started_at: Math.floor(Date.now() / 1000), 
-            duration_minutes, 
-            price: (duration_minutes / 60) * pc.price_per_hour, 
-            ended_at: null 
-        });
-        
-        // Then broadcast to admin group
-        io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { 
-            pc_id: pcId, 
-            session_end, 
-            stopwatch_start: 0, 
-            payment_status: pc.payment_status 
-        });
-        
-        res.json({ success: true, session_end, remaining_seconds: remaining });
-    } catch(e) { res.status(500).json({ error: e.message }); }
+app.post('/api/pcs/:pcId/session/start', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { pcId } = req.params;
+    const { duration_minutes, group_id } = req.body;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    const pc = await db.get('pcs', p => p.id === pcId);
+    if (!pc) return res.status(404).json({ error: 'PC not found' });
+    const session_end = Math.floor(Date.now() / 1000) + duration_minutes * 60;
+    await db.update('pcs', p => p.id === pcId, { session_end, stopwatch_start: 0 });
+    await db.insert('sessions', { id: uuidv4(), pc_id: pcId, started_at: Math.floor(Date.now() / 1000), duration_minutes, price: (duration_minutes / 60) * pc.price_per_hour, ended_at: null });
+    const remaining = duration_minutes * 60;
+    io.to(`pc:${pcId}`).emit('session:start', { session_end, duration_minutes, remaining_seconds: remaining });
+    io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end, stopwatch_start: 0, payment_status: pc.payment_status });
+    res.json({ success: true, session_end, remaining_seconds: remaining });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/pcs/:pcId/session/add-time', authMiddleware, accountCheck, async (req, res) => {
@@ -538,30 +512,16 @@ app.get('/api/health', async (req, res) => {
 });
 
 io.on('connection', (socket) => {
- // In socket.on('pc:auth'), ensure BOTH rooms are joined BEFORE broadcasting:
-socket.on('pc:auth', async ({ pc_name, group_id, password }, callback) => {
+  socket.on('pc:auth', async ({ pc_name, group_id, password }, callback) => {
     const pc = await db.get('pcs', p => p.name === pc_name && p.group_id === group_id);
     if (!pc || !bcrypt.compareSync(password, pc.password))
-        return callback({ success: false, error: 'Invalid PC credentials' });
-    
-    // ✅ Join rooms FIRST, before any broadcast
+      return callback({ success: false, error: 'Invalid PC credentials' });
     socket.join(`pc:${pc.id}`);
-    socket.join(`group:${group_id}`);
-    
     socket.pcId = pc.id;
     socket.groupId = group_id;
-    
     await db.update('pcs', p => p.id === pc.id, { is_online: 1 });
-    
-    // ✅ Broadcast immediately after DB update
-    io.to(`group:${group_id}`).emit(`group:${group_id}:pc-status`, { 
-        pc_id: pc.id, 
-        is_online: true 
-    });
-    
+    io.emit(`group:${group_id}:pc-status`, { pc_id: pc.id, is_online: true });
     console.log(`[+] PC "${pc_name}" connected`);
-    // ... rest of callback
-});
     const now = Math.floor(Date.now()/1000);
     const swStart = (pc.stopwatch_start && pc.stopwatch_start < now) ? pc.stopwatch_start : 0;
     const remAuth = pc.session_end > now ? pc.session_end - now : 0;
