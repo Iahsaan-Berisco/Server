@@ -384,10 +384,10 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet-title">Add Time</div>
 <div class="sheet-sub">Extend by duration or amount</div>
 <div class="chip-row">
-<div class="chip green" onclick="addTime(31)"><i class="fa-solid fa-circle-plus"></i> 30m</div>
-<div class="chip green" onclick="addTime(61)"><i class="fa-solid fa-circle-plus"></i> 1h</div>
-<div class="chip green" onclick="addTime(92)"><i class="fa-solid fa-circle-plus"></i> 1.5h</div>
-<div class="chip green" onclick="addTime(122)"><i class="fa-solid fa-circle-plus"></i> 2h</div>
+<div class="chip green" onclick="addTime(30)"><i class="fa-solid fa-circle-plus"></i> 30m</div>
+<div class="chip green" onclick="addTime(60)"><i class="fa-solid fa-circle-plus"></i> 1h</div>
+<div class="chip green" onclick="addTime(90)"><i class="fa-solid fa-circle-plus"></i> 1.5h</div>
+<div class="chip green" onclick="addTime(120)"><i class="fa-solid fa-circle-plus"></i> 2h</div>
 <div class="chip green" onclick="addTime(180)"><i class="fa-solid fa-circle-plus"></i> 3h</div>
 </div>
 <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:16px 0 8px">Add Time</div>
@@ -970,49 +970,21 @@ toast('Free timer started','ok');
 
 // ✅ FIX #1: Added renderPCActions() to refresh UI after lhAdd()
 async function addTime(mins) {
-    closeSheet('sheet-addtime');
-    try {
-        const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
-        
-        if (r.stopwatch_start !== undefined) {
-            // ✅ FREE TIMER: Update elapsed time in EXISTING entry (no new entry)
-            updatePcField(state.activePc.id,'stopwatch_start', r.stopwatch_start);
-            _freeTimerAdded += mins;
-            
-            // Calculate new elapsed time
-            const now = Math.floor(Date.now()/1000);
-            const elapsed = (now - _freeTimerStart) + (_freeTimerAdded * 60);
-            
-            // Update the most recent 'free' entry that hasn't been finalized yet
-            const history = lhGet(state.activePc.id);
-            for (let i = 0; i < history.length; i++) {
-                if (history[i].type === 'free' && !history[i].elapsed) {
-                    history[i].elapsed = elapsed;  // ✅ Update elapsed, don't add new entry
-                    break;
-                }
-            }
-            lhSet(state.activePc.id, history);
-            
-            // ✅ Broadcast updated history to other devices
-            if (state.socket && state.activeGroup) {
-                state.socket.emit('admin:history-update', {
-                    group_id: state.activeGroup.id,
-                    pc_id: state.activePc.id,
-                    history: history.slice(0,5)
-                });
-            }
-            
-            toast('+'+mins+'m added to free timer','ok');
-            renderPCActions();  // ✅ Refresh UI to show updated elapsed time
-            
-        } else {
-            // ✅ COUNTDOWN SESSION: Normal behavior (add new entry)
-            updatePcField(state.activePc.id,'session_end', r.session_end);
-            lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
-            toast('+'+mins+'m added','ok');
-            renderPCActions();
-        }
-    } catch(e) { toast(e.message,'err'); }
+closeSheet('sheet-addtime');
+try {
+const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
+if (r.stopwatch_start !== undefined) {
+updatePcField(state.activePc.id,'stopwatch_start', r.stopwatch_start);
+_freeTimerAdded += mins;
+toast('+'+mins+'m added to free timer','ok');
+} else {
+updatePcField(state.activePc.id,'session_end', r.session_end);
+lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
+toast('+'+mins+'m added','ok');
+// ✅ Refresh UI to show updated history
+renderPCActions();
+}
+} catch(e) { toast(e.message,'err'); }
 }
 
 async function addTimeByAmount() {
