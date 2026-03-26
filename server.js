@@ -535,6 +535,21 @@ app.get('/api/health', async (req, res) => {
   } catch { res.json({ status: 'ok', database: 'disconnected', uptime: process.uptime() }); }
 });
 
+// In io.on('connection')
+socket.on('pc:heartbeat', ({ pc_name, group_id, timestamp }) => {
+    // Update last seen timestamp (optional: store in DB)
+    console.log(`[♥] Heartbeat from ${pc_name}`);
+    // Optionally refresh online status if it was stale
+});
+
+socket.on('pc:status', ({ pc_name, group_id, is_online }) => {
+    // Explicit status update from PC
+    console.log(`[STATUS] ${pc_name} is ${is_online ? 'online' : 'offline'}`);
+    io.to(`group:${group_id}`).emit(`group:${group_id}:pc-status`, { 
+        pc_id: pc_name,  // or use actual pc.id from DB lookup
+        is_online 
+    });
+});
 io.on('connection', (socket) => {
   socket.on('pc:auth', async ({ pc_name, group_id, password }, callback) => {
     const pc = await db.get('pcs', p => p.name === pc_name && p.group_id === group_id);
