@@ -1331,15 +1331,14 @@ renderGroups(); showScreen('groups'); toast('Group deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// ✅ Hide Sleep/Shutdown buttons for Super Admin
+// ✅ Sleep/Shutdown visible for ALL users with dashboard access
 function updatePowerButtons() {
-const isSuperAdmin = state.user?.username === 'iahsaan.berisco';
-const sleepBtn = document.getElementById('btn-sleep');
-const shutdownBtn = document.getElementById('btn-shutdown');
-if (sleepBtn) sleepBtn.style.display = isSuperAdmin ? 'none' : '';
-if (shutdownBtn) shutdownBtn.style.display = isSuperAdmin ? 'none' : '';
+    // No hiding - buttons visible for everyone
+    const sleepBtn = document.getElementById('btn-sleep');
+    const shutdownBtn = document.getElementById('btn-shutdown');
+    if (sleepBtn) sleepBtn.style.display = '';
+    if (shutdownBtn) shutdownBtn.style.display = '';
 }
-
 function connectSocket() {
 if (state.socket) state.socket.disconnect();
 state.socket = io(state.serverUrl, { transports: ['websocket'] });
