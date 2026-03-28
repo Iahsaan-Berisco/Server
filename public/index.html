@@ -1324,23 +1324,54 @@ function closeModal() {
 }
 
 async function executeAction() {
+    console.log('🔸 executeAction starting');
+    console.log('🔸 _pendingAction value:', _pendingAction, 'type:', typeof _pendingAction, 'at time:', Date.now());
+    
+    // ✅ Safety: If still null, try to infer from modal
+    if (!_pendingAction) {
+        const modalTitle = document.getElementById('modal-title')?.textContent || '';
+        if (modalTitle.includes('Sleep')) {
+            _pendingAction = 'sleep';
+            console.log('⚠️ Fallback: inferred action=sleep');
+        } else if (modalTitle.includes('Shutdown')) {
+            _pendingAction = 'shutdown';
+            console.log('⚠️ Fallback: inferred action=shutdown');
+        }
+    }
+    
     if (!_pendingAction || !state.activePc || !state.activeGroup) {
-        console.error('Missing data:', { _pendingAction, pc: state.activePc, group: state.activeGroup });
+        console.error('❌ Missing required ', { 
+            _pendingAction, 
+            pc: state.activePc?.id, 
+            group: state.activeGroup?.id 
+        });
         toast('Error: Missing required data','err');
         closeModal();
         return;
     }
+    
+    console.log('🔸 Proceeding with action:', _pendingAction);
     closeModal();
+    
     try {
-        await api('POST','/pcs/'+state.activePc.id+'/'+_pendingAction,{group_id:state.activeGroup.id});
+        const url = '/pcs/'+state.activePc.id+'/'+_pendingAction;
+        console.log('🔸 POST request to:', url);
+        
+        await api('POST', url, {group_id:state.activeGroup.id});
         const actionName = _pendingAction.charAt(0).toUpperCase() + _pendingAction.slice(1);
         toast(actionName + ' command sent','ok');
     } catch(e) {
-        console.error('Action failed:', e);
+        console.error('❌ Action failed:', e);
         toast(e.message || 'Command failed','err');
     } finally {
+        console.log('🔸 Cleaning up _pendingAction');
         _pendingAction = null;
     }
+}
+   function closeModal() {
+    console.log('🔻 closeModal called, _pendingAction was:', _pendingAction);
+    document.getElementById('confirm-modal').classList.remove('active');
+    _pendingAction = null;
 }
 
 function confirmAction(action) {
