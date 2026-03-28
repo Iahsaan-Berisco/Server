@@ -1303,7 +1303,7 @@ renderGroups(); showScreen('groups'); toast('Group deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// ✅ Custom Confirmation Modal Functions - FIXED WITH FALLBACK
+// ✅ Custom Confirmation Modal Functions - FIXED
 function showModal(title, message, action) {
     document.getElementById('modal-title').textContent = title;
     document.getElementById('modal-message').textContent = message;
@@ -1322,6 +1322,7 @@ function closeModal() {
     _pendingAction = null;
 }
 
+// ✅ FIXED: Save action to local variable BEFORE closeModal() clears it
 async function executeAction() {
     console.log('🔸 executeAction starting, _pendingAction:', _pendingAction);
     
@@ -1362,32 +1363,6 @@ async function executeAction() {
     } catch(e) {
         console.error('❌ Action failed:', e);
         toast(e.message || 'Command failed','err');
-    }
-}
-    
-    if (!_pendingAction || !state.activePc || !state.activeGroup) {
-        console.error('❌ Missing required ', { _pendingAction, pc: state.activePc?.id, group: state.activeGroup?.id });
-        toast('Error: Missing required data','err');
-        closeModal();
-        return;
-    }
-    
-    console.log('🔸 Proceeding with action:', _pendingAction);
-    closeModal();
-    
-    try {
-        const url = '/pcs/'+state.activePc.id+'/'+_pendingAction;
-        console.log('🔸 POST request to:', url);
-        
-        await api('POST', url, {group_id:state.activeGroup.id});
-        const actionName = _pendingAction.charAt(0).toUpperCase() + _pendingAction.slice(1);
-        toast(actionName + ' command sent','ok');
-    } catch(e) {
-        console.error('❌ Action failed:', e);
-        toast(e.message || 'Command failed','err');
-    } finally {
-        console.log('🔸 Cleaning up _pendingAction');
-        _pendingAction = null;
     }
 }
 
