@@ -1344,10 +1344,24 @@ async function executeAction() {
 }
 
 function confirmAction(action) {
+    console.log('🔹 confirmAction called with:', action, 'type:', typeof action);
+    
     if (!state.activePc) {
         toast('No PC selected','err');
         return;
     }
+    
+    // ✅ Set FIRST, before anything else
+    _pendingAction = action;
+    console.log('🔹 _pendingAction set to:', _pendingAction, 'at time:', Date.now());
+    
+    const pcName = state.activePc.name;
+    if (action === 'sleep') {
+        showModal('Put PC to Sleep?', `Put ${pcName} to sleep?\n\n⚠️ This will interrupt any active session.`, 'sleep');
+    } else if (action === 'shutdown') {
+        showModal('Shutdown PC?', `Shutdown ${pcName}?\n\n⚠️ This will end all sessions and turn off the PC.\nThis cannot be undone.`, 'shutdown');
+    }
+}
     // ✅ Set _pendingAction FIRST, before showing modal
     _pendingAction = action;
     const pcName = state.activePc.name;
