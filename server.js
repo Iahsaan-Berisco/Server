@@ -92,7 +92,7 @@ app.get('/api/admin/accounts', adminAuth, async (req, res) => {
         pcCount += pcs.length;
       }
       let status = u.status || 'active';
-      if (status === 'active' && u.expiry_date && Date.now() > u.expiry_date) {
+      if (status === 'active' && u.expiry_date && Date.now() > user.expiry_date) {
         status = 'expired';
         await db.update('users', x => x.id === u.id, { status: 'expired' });
       }
@@ -426,7 +426,7 @@ app.post('/api/pcs/:pcId/unlock', authMiddleware, accountCheck, async (req, res)
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ✅ NEW: Sleep endpoint
+// ✅ SLEEP ENDPOINT
 app.post('/api/pcs/:pcId/sleep', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { pcId } = req.params;
@@ -436,11 +436,12 @@ app.post('/api/pcs/:pcId/sleep', authMiddleware, accountCheck, async (req, res) 
     console.log(`[AUDIT] ${req.user.username} triggered SLEEP on PC ${pcId}`);
     res.json({ success: true });
   } catch(e) { 
+    console.error('Sleep error:', e);
     res.status(500).json({ error: e.message }); 
   }
 });
 
-// ✅ NEW: Shutdown endpoint
+// ✅ SHUTDOWN ENDPOINT
 app.post('/api/pcs/:pcId/shutdown', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { pcId } = req.params;
@@ -450,6 +451,7 @@ app.post('/api/pcs/:pcId/shutdown', authMiddleware, accountCheck, async (req, re
     console.log(`[AUDIT] ${req.user.username} triggered SHUTDOWN on PC ${pcId}`);
     res.json({ success: true });
   } catch(e) { 
+    console.error('Shutdown error:', e);
     res.status(500).json({ error: e.message }); 
   }
 });
