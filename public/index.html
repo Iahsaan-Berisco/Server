@@ -1303,9 +1303,8 @@ renderGroups(); showScreen('groups'); toast('Group deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// ✅ Custom Confirmation Modal Functions - FIXED
+// ✅ Custom Confirmation Modal Functions - FIXED WITH FALLBACK
 function showModal(title, message, action) {
-    // _pendingAction already set by confirmAction()
     document.getElementById('modal-title').textContent = title;
     document.getElementById('modal-message').textContent = message;
     const confirmBtn = document.getElementById('modal-confirm-btn');
@@ -1324,27 +1323,22 @@ function closeModal() {
 }
 
 async function executeAction() {
-    console.log('🔸 executeAction starting');
-    console.log('🔸 _pendingAction value:', _pendingAction, 'type:', typeof _pendingAction, 'at time:', Date.now());
+    console.log('🔸 executeAction starting, _pendingAction:', _pendingAction);
     
-    // ✅ Safety: If still null, try to infer from modal
+    // ✅ FALLBACK: If _pendingAction is null, infer from modal title
     if (!_pendingAction) {
         const modalTitle = document.getElementById('modal-title')?.textContent || '';
         if (modalTitle.includes('Sleep')) {
             _pendingAction = 'sleep';
-            console.log('⚠️ Fallback: inferred action=sleep');
+            console.log('⚠️ Fallback: inferred action=sleep from modal title');
         } else if (modalTitle.includes('Shutdown')) {
             _pendingAction = 'shutdown';
-            console.log('⚠️ Fallback: inferred action=shutdown');
+            console.log('⚠️ Fallback: inferred action=shutdown from modal title');
         }
     }
     
     if (!_pendingAction || !state.activePc || !state.activeGroup) {
-        console.error('❌ Missing required ', { 
-            _pendingAction, 
-            pc: state.activePc?.id, 
-            group: state.activeGroup?.id 
-        });
+        console.error('❌ Missing required ', { _pendingAction, pc: state.activePc?.id, group: state.activeGroup?.id });
         toast('Error: Missing required data','err');
         closeModal();
         return;
@@ -1368,11 +1362,6 @@ async function executeAction() {
         _pendingAction = null;
     }
 }
-   function closeModal() {
-    console.log('🔻 closeModal called, _pendingAction was:', _pendingAction);
-    document.getElementById('confirm-modal').classList.remove('active');
-    _pendingAction = null;
-}
 
 function confirmAction(action) {
     console.log('🔹 confirmAction called with:', action, 'type:', typeof action);
@@ -1386,15 +1375,6 @@ function confirmAction(action) {
     _pendingAction = action;
     console.log('🔹 _pendingAction set to:', _pendingAction, 'at time:', Date.now());
     
-    const pcName = state.activePc.name;
-    if (action === 'sleep') {
-        showModal('Put PC to Sleep?', `Put ${pcName} to sleep?\n\n⚠️ This will interrupt any active session.`, 'sleep');
-    } else if (action === 'shutdown') {
-        showModal('Shutdown PC?', `Shutdown ${pcName}?\n\n⚠️ This will end all sessions and turn off the PC.\nThis cannot be undone.`, 'shutdown');
-    }
-}
-    // ✅ Set _pendingAction FIRST, before showing modal
-    _pendingAction = action;
     const pcName = state.activePc.name;
     if (action === 'sleep') {
         showModal('Put PC to Sleep?', `Put ${pcName} to sleep?\n\n⚠️ This will interrupt any active session.`, 'sleep');
