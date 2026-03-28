@@ -426,44 +426,28 @@ app.post('/api/pcs/:pcId/unlock', authMiddleware, accountCheck, async (req, res)
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// ✅ NEW: Sleep endpoint - only Group Owner/Admin can trigger (NOT Super Admin)
+// ✅ NEW: Sleep endpoint
 app.post('/api/pcs/:pcId/sleep', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { pcId } = req.params;
     const { group_id } = req.body;
-    
-    // ✅ Permission check: must be Group Owner or Admin
-    if (!await canManageGroup(req.user.id, group_id)) 
-      return res.status(403).json({ error: 'Forbidden' });
-    
-    // ✅ Forward command to PC client via socket
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
     io.to(`pc:${pcId}`).emit('command:sleep', {});
-    
-    // ✅ Log for audit trail
     console.log(`[AUDIT] ${req.user.username} triggered SLEEP on PC ${pcId}`);
-    
     res.json({ success: true });
   } catch(e) { 
     res.status(500).json({ error: e.message }); 
   }
 });
 
-// ✅ NEW: Shutdown endpoint - only Group Owner/Admin can trigger (NOT Super Admin)
+// ✅ NEW: Shutdown endpoint
 app.post('/api/pcs/:pcId/shutdown', authMiddleware, accountCheck, async (req, res) => {
   try {
     const { pcId } = req.params;
     const { group_id } = req.body;
-    
-    // ✅ Permission check: must be Group Owner or Admin
-    if (!await canManageGroup(req.user.id, group_id)) 
-      return res.status(403).json({ error: 'Forbidden' });
-    
-    // ✅ Forward command to PC client via socket
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
     io.to(`pc:${pcId}`).emit('command:shutdown', {});
-    
-    // ✅ Log for audit trail
     console.log(`[AUDIT] ${req.user.username} triggered SHUTDOWN on PC ${pcId}`);
-    
     res.json({ success: true });
   } catch(e) { 
     res.status(500).json({ error: e.message }); 
