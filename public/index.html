@@ -414,7 +414,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 </div>
 </div>
 
-<!-- Sheets (all sheets remain same as before) -->
+<!-- Sheets -->
 <div class="sheet-bg" id="bg-newgroup" onclick="closeSheet('sheet-newgroup')"></div>
 <div class="sheet" id="sheet-newgroup">
 <div class="sheet-handle"></div>
@@ -1303,128 +1303,147 @@ renderGroups(); showScreen('groups'); toast('Group deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// ✅ Custom Confirmation Modal Functions
-function showModal(title, message, action, type='danger') {
-_pendingAction = action;
-document.getElementById('modal-title').textContent = title;
-document.getElementById('modal-message').textContent = message;
-const confirmBtn = document.getElementById('modal-confirm-btn');
-confirmBtn.className = 'modal-btn confirm ' + (type === 'sleep' ? 'sleep' : '');
-confirmBtn.textContent = 'Confirm';
-document.getElementById('confirm-modal').classList.add('active');
+// ✅ Custom Confirmation Modal Functions - FIXED
+function showModal(title, message, action) {
+    // _pendingAction already set by confirmAction()
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-message').textContent = message;
+    const confirmBtn = document.getElementById('modal-confirm-btn');
+    if (action === 'sleep') {
+        confirmBtn.className = 'modal-btn confirm sleep';
+    } else {
+        confirmBtn.className = 'modal-btn confirm';
+    }
+    confirmBtn.textContent = 'Confirm';
+    document.getElementById('confirm-modal').classList.add('active');
 }
 
 function closeModal() {
-document.getElementById('confirm-modal').classList.remove('active');
-_pendingAction = null;
+    document.getElementById('confirm-modal').classList.remove('active');
+    _pendingAction = null;
 }
 
 async function executeAction() {
-if (!_pendingAction || !state.activePc) return;
-closeModal();
-try {
-await api('POST','/pcs/'+state.activePc.id+'/'+_pendingAction,{group_id:state.activeGroup.id});
-toast(_pendingAction.charAt(0).toUpperCase() + _pendingAction.slice(1) + ' command sent','ok');
-} catch(e) { toast(e.message,'err'); }
-_pendingAction = null;
+    if (!_pendingAction || !state.activePc || !state.activeGroup) {
+        console.error('Missing data:', { _pendingAction, pc: state.activePc, group: state.activeGroup });
+        toast('Error: Missing required data','err');
+        closeModal();
+        return;
+    }
+    closeModal();
+    try {
+        await api('POST','/pcs/'+state.activePc.id+'/'+_pendingAction,{group_id:state.activeGroup.id});
+        const actionName = _pendingAction.charAt(0).toUpperCase() + _pendingAction.slice(1);
+        toast(actionName + ' command sent','ok');
+    } catch(e) {
+        console.error('Action failed:', e);
+        toast(e.message || 'Command failed','err');
+    } finally {
+        _pendingAction = null;
+    }
 }
 
 function confirmAction(action) {
-if (!state.activePc) return;
-const pcName = state.activePc.name;
-if (action === 'sleep') {
-showModal('Put PC to Sleep?', `Put ${pcName} to sleep?\n\n⚠️ This will interrupt any active session.`, 'sleep', 'sleep');
-} else if (action === 'shutdown') {
-showModal('Shutdown PC?', `Shutdown ${pcName}?\n\n⚠️ This will end all sessions and turn off the PC.\nThis cannot be undone.`, 'shutdown', 'danger');
-}
+    if (!state.activePc) {
+        toast('No PC selected','err');
+        return;
+    }
+    // ✅ Set _pendingAction FIRST, before showing modal
+    _pendingAction = action;
+    const pcName = state.activePc.name;
+    if (action === 'sleep') {
+        showModal('Put PC to Sleep?', `Put ${pcName} to sleep?\n\n⚠️ This will interrupt any active session.`, 'sleep');
+    } else if (action === 'shutdown') {
+        showModal('Shutdown PC?', `Shutdown ${pcName}?\n\n⚠️ This will end all sessions and turn off the PC.\nThis cannot be undone.`, 'shutdown');
+    }
 }
 
 // ✅ Sleep/Shutdown visible for ALL users on ALL devices
 function updatePowerButtons() {
-try {
-const sleepBtn = document.getElementById('btn-sleep');
-const shutdownBtn = document.getElementById('btn-shutdown');
-if (sleepBtn) sleepBtn.style.display = '';
-if (shutdownBtn) shutdownBtn.style.display = '';
-} catch(e) {
-// Buttons don't exist yet - ignore
-}
+    try {
+        const sleepBtn = document.getElementById('btn-sleep');
+        const shutdownBtn = document.getElementById('btn-shutdown');
+        if (sleepBtn) sleepBtn.style.display = '';
+        if (shutdownBtn) shutdownBtn.style.display = '';
+    } catch(e) {
+        // Buttons don't exist yet - ignore
+    }
 }
 
 function connectSocket() {
-if (state.socket) state.socket.disconnect();
-state.socket = io(state.serverUrl, { transports: ['websocket'] });
-state.socket.on('connect', () => {
-state.socket.emit('admin:subscribe', { group_id: state.activeGroup.id, token: state.token });
-updatePowerButtons();
-});
-state.socket.on('group:'+state.activeGroup.id+':pc-status', ({ pc_id, is_online }) => {
-const pc = state.pcs.find(p=>p.id===pc_id);
-if (pc) {
-pc.is_online = is_online ? 1 : 0;
-renderPCs();
-if (state.activePc?.id===pc_id) { state.activePc.is_online=pc.is_online; updateOnlinePill(); }
-}
-});
-state.socket.on('group:'+state.activeGroup.id+':pc-session', (data) => {
-const { pc_id } = data;
-const pc = state.pcs.find(p=>p.id===pc_id);
-if (pc) {
-if ('session_end'     in data) pc.session_end     = data.session_end;
-if ('stopwatch_start' in data) pc.stopwatch_start = data.stopwatch_start;
-if ('payment_status'  in data) pc.payment_status  = data.payment_status;
-renderPCs();
-if (state.activePc?.id===pc_id) {
-if ('session_end'     in data) state.activePc.session_end     = data.session_end;
-if ('stopwatch_start' in data) state.activePc.stopwatch_start = data.stopwatch_start;
-if ('payment_status'  in data) state.activePc.payment_status  = data.payment_status;
-renderPCActions(); updateOnlinePill();
-}
-}
-});
+    if (state.socket) state.socket.disconnect();
+    state.socket = io(state.serverUrl, { transports: ['websocket'] });
+    state.socket.on('connect', () => {
+        state.socket.emit('admin:subscribe', { group_id: state.activeGroup.id, token: state.token });
+        updatePowerButtons();
+    });
+    state.socket.on('group:'+state.activeGroup.id+':pc-status', ({ pc_id, is_online }) => {
+        const pc = state.pcs.find(p=>p.id===pc_id);
+        if (pc) {
+            pc.is_online = is_online ? 1 : 0;
+            renderPCs();
+            if (state.activePc?.id===pc_id) { state.activePc.is_online=pc.is_online; updateOnlinePill(); }
+        }
+    });
+    state.socket.on('group:'+state.activeGroup.id+':pc-session', (data) => {
+        const { pc_id } = data;
+        const pc = state.pcs.find(p=>p.id===pc_id);
+        if (pc) {
+            if ('session_end'     in data) pc.session_end     = data.session_end;
+            if ('stopwatch_start' in data) pc.stopwatch_start = data.stopwatch_start;
+            if ('payment_status'  in data) pc.payment_status  = data.payment_status;
+            renderPCs();
+            if (state.activePc?.id===pc_id) {
+                if ('session_end'     in data) state.activePc.session_end     = data.session_end;
+                if ('stopwatch_start' in data) state.activePc.stopwatch_start = data.stopwatch_start;
+                if ('payment_status'  in data) state.activePc.payment_status  = data.payment_status;
+                renderPCActions(); updateOnlinePill();
+            }
+        }
+    });
 }
 const _LH_KEY = 'gz_history_';
 function lhGet(pcId) {
-try { return JSON.parse(localStorage.getItem(_LH_KEY+pcId) || '[]'); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem(_LH_KEY+pcId) || '[]'); } catch { return []; }
 }
 function lhSet(pcId, entries) {
-localStorage.setItem(_LH_KEY+pcId, JSON.stringify(entries.slice(0,5)));
+    localStorage.setItem(_LH_KEY+pcId, JSON.stringify(entries.slice(0,5)));
 }
 function lhAdd(pcId, entry) {
-const h = lhGet(pcId);
-h.unshift(entry);
-lhSet(pcId, h);
-if (state.socket && state.activeGroup) {
-state.socket.emit('admin:history-update', {
-group_id: state.activeGroup.id,
-pc_id: pcId,
-history: h.slice(0,5)
-});
-}
+    const h = lhGet(pcId);
+    h.unshift(entry);
+    lhSet(pcId, h);
+    if (state.socket && state.activeGroup) {
+        state.socket.emit('admin:history-update', {
+            group_id: state.activeGroup.id,
+            pc_id: pcId,
+            history: h.slice(0,5)
+        });
+    }
 }
 function refreshHistory() {
-if (!state.activePc) return;
-if (state.socket && state.activeGroup) {
-state.socket.emit('admin:request-history', {
-group_id: state.activeGroup.id,
-pc_id: state.activePc.id
-});
-}
-renderPCActions();
-toast('Refreshed','ok');
+    if (!state.activePc) return;
+    if (state.socket && state.activeGroup) {
+        state.socket.emit('admin:request-history', {
+            group_id: state.activeGroup.id,
+            pc_id: state.activePc.id
+        });
+    }
+    renderPCActions();
+    toast('Refreshed','ok');
 }
 function fmtTime(secs) {
-if (secs<=0) return '00:00';
-const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
-if (h>0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if (secs<=0) return '00:00';
+    const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
+    if (h>0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 function toast(msg, type='ok') {
-const el = document.getElementById('toast');
-el.textContent = msg;
-el.className = 'toast '+type+' show';
-clearTimeout(_toastT);
-_toastT = setTimeout(()=>el.classList.remove('show'), 2600);
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast '+type+' show';
+    clearTimeout(_toastT);
+    _toastT = setTimeout(()=>el.classList.remove('show'), 2600);
 }
 </script>
 </body>
