@@ -1344,6 +1344,34 @@ async function executeAction() {
         return;
     }
     
+    // ✅ FIX: Save to local variable BEFORE closeModal() clears it!
+    const actionToExecute = _pendingAction;
+    console.log('🔸 Saved action to execute:', actionToExecute);
+    
+    // ✅ Now safe to close modal (which clears _pendingAction)
+    closeModal();
+    
+    try {
+        // ✅ Use local variable, not _pendingAction
+        const url = '/pcs/'+state.activePc.id+'/'+actionToExecute;
+        console.log('🔸 POST request to:', url);
+        
+        await api('POST', url, {group_id:state.activeGroup.id});
+        const actionName = actionToExecute.charAt(0).toUpperCase() + actionToExecute.slice(1);
+        toast(actionName + ' command sent','ok');
+    } catch(e) {
+        console.error('❌ Action failed:', e);
+        toast(e.message || 'Command failed','err');
+    }
+}
+    
+    if (!_pendingAction || !state.activePc || !state.activeGroup) {
+        console.error('❌ Missing required ', { _pendingAction, pc: state.activePc?.id, group: state.activeGroup?.id });
+        toast('Error: Missing required data','err');
+        closeModal();
+        return;
+    }
+    
     console.log('🔸 Proceeding with action:', _pendingAction);
     closeModal();
     
