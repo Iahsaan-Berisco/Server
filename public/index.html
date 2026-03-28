@@ -238,6 +238,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
     color: var(--t2);
     margin-bottom: 20px;
     line-height: 1.4;
+    white-space: pre-line;
 }
 .modal-actions {
     display: flex;
@@ -349,9 +350,9 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="action-grid" style="margin-bottom:20px">
 <div class="action-card" onclick="pcCmd('lock')"><div class="action-card-icon"><i class="fa-solid fa-lock" style="color:var(--amber)"></i></div><div class="action-card-label">Lock</div></div>
 <div class="action-card" onclick="pcCmd('unlock')"><div class="action-card-icon"><i class="fa-solid fa-lock-open" style="color:var(--green)"></i></div><div class="action-card-label">Unlock</div></div>
-<!-- ✅ ADD: Sleep/Shutdown buttons (hidden for Super Admin) -->
-<div class="action-card desktop-only" onclick="confirmAction('sleep')" id="btn-sleep" style="display:none"><div class="action-card-icon"><i class="fa-solid fa-moon" style="color:var(--blue)"></i></div><div class="action-card-label">Sleep</div></div>
-<div class="action-card desktop-only" onclick="confirmAction('shutdown')" id="btn-shutdown" style="display:none"><div class="action-card-icon"><i class="fa-solid fa-power-off" style="color:var(--red)"></i></div><div class="action-card-label">Shutdown</div></div>
+<!-- ✅ Sleep/Shutdown buttons - VISIBLE FOR ALL USERS -->
+<div class="action-card desktop-only" onclick="confirmAction('sleep')" id="btn-sleep"><div class="action-card-icon"><i class="fa-solid fa-moon" style="color:var(--blue)"></i></div><div class="action-card-label">Sleep</div></div>
+<div class="action-card desktop-only" onclick="confirmAction('shutdown')" id="btn-shutdown"><div class="action-card-icon"><i class="fa-solid fa-power-off" style="color:var(--red)"></i></div><div class="action-card-label">Shutdown</div></div>
 </div>
 <div class="section-head">Applications</div>
 <div class="action-grid" style="margin-bottom:20px">
@@ -584,7 +585,7 @@ const left = pc.session_end>now ? pc.session_end-now : 0;
 const isWatch = pc.stopwatch_start>0;
 const elapsed = isWatch ? now-pc.stopwatch_start : 0;
 const timerBig = document.querySelector('.timer-big');
-if (timerBig) timerBig.textContent = isWatch ? fmtTime(elapsed) : fmtTime(left);
+if (timerBig) timerBig.textContent = isWatch ? fmtTime(elapsed) : (left>0 ? fmtTime(left) : '--:--');
 }
 }
 }, 1000);
@@ -909,6 +910,8 @@ pill.innerHTML = '<span class="dot" style="background:var(--t3)"></span> Offline
 pill.style.cssText = '';
 }
 }
+
+// ✅ UPDATED: Timer + Payment ALWAYS visible
 function renderPCActions() {
 const pc = state.activePc; if(!pc) return;
 const now = Math.floor(Date.now()/1000);
@@ -917,9 +920,15 @@ const isWatch = pc.stopwatch_start>0;
 const isActive = left>0||isWatch;
 const pay = pc.payment_status || null;
 const timerArea = document.getElementById('pc-timer-area');
-if (isActive) {
-const col = isWatch ? 'var(--blue)' : left<300 ? 'var(--amber)' : left<60 ? 'var(--red)' : 'var(--green)';
-const val = isWatch ? fmtTime(now-pc.stopwatch_start) : fmtTime(left);
+
+// ✅ Timer ALWAYS visible with payment buttons
+const col = isActive 
+    ? (isWatch ? 'var(--blue)' : left<=30 ? 'var(--red)' : left<=60 ? 'var(--amber)' : 'var(--green)')
+    : 'var(--t3)';
+const val = isActive 
+    ? (isWatch ? fmtTime(now-pc.stopwatch_start) : fmtTime(left))
+    : '--:--';
+
 timerArea.innerHTML = `<div class="timer-card">
 <div class="timer-big" style="color:${col}">${val}</div>
 <div class="pay-col">
@@ -927,9 +936,7 @@ timerArea.innerHTML = `<div class="timer-card">
 <button class="pay-btn ${pay==='unpaid'?'unpaid':''}" onclick="togglePay('unpaid')"><i class="fa-solid fa-xmark"></i> Unpaid</button>
 </div>
 </div>`;
-} else {
-timerArea.innerHTML = '';
-}
+
 const sessionArea = document.getElementById('pc-session-area');
 if (isActive) {
 sessionArea.innerHTML = `<div class="section-head">Session Control</div>
@@ -948,6 +955,7 @@ sessionArea.innerHTML = `<div class="section-head">Session Control</div>
 </div>
 </div>`;
 }
+
 const history = lhGet(pc.id);
 if (history && history.length > 0) {
 let hHtml = `<div class="section-head" style="justify-content:space-between;margin-top:20px">Recent Activity
@@ -981,42 +989,6 @@ sessionArea.innerHTML += hHtml;
 }
 }
 
-// ✅ Custom Confirmation Modal Functions
-function showModal(title, message, action, type='danger') {
-_pendingAction = action;
-document.getElementById('modal-title').textContent = title;
-document.getElementById('modal-message').textContent = message;
-const confirmBtn = document.getElementById('modal-confirm-btn');
-confirmBtn.className = 'modal-btn confirm ' + (type === 'sleep' ? 'sleep' : '');
-confirmBtn.textContent = 'Confirm';
-document.getElementById('confirm-modal').classList.add('active');
-}
-
-function closeModal() {
-document.getElementById('confirm-modal').classList.remove('active');
-_pendingAction = null;
-}
-
-async function executeAction() {
-if (!_pendingAction || !state.activePc) return;
-closeModal();
-try {
-await api('POST','/pcs/'+state.activePc.id+'/'+_pendingAction,{group_id:state.activeGroup.id});
-toast(_pendingAction.charAt(0).toUpperCase() + _pendingAction.slice(1) + ' command sent','ok');
-} catch(e) { toast(e.message,'err'); }
-_pendingAction = null;
-}
-
-function confirmAction(action) {
-if (!state.activePc) return;
-const pcName = state.activePc.name;
-if (action === 'sleep') {
-showModal('Put PC to Sleep?', `Put ${pcName} to sleep?\n\n⚠️ This will interrupt any active session.`, 'sleep', 'sleep');
-} else if (action === 'shutdown') {
-showModal('Shutdown PC?', `Shutdown ${pcName}?\n\n⚠️ This will end all sessions and turn off the PC.\nThis cannot be undone.`, 'shutdown', 'danger');
-}
-}
-
 async function togglePay(status) {
 if (!state.activePc) return;
 const id = state.activePc.id;
@@ -1036,6 +1008,7 @@ try {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'session_end',r.session_end);
 updatePcField(state.activePc.id,'stopwatch_start',0);
+lhAdd(state.activePc.id, {type:'add',mins:mins,at:Date.now()});
 toast('Session started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
@@ -1331,14 +1304,50 @@ renderGroups(); showScreen('groups'); toast('Group deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// ✅ Sleep/Shutdown visible for ALL users with dashboard access
-function updatePowerButtons() {
-    // No hiding - buttons visible for everyone
-    const sleepBtn = document.getElementById('btn-sleep');
-    const shutdownBtn = document.getElementById('btn-shutdown');
-    if (sleepBtn) sleepBtn.style.display = '';
-    if (shutdownBtn) shutdownBtn.style.display = '';
+// ✅ Custom Confirmation Modal Functions
+function showModal(title, message, action, type='danger') {
+_pendingAction = action;
+document.getElementById('modal-title').textContent = title;
+document.getElementById('modal-message').textContent = message;
+const confirmBtn = document.getElementById('modal-confirm-btn');
+confirmBtn.className = 'modal-btn confirm ' + (type === 'sleep' ? 'sleep' : '');
+confirmBtn.textContent = 'Confirm';
+document.getElementById('confirm-modal').classList.add('active');
 }
+
+function closeModal() {
+document.getElementById('confirm-modal').classList.remove('active');
+_pendingAction = null;
+}
+
+async function executeAction() {
+if (!_pendingAction || !state.activePc) return;
+closeModal();
+try {
+await api('POST','/pcs/'+state.activePc.id+'/'+_pendingAction,{group_id:state.activeGroup.id});
+toast(_pendingAction.charAt(0).toUpperCase() + _pendingAction.slice(1) + ' command sent','ok');
+} catch(e) { toast(e.message,'err'); }
+_pendingAction = null;
+}
+
+function confirmAction(action) {
+if (!state.activePc) return;
+const pcName = state.activePc.name;
+if (action === 'sleep') {
+showModal('Put PC to Sleep?', `Put ${pcName} to sleep?\n\n⚠️ This will interrupt any active session.`, 'sleep', 'sleep');
+} else if (action === 'shutdown') {
+showModal('Shutdown PC?', `Shutdown ${pcName}?\n\n⚠️ This will end all sessions and turn off the PC.\nThis cannot be undone.`, 'shutdown', 'danger');
+}
+}
+
+// ✅ Sleep/Shutdown visible for ALL users
+function updatePowerButtons() {
+const sleepBtn = document.getElementById('btn-sleep');
+const shutdownBtn = document.getElementById('btn-shutdown');
+if (sleepBtn) sleepBtn.style.display = '';
+if (shutdownBtn) shutdownBtn.style.display = '';
+}
+
 function connectSocket() {
 if (state.socket) state.socket.disconnect();
 state.socket = io(state.serverUrl, { transports: ['websocket'] });
