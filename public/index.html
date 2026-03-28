@@ -199,6 +199,81 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 .toast.err{border-color:var(--red-bd);color:var(--red)}
 .spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.1);border-top-color:#fff;border-radius:50%;animation:_spin .6s linear infinite;display:inline-block}
 @keyframes _spin{to{transform:rotate(360deg)}}
+
+/* ✅ Custom Confirmation Modal Styles */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+}
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+.modal {
+    background: var(--s1);
+    border: 1px solid var(--bd2);
+    border-radius: var(--r3);
+    padding: 24px;
+    max-width: 400px;
+    width: calc(100% - 40px);
+    text-align: center;
+    box-shadow: 0 24px 64px rgba(0,0,0,.5);
+}
+.modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--t1);
+}
+.modal-message {
+    font-size: 13px;
+    color: var(--t2);
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+.modal-btn {
+    padding: 10px 20px;
+    border-radius: var(--r);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-family: var(--sans);
+    transition: all .15s;
+}
+.modal-btn.cancel {
+    background: var(--s3);
+    color: var(--t1);
+}
+.modal-btn.cancel:hover {
+    background: var(--s4);
+}
+.modal-btn.confirm {
+    background: var(--red);
+    color: #fff;
+}
+.modal-btn.confirm:hover {
+    background: #dc2626;
+}
+.modal-btn.confirm.sleep {
+    background: var(--blue);
+}
+.modal-btn.confirm.sleep:hover {
+    background: #2563eb;
+}
 </style>
 </head>
 <body>
@@ -274,6 +349,9 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="action-grid" style="margin-bottom:20px">
 <div class="action-card" onclick="pcCmd('lock')"><div class="action-card-icon"><i class="fa-solid fa-lock" style="color:var(--amber)"></i></div><div class="action-card-label">Lock</div></div>
 <div class="action-card" onclick="pcCmd('unlock')"><div class="action-card-icon"><i class="fa-solid fa-lock-open" style="color:var(--green)"></i></div><div class="action-card-label">Unlock</div></div>
+<!-- ✅ ADD: Sleep/Shutdown buttons (hidden for Super Admin) -->
+<div class="action-card desktop-only" onclick="confirmAction('sleep')" id="btn-sleep" style="display:none"><div class="action-card-icon"><i class="fa-solid fa-moon" style="color:var(--blue)"></i></div><div class="action-card-label">Sleep</div></div>
+<div class="action-card desktop-only" onclick="confirmAction('shutdown')" id="btn-shutdown" style="display:none"><div class="action-card-icon"><i class="fa-solid fa-power-off" style="color:var(--red)"></i></div><div class="action-card-label">Shutdown</div></div>
 </div>
 <div class="section-head">Applications</div>
 <div class="action-grid" style="margin-bottom:20px">
@@ -417,10 +495,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet-bg" id="bg-apps" onclick="closeSheet('sheet-apps')"></div>
 <div class="sheet" id="sheet-apps">
 <div class="sheet-handle"></div>
-<div class="sheet-title-row">
 <div class="sheet-title">Launch App</div>
-<button class="btn btn-ghost btn-sm" onclick="openApps()" style="padding:6px 12px;font-size:10px"><i class="fa-solid fa-rotate"></i> Refresh</button>
-</div>
 <div class="sheet-sub" id="apps-pc-name"></div>
 <div id="apps-list"><div style="text-align:center;padding:28px"><span class="spin"></span></div></div>
 </div>
@@ -459,6 +534,19 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 <div class="sheet-sub" id="killtasks-pc-name"></div>
 <div id="killtasks-list"><div style="text-align:center;padding:28px"><span class="spin"></span></div></div>
 </div>
+
+<!-- ✅ Custom Confirmation Modal -->
+<div class="modal-overlay" id="confirm-modal">
+<div class="modal">
+<div class="modal-title" id="modal-title">Confirm Action</div>
+<div class="modal-message" id="modal-message">Are you sure?</div>
+<div class="modal-actions">
+<button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+<button class="modal-btn confirm" id="modal-confirm-btn" onclick="executeAction()">Confirm</button>
+</div>
+</div>
+</div>
+
 <div class="toast" id="toast"></div>
 </div>
 <script>
@@ -467,12 +555,13 @@ let currentScreen = 'login';
 let _toastT;
 let _freeTimerStart = 0;
 let _freeTimerAdded = 0;
+let _pendingAction = null;
 
 window.addEventListener('load', () => {
 state.token = localStorage.getItem('gz_token');
 state.user = JSON.parse(localStorage.getItem('gz_user') || 'null');
 state.serverUrl = localStorage.getItem('gz_server') || '';
-if (state.token && state.user) { showScreen('groups'); loadGroups(); checkExpiryWarning(); applyPrefs(); }
+if (state.token && state.user) { showScreen('groups'); loadGroups(); checkExpiryWarning(); applyPrefs(); updatePowerButtons(); }
 else { const s = localStorage.getItem('gz_server')||''; if(s) document.getElementById('login-server').value=s; }
 setInterval(() => {
 if (currentScreen==='dashboard') {
@@ -495,7 +584,7 @@ const left = pc.session_end>now ? pc.session_end-now : 0;
 const isWatch = pc.stopwatch_start>0;
 const elapsed = isWatch ? now-pc.stopwatch_start : 0;
 const timerBig = document.querySelector('.timer-big');
-if (timerBig) timerBig.textContent = isWatch ? fmtTime(elapsed) : (left>0 ? fmtTime(left) : '--:--');
+if (timerBig) timerBig.textContent = isWatch ? fmtTime(elapsed) : fmtTime(left);
 }
 }
 }, 1000);
@@ -534,7 +623,6 @@ function closeSheet(id) {
 document.getElementById(id).classList.remove('open');
 document.getElementById('bg-' + id.replace('sheet-','')).classList.remove('open');
 }
-
 async function api(method, path, body) {
 const res = await fetch(state.serverUrl+'/api'+path, {
 method,
@@ -547,7 +635,6 @@ const data = await res.json();
 if (!res.ok) throw new Error(data.error||'Request failed');
 return data;
 }
-
 function switchTab(tab) {
 document.getElementById('tab-login').classList.toggle('active', tab==='login');
 document.getElementById('tab-register').classList.toggle('active', tab==='register');
@@ -574,7 +661,7 @@ const res = await fetchWithTimeout(server+'/api/login', {method:'POST',headers:{
 const d = await res.json();
 if (d.error) throw new Error(d.error);
 saveAuth(server, d.token, d.user, d.status, d.expiry_date);
-showScreen('groups'); loadGroups();
+showScreen('groups'); loadGroups(); updatePowerButtons();
 if (d.status==='active') checkExpiryWarning();
 toast('Signed in','ok');
 } catch(e) {
@@ -596,7 +683,7 @@ const res = await fetchWithTimeout(server+'/api/register', {method:'POST',header
 const d = await res.json();
 if (d.error) throw new Error(d.error);
 saveAuth(server, d.token, d.user, d.status, d.expiry_date);
-showScreen('groups'); loadGroups(); toast('Account created — awaiting approval','ok');
+showScreen('groups'); loadGroups(); updatePowerButtons(); toast('Account created — awaiting approval','ok');
 } catch(e) {
 if (e.name==='AbortError') toast('Connection timed out','err');
 else toast(e.message||'Registration failed','err');
@@ -809,6 +896,7 @@ function openPC(id) {
 state.activePc = state.pcs.find(p=>p.id===id);
 document.getElementById('pc-title').textContent = state.activePc.name;
 updateOnlinePill(); renderPCActions(); showScreen('pccontrol');
+updatePowerButtons();
 }
 function updateOnlinePill() {
 const pc = state.activePc; if(!pc) return;
@@ -840,13 +928,7 @@ timerArea.innerHTML = `<div class="timer-card">
 </div>
 </div>`;
 } else {
-timerArea.innerHTML = `<div class="timer-card">
-<div class="timer-big" style="color:var(--t3)">--:--</div>
-<div class="pay-col">
-<button class="pay-btn ${pay==='paid'?'paid':''}" onclick="togglePay('paid')"><i class="fa-solid fa-check"></i> Paid</button>
-<button class="pay-btn ${pay==='unpaid'?'unpaid':''}" onclick="togglePay('unpaid')"><i class="fa-solid fa-xmark"></i> Unpaid</button>
-</div>
-</div>`;
+timerArea.innerHTML = '';
 }
 const sessionArea = document.getElementById('pc-session-area');
 if (isActive) {
@@ -867,13 +949,13 @@ sessionArea.innerHTML = `<div class="section-head">Session Control</div>
 </div>`;
 }
 const history = lhGet(pc.id);
+if (history && history.length > 0) {
 let hHtml = `<div class="section-head" style="justify-content:space-between;margin-top:20px">Recent Activity
 <button onclick="refreshHistory()" style="margin-left:auto;background:var(--s3);border:1px solid var(--bd2);color:var(--t2);cursor:pointer;font-size:10px;font-family:var(--sans);display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--r);letter-spacing:0;text-transform:none;font-weight:600;transition:all .15s" onmouseover="this.style.color='var(--t1)'" onmouseout="this.style.color='var(--t2)'">
 <i class="fa-solid fa-rotate" style="font-size:10px"></i> Refresh
 </button></div>
 <div class="action-grid" style="padding-bottom:0;margin-bottom:20px;display:block">
 <div style="background:var(--s1);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">`;
-if (history && history.length > 0) {
 history.forEach(entry => {
 const isFree = entry.type === 'free';
 const isAdd  = entry.type === 'add';
@@ -894,11 +976,45 @@ hHtml += `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px
 <span style="font-size:11px;color:var(--t3)">${label}</span>
 </div>`;
 });
-} else {
-hHtml += `<div style="text-align:center;padding:28px;color:var(--t3);font-size:12px">No recent activity</div>`;
-}
 hHtml += '</div></div>';
 sessionArea.innerHTML += hHtml;
+}
+}
+
+// ✅ Custom Confirmation Modal Functions
+function showModal(title, message, action, type='danger') {
+_pendingAction = action;
+document.getElementById('modal-title').textContent = title;
+document.getElementById('modal-message').textContent = message;
+const confirmBtn = document.getElementById('modal-confirm-btn');
+confirmBtn.className = 'modal-btn confirm ' + (type === 'sleep' ? 'sleep' : '');
+confirmBtn.textContent = 'Confirm';
+document.getElementById('confirm-modal').classList.add('active');
+}
+
+function closeModal() {
+document.getElementById('confirm-modal').classList.remove('active');
+_pendingAction = null;
+}
+
+async function executeAction() {
+if (!_pendingAction || !state.activePc) return;
+closeModal();
+try {
+await api('POST','/pcs/'+state.activePc.id+'/'+_pendingAction,{group_id:state.activeGroup.id});
+toast(_pendingAction.charAt(0).toUpperCase() + _pendingAction.slice(1) + ' command sent','ok');
+} catch(e) { toast(e.message,'err'); }
+_pendingAction = null;
+}
+
+function confirmAction(action) {
+if (!state.activePc) return;
+const pcName = state.activePc.name;
+if (action === 'sleep') {
+showModal('Put PC to Sleep?', `Put ${pcName} to sleep?\n\n⚠️ This will interrupt any active session.`, 'sleep', 'sleep');
+} else if (action === 'shutdown') {
+showModal('Shutdown PC?', `Shutdown ${pcName}?\n\n⚠️ This will end all sessions and turn off the PC.\nThis cannot be undone.`, 'shutdown', 'danger');
+}
 }
 
 async function togglePay(status) {
@@ -920,7 +1036,6 @@ try {
 const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
 updatePcField(state.activePc.id,'session_end',r.session_end);
 updatePcField(state.activePc.id,'stopwatch_start',0);
-lhAdd(state.activePc.id, {type:'add',mins:mins,at:Date.now()});
 toast('Session started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
@@ -967,8 +1082,6 @@ lhAdd(state.activePc.id, {type:'free',mins:0,at:Date.now()});
 toast('Free timer started','ok');
 } catch(e) { toast(e.message,'err'); }
 }
-
-// ✅ FIX #1: Added renderPCActions() to refresh UI after lhAdd()
 async function addTime(mins) {
 closeSheet('sheet-addtime');
 try {
@@ -981,12 +1094,9 @@ toast('+'+mins+'m added to free timer','ok');
 updatePcField(state.activePc.id,'session_end', r.session_end);
 lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
 toast('+'+mins+'m added','ok');
-// ✅ Refresh UI to show updated history
-renderPCActions();
 }
 } catch(e) { toast(e.message,'err'); }
 }
-
 async function addTimeByAmount() {
 const amount = parseFloat(document.getElementById('add-amount').value);
 const mins = parseInt(document.getElementById('add-mins').value)||0;
@@ -1011,8 +1121,6 @@ toast(`Added: ${mins}m`,'ok');
 }
 document.getElementById('add-amount').value = '';
 document.getElementById('add-mins').value = '';
-// ✅ Refresh UI to show updated history
-renderPCActions();
 } catch(e) { toast(e.message,'err'); }
 }
 function addCustomTime() {
@@ -1035,8 +1143,6 @@ updatePcField(state.activePc.id,'session_end',r.session_end);
 lhAdd(state.activePc.id, {type:'remove',mins,at:Date.now()});
 toast('-'+mins+'m removed','ok');
 }
-// ✅ Refresh UI to show updated history
-renderPCActions();
 } catch(e) { toast(e.message,'err'); }
 }
 function removeCustomTime() {
@@ -1045,8 +1151,6 @@ if (mins<1) { toast('Enter duration','err'); return; }
 document.getElementById('rem-mins').value='';
 removeTime(mins);
 }
-
-// ✅ FIX #2: Broadcast free timer elapsed time to other devices
 function confirmEndSession() {
 if (!confirm('End session on '+state.activePc.name+'?\nScreen will lock immediately.')) return;
 const pc = state.activePc;
@@ -1062,27 +1166,13 @@ break;
 }
 }
 lhSet(pc.id, history);
-// ✅ Broadcast updated history to other devices
-if (state.socket && state.activeGroup) {
-state.socket.emit('admin:history-update', {
-group_id: state.activeGroup.id,
-pc_id: pc.id,
-history: history.slice(0,5)
-});
-}
 _freeTimerStart = 0;
 _freeTimerAdded = 0;
 }
 api('POST','/pcs/'+state.activePc.id+'/session/end',{group_id:state.activeGroup.id})
-.then(()=>{ 
-updatePcField(state.activePc.id,'session_end',0); 
-updatePcField(state.activePc.id,'stopwatch_start',0); 
-toast('Session ended','ok'); 
-renderPCActions(); 
-})
+.then(()=>{ updatePcField(state.activePc.id,'session_end',0); updatePcField(state.activePc.id,'stopwatch_start',0); toast('Session ended','ok'); renderPCActions(); })
 .catch(e=>toast(e.message,'err'));
 }
-
 async function pcCmd(action) {
 try {
 await api('POST','/pcs/'+state.activePc.id+'/'+action,{group_id:state.activeGroup.id});
@@ -1092,10 +1182,7 @@ toast(action==='lock'?'Screen locked':'Screen unlocked','ok');
 function updatePcField(pcId, field, value) {
 const pc = state.pcs.find(p=>p.id===pcId);
 if (pc) pc[field]=value;
-if (state.activePc?.id===pcId) { 
-state.activePc[field]=value; 
-renderPCActions();
-}
+if (state.activePc?.id===pcId) { state.activePc[field]=value; renderPCActions(); }
 renderPCs();
 }
 async function openApps() {
@@ -1244,15 +1331,22 @@ renderGroups(); showScreen('groups'); toast('Group deleted','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-// ✅ FIX #3: Added socket listener for history updates from other devices
+// ✅ Hide Sleep/Shutdown buttons for Super Admin
+function updatePowerButtons() {
+const isSuperAdmin = state.user?.username === 'iahsaan.berisco';
+const sleepBtn = document.getElementById('btn-sleep');
+const shutdownBtn = document.getElementById('btn-shutdown');
+if (sleepBtn) sleepBtn.style.display = isSuperAdmin ? 'none' : '';
+if (shutdownBtn) shutdownBtn.style.display = isSuperAdmin ? 'none' : '';
+}
+
 function connectSocket() {
 if (state.socket) state.socket.disconnect();
 state.socket = io(state.serverUrl, { transports: ['websocket'] });
-
 state.socket.on('connect', () => {
 state.socket.emit('admin:subscribe', { group_id: state.activeGroup.id, token: state.token });
+updatePowerButtons();
 });
-
 state.socket.on('group:'+state.activeGroup.id+':pc-status', ({ pc_id, is_online }) => {
 const pc = state.pcs.find(p=>p.id===pc_id);
 if (pc) {
@@ -1261,7 +1355,6 @@ renderPCs();
 if (state.activePc?.id===pc_id) { state.activePc.is_online=pc.is_online; updateOnlinePill(); }
 }
 });
-
 state.socket.on('group:'+state.activeGroup.id+':pc-session', (data) => {
 const { pc_id } = data;
 const pc = state.pcs.find(p=>p.id===pc_id);
@@ -1278,17 +1371,7 @@ renderPCActions(); updateOnlinePill();
 }
 }
 });
-
-// ✅ Listen for history updates from other admins (real-time sync)
-state.socket.on('admin:history-update', (data) => {
-if (data.group_id === state.activeGroup?.id && data.pc_id === state.activePc?.id) {
-const h = data.history || [];
-localStorage.setItem('gz_history_' + data.pc_id, JSON.stringify(h.slice(0,5)));
-renderPCActions();  // Refresh UI to show updated history
 }
-});
-}
-
 const _LH_KEY = 'gz_history_';
 function lhGet(pcId) {
 try { return JSON.parse(localStorage.getItem(_LH_KEY+pcId) || '[]'); } catch { return []; }
