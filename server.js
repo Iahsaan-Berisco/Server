@@ -81,6 +81,7 @@ app.post('/api/admin/login', (req, res) => {
   res.json({ token, username: ADMIN_UNAME });
 });
 
+// ✅ FIXED: /api/admin/accounts endpoint - 'user' → 'u' typo fixed
 app.get('/api/admin/accounts', adminAuth, async (req, res) => {
   try {
     const users = await db.filter('users', () => true);
@@ -92,7 +93,8 @@ app.get('/api/admin/accounts', adminAuth, async (req, res) => {
         pcCount += pcs.length;
       }
       let status = u.status || 'active';
-      if (status === 'active' && u.expiry_date && Date.now() > user.expiry_date) {
+      // ✅ FIXED: Changed 'user' to 'u' (the loop variable)
+      if (status === 'active' && u.expiry_date && Date.now() > u.expiry_date) {
         status = 'expired';
         await db.update('users', x => x.id === u.id, { status: 'expired' });
       }
@@ -114,7 +116,10 @@ app.get('/api/admin/accounts', adminAuth, async (req, res) => {
       return (o[a.status] ?? 1) - (o[b.status] ?? 1);
     });
     res.json(result);
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) { 
+    console.error('[ERROR] /api/admin/accounts:', e);
+    res.status(500).json({ error: e.message }); 
+  }
 });
 
 app.patch('/api/admin/accounts/:id', adminAuth, async (req, res) => {
