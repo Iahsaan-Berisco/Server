@@ -762,8 +762,8 @@ document.getElementById('group-rate-input').value = rate.toFixed(2);
 }
 function doLogout() {
 if (!confirm('Logout?')) return;
-state.token=null; state.user=null;
-localStorage.removeItem('gz_token'); localStorage.removeItem('gz_user');
+state.token=null; state.user=null; state.serverUrl=null;
+localStorage.removeItem('gz_token'); localStorage.removeItem('gz_user'); localStorage.removeItem('gz_server');
 if (state.socket) state.socket.disconnect();
 showScreen('login');
 }
@@ -1562,6 +1562,8 @@ function connectSocket() {
             }
         }
     });
+    
+    // ✅ NEW: Listen for history updates from other devices
     state.socket.on('admin:history-update', (data) => {
         console.log('📬 Received history update from another device:', data);
         
@@ -1575,7 +1577,6 @@ function connectSocket() {
             console.log('✅ History updated in background for PC:', data.pc_id);
         }
     });
-}
 }
 const _LH_KEY = 'gz_history_';
 function lhGet(pcId) {
@@ -1609,13 +1610,16 @@ function lhAdd(pcId, entry) {
 function refreshHistory() {
     if (!state.activePc) return;
     if (state.socket && state.activeGroup) {
+        console.log('🔄 Requesting latest history from server...');
         state.socket.emit('admin:request-history', {
             group_id: state.activeGroup.id,
             pc_id: state.activePc.id
         });
+        toast('Refreshing...','ok');
+    } else {
+        renderPCActions();
+        toast('Refreshed','ok');
     }
-    renderPCActions();
-    toast('Refreshed','ok');
 }
 function fmtTime(secs) {
     if (secs<=0) return '00:00';
