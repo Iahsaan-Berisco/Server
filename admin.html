@@ -211,8 +211,15 @@ let _toastT;
 
 window.addEventListener('load', () => {
   document.getElementById('admin-name-display').textContent = sessionStorage.getItem('admin_uname') || '';
-  if (state.token) { showDash(); loadAccounts(); }
-  else showLogin();
+  if (state.token) { 
+    console.log('✅ Auto-login: token found, loading dashboard');
+    showDash(); 
+    loadAccounts(); 
+  }
+  else {
+    console.log('ℹ️ No token found, showing login');
+    showLogin(); 
+  }
   // Enter key on login
   document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
   document.getElementById('edit-expiry').addEventListener('change', updateExpiryDisplay);
@@ -232,30 +239,56 @@ async function doLogin() {
   const password = document.getElementById('login-pass').value;
   const err = document.getElementById('login-err');
   const btn = document.getElementById('login-btn');
-  if (!username || !password) { err.textContent='Fill all fields'; err.style.display='block'; return; }
+  
+  console.log('🔐 Login attempt for:', username);
+  
+  if (!username || !password) { 
+    err.textContent='Fill all fields'; 
+    err.style.display='block'; 
+    return; 
+  }
+  
   btn.disabled=true;
   document.getElementById('login-btn-text').innerHTML='<span class="spin"></span>';
   err.style.display='none';
+  
   try {
+    console.log('📡 Sending login request...');
     const res = await fetch('/api/admin/login', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({username,password})
     });
+    
+    console.log('📥 Login response status:', res.status);
+    
     const d = await res.json();
+    console.log('📦 Login response data:', { error: d.error, hasToken: !!d.token });
+    
     if (!res.ok) throw new Error(d.error||'Login failed');
+    
     state.token = d.token;
     sessionStorage.setItem('admin_token', d.token);
     sessionStorage.setItem('admin_uname', d.username || username);
     document.getElementById('admin-name-display').textContent = d.username || username;
-    showDash(); loadAccounts();
+    
+    console.log('✅ Login successful, loading dashboard');
+    showDash(); 
+    loadAccounts();
+    
   } catch(e) {
-    err.textContent = e.message; err.style.display='block';
-  } finally { btn.disabled=false; document.getElementById('login-btn-text').textContent='Sign In'; }
+    console.error('❌ Login error:', e);
+    err.textContent = e.message; 
+    err.style.display='block';
+  } finally { 
+    btn.disabled=false; 
+    document.getElementById('login-btn-text').textContent='Sign In'; 
+  }
 }
 
 function doLogout() {
   if (!confirm('Logout?')) return;
+  console.log('🚪 Logging out');
   sessionStorage.removeItem('admin_token');
   sessionStorage.removeItem('admin_uname');
   state.token = null;
@@ -263,27 +296,78 @@ function doLogout() {
 }
 
 async function api(method, path, body) {
+  console.log(`📡 API ${method} ${path}`, body ? {body} : '');
+  
   const res = await fetch('/api' + path, {
     method,
     headers:{'Content-Type':'application/json', Authorization:'Bearer '+state.token},
     body: body ? JSON.stringify(body) : undefined
   });
+  
+  console.log(`📥 API ${method} ${path} response:`, res.status);
+  
   const d = await res.json();
-  if (res.status === 401) { doLogout(); throw new Error('Session expired'); }
+  console.log(`📦 API ${method} ${path} data:`, d);
+  
+  if (res.status === 401) { 
+    console.warn('⚠️ API 401 - session expired, logging out');
+    doLogout(); 
+    throw new Error('Session expired'); 
+  }
   if (!res.ok) throw new Error(d.error||'Error');
   return d;
 }
 
 async function loadAccounts() {
-  document.getElementById('accounts-list').innerHTML = '<div style="text-align:center;padding:40px"><span class="spin"></span></div>';
+  console.log('🔍 Loading accounts...');
+  
+  document.getElementById('accounts-list').innerHTML = 
+    '<div style="text-align:center;padding:40px"><span class="spin"></span></div>';
+  
   try {
-    state.accounts = await api('GET','/admin/accounts');
+    console.log('📡 Fetching /api/admin/accounts');
+    const accounts = await api('GET','/admin/accounts');
+    
+    console.log('✅ Accounts received:', accounts.length, 
+      accounts.map(a => ({username: a.username, status: a.status})));
+    
+    state.accounts = accounts;
     renderAccounts();
-  } catch(e) { toast(e.message,'err'); }
+    
+    // Show helpful message if no accounts
+    if (!accounts.length) {
+      console.log('ℹ️ No accounts found in database');
+      document.getElementById('accounts-list').innerHTML = 
+        '<div class="empty-state">' +
+        '<i class="fa-solid fa-users"></i>' +
+        '<h3>No accounts found</h3>' +
+        '<p>Either no one has registered yet, or all accounts are already approved</p>' +
+        '<button class="btn btn-ghost btn-sm" onclick="loadAccounts()" style="margin-top:12px">' +
+        '<i class="fa-solid fa-rotate"></i> Refresh' +
+        '</button>' +
+        '</div>';
+    }
+    
+  } catch(e) {
+    console.error('❌ Failed to load accounts:', e);
+    
+    document.getElementById('accounts-list').innerHTML = 
+      `<div class="empty-state">
+        <i class="fa-solid fa-triangle-exclamation" style="color:var(--red);font-size:32px"></i>
+        <h3>Error Loading Accounts</h3>
+        <p style="color:var(--red);font-family:var(--mono);font-size:11px">${e.message}</p>
+        <button class="btn btn-ghost btn-sm" onclick="loadAccounts()" style="margin-top:12px">
+          <i class="fa-solid fa-rotate"></i> Retry
+        </button>
+      </div>`;
+      
+    toast(e.message,'err');
+  }
 }
 
 function renderAccounts() {
   const accts = state.accounts;
+  
   // Stats
   document.getElementById('st-total').textContent = accts.length;
   document.getElementById('st-pending').textContent = accts.filter(a=>a.status==='pending').length;
