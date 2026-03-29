@@ -553,7 +553,11 @@ io.on('connection', (socket) => {
         is_online 
     });
   });
-
+socket.on('command:refresh-apps', async ({ pc_id }) => {
+    // Forward refresh request to specific PC client
+    io.to(`pc:${pc_id}`).emit('command:refresh-apps', {});
+    console.log(`[APP REFRESH] Requested for PC ${pc_id}`);
+});
   socket.on('pc:auth', async ({ pc_name, group_id, password }, callback) => {
     const pc = await db.get('pcs', p => p.name === pc_name && p.group_id === group_id);
     if (!pc || !bcrypt.compareSync(password, pc.password))
