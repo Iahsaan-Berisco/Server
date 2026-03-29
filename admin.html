@@ -1,572 +1,634 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#0f0f0f">
-<title>GameZone — Super Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<style>
-:root{
-  --bg:#0f0f0f;--s1:#171717;--s2:#1e1e1e;--s3:#272727;--s4:#303030;
-  --green:#10b981;--green-bg:rgba(16,185,129,.1);--green-bd:rgba(16,185,129,.3);
-  --red:#ef4444;--red-bg:rgba(239,68,68,.1);--red-bd:rgba(239,68,68,.3);
-  --amber:#f59e0b;--amber-bg:rgba(245,158,11,.1);--amber-bd:rgba(245,158,11,.3);
-  --blue:#3b82f6;--blue-bg:rgba(59,130,246,.1);--blue-bd:rgba(59,130,246,.3);
-  --purple:#8b5cf6;--purple-bg:rgba(139,92,246,.1);--purple-bd:rgba(139,92,246,.3);
-  --t1:#fafafa;--t2:#a3a3a3;--t3:#525252;
-  --bd:rgba(255,255,255,.07);--bd2:rgba(255,255,255,.12);
-  --r:10px;--r2:14px;--r3:20px;
-  --sans:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
+const path = require('path');
+const db = require('./db');
+
+const _historyCache = {};
+
+const app    = express();
+const server = http.createServer(app);
+const io     = new Server(server, { cors: { origin: '*' } });
+
+const JWT_SECRET = process.env.JWT_SECRET || 'gamezone-secret-2024';
+const PORT       = process.env.PORT || 3000;
+
+const ADMIN_UNAME  = 'iahsaan.berisco';
+const ADMIN_HASH   = bcrypt.hashSync('B@nkaiminazuk1', 10);
+const ADMIN_SECRET = JWT_SECRET + '_superadmin_v1';
+
+app.use(cors());
+app.use(express.json());
+
+app.get('/connect', (_req, res) =>
+  res.sendFile(path.join(__dirname, 'admin.html'))
+);
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+function authMiddleware(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'No token' });
+  try { req.user = jwt.verify(token, JWT_SECRET); next(); }
+  catch { res.status(401).json({ error: 'Invalid token' }); }
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--sans);overflow-x:hidden}
-.screen{display:none}
-.screen.active{display:flex;flex-direction:column;min-height:100vh}
-input,textarea,select{font-family:var(--sans);color:var(--t1)}
-/* ── Login ── */
-#screen-login{align-items:center;justify-content:center;padding:20px}
-.login-card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r3);padding:40px 36px;width:100%;max-width:400px;box-shadow:0 24px 64px rgba(0,0,0,.5)}
-.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:6px}
-.login-logo-icon{width:44px;height:44px;border-radius:var(--r2);background:var(--purple-bg);border:1px solid var(--purple-bd);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.login-logo-icon i{font-size:18px;color:var(--purple)}
-.login-logo h1{font-size:20px;font-weight:800;letter-spacing:-.4px}
-.sa-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 8px;border-radius:99px;background:var(--purple-bg);border:1px solid var(--purple-bd);color:var(--purple);margin-bottom:28px}
-.field{margin-bottom:14px}
-.field-label{display:block;font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
-.field-input{width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:11px 13px;font-size:13px;color:var(--t1);outline:none;transition:border-color .18s}
-.field-input:focus{border-color:var(--purple)}
-.field-input::placeholder{color:var(--t3)}
-textarea.field-input{resize:vertical;min-height:80px;line-height:1.5}
-select.field-input{cursor:pointer;background:var(--bg)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 18px;border-radius:var(--r);font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:var(--sans);transition:all .18s;white-space:nowrap}
-.btn:active{transform:scale(.97)}
-.btn-full{width:100%}
-.btn-primary{background:var(--purple);color:#fff}
-.btn-primary:hover{background:#7c3aed}
-.btn-primary:disabled{opacity:.45;cursor:not-allowed}
-.btn-ghost{background:transparent;border:1px solid var(--bd2);color:var(--t1)}
-.btn-ghost:hover{background:var(--s3)}
-.btn-danger{background:var(--red-bg);border:1px solid var(--red-bd);color:var(--red)}
-.btn-green{background:var(--green-bg);border:1px solid var(--green-bd);color:var(--green)}
-.btn-sm{padding:6px 12px;font-size:11px;border-radius:8px;font-weight:700;letter-spacing:.3px}
-/* ── Dashboard ── */
-#screen-dash{flex-direction:column}
-.topbar{height:60px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;background:var(--s1);border-bottom:1px solid var(--bd);flex-shrink:0;position:sticky;top:0;z-index:50}
-.topbar-brand{display:flex;align-items:center;gap:10px}
-.topbar-brand-icon{width:32px;height:32px;border-radius:8px;background:var(--purple-bg);border:1px solid var(--purple-bd);display:flex;align-items:center;justify-content:center}
-.topbar-brand-icon i{font-size:14px;color:var(--purple)}
-.topbar-brand-name{font-size:15px;font-weight:800}
-.topbar-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:2px 7px;border-radius:99px;background:var(--purple-bg);border:1px solid var(--purple-bd);color:var(--purple);margin-left:6px}
-.topbar-right{display:flex;align-items:center;gap:8px}
-.admin-name{font-size:12px;color:var(--t2);font-weight:500}
-.icon-btn{width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;color:var(--t3);border-radius:var(--r);font-size:15px;transition:all .15s}
-.icon-btn:hover{color:var(--t1);background:var(--s3)}
-.content{flex:1;max-width:1200px;width:100%;margin:0 auto;padding:24px 20px}
-.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:28px}
-@media(min-width:640px){.stats-grid{grid-template-columns:repeat(4,1fr)}}
-.stat-box{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r2);padding:18px 16px}
-.stat-val{font-size:30px;font-weight:800;font-family:var(--mono);line-height:1;letter-spacing:-1px}
-.stat-key{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3);margin-top:6px}
-.section-title{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1.4px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.section-title::after{content:'';flex:1;height:1px;background:var(--bd)}
-/* Account cards */
-.accounts-list{display:flex;flex-direction:column;gap:10px}
-.acct-card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden;transition:border-color .18s}
-.acct-card:hover{border-color:var(--bd2)}
-.acct-bar{height:3px}
-.acct-body{padding:16px}
-.acct-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
-.acct-info{}
-.acct-label{font-size:15px;font-weight:700;margin-bottom:2px}
-.acct-label.empty{color:var(--t3);font-style:italic;font-weight:400}
-.acct-username{font-size:12px;color:var(--t2);font-family:var(--mono)}
-.status-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;padding:3px 8px;border-radius:99px}
-.status-badge.pending{background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber)}
-.status-badge.active{background:var(--green-bg);border:1px solid var(--green-bd);color:var(--green)}
-.status-badge.expired{background:var(--red-bg);border:1px solid var(--red-bd);color:var(--red)}
-.status-badge.deactivated{background:var(--s3);border:1px solid var(--bd);color:var(--t3)}
-.acct-meta{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px}
-.meta-item{font-size:11px;color:var(--t2);display:flex;align-items:center;gap:5px}
-.meta-item i{color:var(--t3);font-size:10px}
-.meta-item.hl{color:var(--t1);font-weight:600}
-.acct-notes{font-size:11px;color:var(--t3);font-style:italic;margin-bottom:10px;padding:8px 10px;background:var(--bg);border-radius:var(--r);border:1px solid var(--bd)}
-.acct-actions{display:flex;flex-wrap:wrap;gap:6px}
-/* Sheet */
-.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:100;opacity:0;pointer-events:none;transition:opacity .22s;display:flex;align-items:center;justify-content:center}
-.sheet-bg.open{opacity:1;pointer-events:all}
-.sheet{background:var(--s1);border:1px solid var(--bd2);border-radius:var(--r3);padding:28px;z-index:101;opacity:0;pointer-events:none;transform:scale(.95);transition:transform .22s cubic-bezier(.16,1,.3,1),opacity .22s ease;width:calc(100% - 40px);max-width:520px}
-.sheet.open{opacity:1;pointer-events:all;transform:scale(1)}
-.sheet-handle{display:none}
-.sheet-title{font-size:18px;font-weight:800;letter-spacing:-.3px;margin-bottom:20px}
-.sheet-btns{display:flex;gap:8px;margin-top:20px}
-.sheet-btns .btn{flex:1}
-.quick-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.quick-btn{padding:6px 12px;background:var(--s3);border:1px solid var(--bd);border-radius:8px;font-size:11px;font-weight:600;color:var(--t2);cursor:pointer;font-family:var(--sans);transition:all .15s}
-.quick-btn:hover{background:var(--purple-bg);border-color:var(--purple-bd);color:var(--purple)}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--s2);border:1px solid var(--bd2);border-radius:var(--r2);padding:11px 18px;font-size:12px;font-weight:600;z-index:300;white-space:nowrap;box-shadow:0 8px 28px rgba(0,0,0,.5);transition:transform .28s cubic-bezier(.16,1,.3,1)}
-.toast.show{transform:translateX(-50%) translateY(0)}
-.toast.ok{border-color:var(--green-bd);color:var(--green)}
-.toast.err{border-color:var(--red-bd);color:var(--red)}
-.spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.15);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block}
-@keyframes sp{to{transform:rotate(360deg)}}
-.empty-state{text-align:center;padding:60px 20px}
-.empty-state i{font-size:32px;color:var(--t3);margin-bottom:14px;display:block}
-.empty-state h3{font-size:15px;font-weight:700;margin-bottom:4px}
-.empty-state p{font-size:12px;color:var(--t2)}
-</style>
-</head>
-<body>
 
-<!-- Login -->
-<div class="screen active" id="screen-login">
-  <div class="login-card">
-    <div class="login-logo">
-      <div class="login-logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
-      <div><h1>GameZone</h1></div>
-    </div>
-    <div class="sa-badge"><i class="fa-solid fa-crown"></i> Super Admin</div>
-    <div class="field"><label class="field-label">Username</label><input class="field-input" type="text" id="login-user" placeholder="Username" autocomplete="username" autocapitalize="none"></div>
-    <div class="field"><label class="field-label">Password</label><input class="field-input" type="password" id="login-pass" placeholder="Password" autocomplete="current-password"></div>
-    <div style="height:8px"></div>
-    <button class="btn btn-primary btn-full" id="login-btn" onclick="doLogin()"><span id="login-btn-text">Sign In</span></button>
-    <div id="login-err" style="display:none;margin-top:12px;color:var(--red);font-size:12px;text-align:center"></div>
-  </div>
-</div>
+function adminAuth(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'No token' });
+  try {
+    const p = jwt.verify(token, ADMIN_SECRET);
+    if (!p.sa) throw new Error();
+    next();
+  } catch { res.status(401).json({ error: 'Unauthorized' }); }
+}
 
-<!-- Dashboard -->
-<div class="screen" id="screen-dash">
-  <div class="topbar">
-    <div class="topbar-brand">
-      <div class="topbar-brand-icon"><i class="fa-solid fa-gamepad"></i></div>
-      <div class="topbar-brand-name">GameZone<span class="topbar-badge"><i class="fa-solid fa-crown"></i> Super Admin</span></div>
-    </div>
-    <div class="topbar-right">
-      <span class="admin-name" id="admin-name-display"></span>
-      <button class="icon-btn" onclick="doLogout()" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></button>
-    </div>
-  </div>
-  <div class="content">
-    <div class="stats-grid">
-      <div class="stat-box"><div class="stat-val" id="st-total">—</div><div class="stat-key">Total</div></div>
-      <div class="stat-box"><div class="stat-val" id="st-pending" style="color:var(--amber)">—</div><div class="stat-key">Pending</div></div>
-      <div class="stat-box"><div class="stat-val" id="st-active" style="color:var(--green)">—</div><div class="stat-key">Active</div></div>
-      <div class="stat-box"><div class="stat-val" id="st-inactive" style="color:var(--red)">—</div><div class="stat-key">Inactive</div></div>
-    </div>
-    <div class="section-title">Accounts <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;margin-left:auto" onclick="loadAccounts()"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
-    <div id="accounts-list"><div style="text-align:center;padding:40px"><span class="spin"></span></div></div>
-  </div>
-</div>
+async function accountCheck(req, res, next) {
+  try {
+    const user = await db.get('users', u => u.id === req.user.id);
+    if (!user) return res.status(401).json({ error: 'User not found' });
+    let status = user.status || 'active';
+    if (status === 'active' && user.expiry_date && Date.now() > user.expiry_date) {
+      status = 'expired';
+      await db.update('users', u => u.id === user.id, { status: 'expired' });
+    }
+    if (status === 'pending')     return res.status(403).json({ error: 'account_pending' });
+    if (status === 'deactivated') return res.status(403).json({ error: 'account_deactivated' });
+    if (status === 'expired')     return res.status(403).json({ error: 'subscription_expired' });
+    next();
+  } catch { next(); }
+}
 
-<!-- Edit Sheet -->
-<div class="sheet-bg" id="bg-edit" onclick="closeEdit()">
-<div class="sheet" id="sheet-edit" onclick="event.stopPropagation()">
-  <div class="sheet-handle"></div>
-  <div class="sheet-title" id="edit-title">Edit Account</div>
-  <input type="hidden" id="edit-id">
-  <div style="display:flex;gap:10px;margin-bottom:14px">
-    <div style="flex:1">
-      <label class="field-label">Custom Label</label>
-      <input class="field-input" type="text" id="edit-label" placeholder="e.g. Dragon Cafe Karachi">
-    </div>
-    <div style="flex:1">
-      <label class="field-label">Status</label>
-      <div style="position:relative">
-        <select class="field-input" id="edit-status" style="appearance:none;-webkit-appearance:none;padding-right:32px;cursor:pointer">
-          <option value="pending">⏳ Pending</option>
-          <option value="active">✅ Active</option>
-          <option value="deactivated">⏸ Deactivated</option>
-          <option value="expired">❌ Expired</option>
-        </select>
-        <i class="fa-solid fa-chevron-down" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:10px;color:var(--t3)"></i>
-      </div>
-    </div>
-  </div>
-  <div class="field">
-    <label class="field-label">Expiry Date</label>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-      <input class="field-input" type="number" id="edit-custom-days" placeholder="Add days..." min="1" style="flex:1">
-      <button class="btn btn-ghost" style="padding:9px 14px;font-size:12px;flex-shrink:0;white-space:nowrap" onclick="addCustomDays()"><i class="fa-solid fa-plus"></i> Add Days</button>
-      <button class="btn btn-ghost" style="padding:9px 14px;font-size:12px;flex-shrink:0;white-space:nowrap;border-color:var(--green-bd);color:var(--green)" onclick="addCustomDays(30)"><i class="fa-solid fa-rotate-right"></i> +30</button>
-    </div>
-    <input class="field-input" type="datetime-local" id="edit-expiry">
-    <div id="edit-expiry-display" style="font-size:11px;color:var(--t3);margin-top:4px"></div>
-    <button onclick="clearExpiry()" style="margin-top:6px;background:none;border:none;color:var(--t3);font-size:11px;cursor:pointer;font-family:var(--sans);padding:0;text-decoration:underline">Clear expiry date</button>
-  </div>
-  <div class="field"><label class="field-label">Monthly Price</label><input class="field-input" type="number" id="edit-price" placeholder="0.00" step="0.01" min="0"></div>
-  <div class="field"><label class="field-label">Notes</label><textarea class="field-input" id="edit-notes" placeholder="Contact info, location, payment notes..."></textarea></div>
-  <div class="sheet-btns">
-    <button class="btn btn-ghost" onclick="closeEdit()">Cancel</button>
-    <button class="btn btn-primary" onclick="saveEdit()"><span id="edit-btn-text">Save Changes</span></button>
-  </div>
-</div>
-</div>
+async function canManageGroup(userId, groupId) {
+  const group = await db.get('groups', g => g.id === groupId);
+  if (!group) return false;
+  if (group.owner_id === userId) return true;
+  return !!(await db.get('group_members', m => m.group_id === groupId && m.user_id === userId));
+}
 
-<div class="toast" id="toast"></div>
-
-<script>
-const state = { token: sessionStorage.getItem('admin_token'), accounts: [] };
-let _toastT;
-
-window.addEventListener('load', () => {
-  document.getElementById('admin-name-display').textContent = sessionStorage.getItem('admin_uname') || '';
-  if (state.token) { 
-    console.log('✅ Auto-login: token found, loading dashboard');
-    showDash(); 
-    loadAccounts(); 
-  }
-  else {
-    console.log('ℹ️ No token found, showing login');
-    showLogin(); 
-  }
-  // Enter key on login
-  document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
-  document.getElementById('edit-expiry').addEventListener('change', updateExpiryDisplay);
+app.post('/api/admin/login', (req, res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error: 'Missing fields' });
+  if (username.toLowerCase().trim() !== ADMIN_UNAME.toLowerCase())
+    return res.status(401).json({ error: 'Invalid credentials' });
+  if (!bcrypt.compareSync(password, ADMIN_HASH))
+    return res.status(401).json({ error: 'Invalid credentials' });
+  const token = jwt.sign({ sa: true }, ADMIN_SECRET, { expiresIn: '12h' });
+  res.json({ token, username: ADMIN_UNAME });
 });
 
-function showLogin() {
-  document.getElementById('screen-login').classList.add('active');
-  document.getElementById('screen-dash').classList.remove('active');
-}
-function showDash() {
-  document.getElementById('screen-login').classList.remove('active');
-  document.getElementById('screen-dash').classList.add('active');
-}
-
-async function doLogin() {
-  const username = document.getElementById('login-user').value.trim();
-  const password = document.getElementById('login-pass').value;
-  const err = document.getElementById('login-err');
-  const btn = document.getElementById('login-btn');
-  
-  console.log('🔐 Login attempt for:', username);
-  
-  if (!username || !password) { 
-    err.textContent='Fill all fields'; 
-    err.style.display='block'; 
-    return; 
-  }
-  
-  btn.disabled=true;
-  document.getElementById('login-btn-text').innerHTML='<span class="spin"></span>';
-  err.style.display='none';
-  
+// ✅ FIXED: /api/admin/accounts endpoint - 'user' → 'u' typo fixed
+app.get('/api/admin/accounts', adminAuth, async (req, res) => {
   try {
-    console.log('📡 Sending login request...');
-    const res = await fetch('/api/admin/login', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({username,password})
+    const users = await db.filter('users', () => true);
+    const result = await Promise.all(users.map(async u => {
+      const groups = await db.filter('groups', g => g.owner_id === u.id);
+      let pcCount = 0;
+      for (const g of groups) {
+        const pcs = await db.filter('pcs', p => p.group_id === g.id);
+        pcCount += pcs.length;
+      }
+      let status = u.status || 'active';
+      // ✅ FIXED: Changed 'user' to 'u' (the loop variable)
+      if (status === 'active' && u.expiry_date && Date.now() > u.expiry_date) {
+        status = 'expired';
+        await db.update('users', x => x.id === u.id, { status: 'expired' });
+      }
+      return {
+        id: u.id, username: u.username,
+        label: u.label || '',
+        status,
+        price: u.price || 0,
+        expiry_date: u.expiry_date || null,
+        notes: u.notes || '',
+        last_active: u.last_active || u.created_at || Date.now(),
+        created_at: u.created_at || Date.now(),
+        pc_count: pcCount,
+        group_count: groups.length
+      };
+    }));
+    result.sort((a, b) => {
+      const o = { pending: 0, active: 1, deactivated: 2, expired: 3 };
+      return (o[a.status] ?? 1) - (o[b.status] ?? 1);
     });
-    
-    console.log('📥 Login response status:', res.status);
-    
-    const d = await res.json();
-    console.log('📦 Login response data:', { error: d.error, hasToken: !!d.token });
-    
-    if (!res.ok) throw new Error(d.error||'Login failed');
-    
-    state.token = d.token;
-    sessionStorage.setItem('admin_token', d.token);
-    sessionStorage.setItem('admin_uname', d.username || username);
-    document.getElementById('admin-name-display').textContent = d.username || username;
-    
-    console.log('✅ Login successful, loading dashboard');
-    showDash(); 
-    loadAccounts();
-    
-  } catch(e) {
-    console.error('❌ Login error:', e);
-    err.textContent = e.message; 
-    err.style.display='block';
-  } finally { 
-    btn.disabled=false; 
-    document.getElementById('login-btn-text').textContent='Sign In'; 
+    res.json(result);
+  } catch(e) { 
+    console.error('[ERROR] /api/admin/accounts:', e);
+    res.status(500).json({ error: e.message }); 
   }
-}
+});
 
-function doLogout() {
-  if (!confirm('Logout?')) return;
-  console.log('🚪 Logging out');
-  sessionStorage.removeItem('admin_token');
-  sessionStorage.removeItem('admin_uname');
-  state.token = null;
-  showLogin();
-}
+app.patch('/api/admin/accounts/:id', adminAuth, async (req, res) => {
+  try {
+    const updates = {};
+    ['label','status','price','expiry_date','notes'].forEach(f => {
+      if (req.body[f] !== undefined) updates[f] = req.body[f];
+    });
+    await db.update('users', u => u.id === req.params.id, updates);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
-async function api(method, path, body) {
-  console.log(`📡 API ${method} ${path}`, body ? {body} : '');
-  
-  const res = await fetch('/api' + path, {
-    method,
-    headers:{'Content-Type':'application/json', Authorization:'Bearer '+state.token},
-    body: body ? JSON.stringify(body) : undefined
+app.delete('/api/admin/accounts/:id', adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const groups = await db.filter('groups', g => g.owner_id === id);
+    for (const g of groups) {
+      const pcs = await db.filter('pcs', p => p.group_id === g.id);
+      for (const pc of pcs) {
+        await db.delete('installed_apps', a => a.pc_id === pc.id);
+        await db.delete('sessions', s => s.pc_id === pc.id);
+      }
+      await db.delete('pcs', p => p.group_id === g.id);
+      await db.delete('group_members', m => m.group_id === g.id);
+    }
+    await db.delete('groups', g => g.owner_id === id);
+    await db.delete('users', u => u.id === id);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+    if (await db.get('users', u => u.username === username)) return res.status(400).json({ error: 'Username already taken' });
+    const id = uuidv4();
+    await db.insert('users', {
+      id, username,
+      password: bcrypt.hashSync(password, 10),
+      status: 'pending',
+      label: '', price: 0, expiry_date: null, notes: '',
+      last_active: Date.now(),
+      created_at: Date.now()
+    });
+    const token = jwt.sign({ id, username }, JWT_SECRET);
+    res.json({ token, user: { id, username }, status: 'pending', expiry_date: null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await db.get('users', u => u.username === username);
+    if (!user || !bcrypt.compareSync(password, user.password))
+      return res.status(401).json({ error: 'Invalid credentials' });
+    let status = user.status || 'active';
+    if (status === 'active' && user.expiry_date && Date.now() > user.expiry_date) {
+      status = 'expired';
+      await db.update('users', u => u.id === user.id, { status: 'expired', last_active: Date.now() });
+    } else {
+      await db.update('users', u => u.id === user.id, { last_active: Date.now() });
+    }
+    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET);
+    res.json({ token, user: { id: user.id, username: user.username }, status, expiry_date: user.expiry_date || null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/groups', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: 'Group name required' });
+    const id = uuidv4();
+    const group = await db.insert('groups', { id, name, owner_id: req.user.id, created_at: Date.now() });
+    res.json(group);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/groups', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const owned = await db.filter('groups', g => g.owner_id === req.user.id);
+    const memberGroupIds = (await db.filter('group_members', m => m.user_id === req.user.id)).map(m => m.group_id);
+    const membered = await db.filter('groups', g => memberGroupIds.includes(g.id));
+    const all = [...owned, ...membered].filter((g, i, arr) => arr.findIndex(x => x.id === g.id) === i);
+    res.json(all);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/groups/:groupId', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const group = await db.get('groups', g => g.id === groupId && g.owner_id === req.user.id);
+    if (!group) return res.status(403).json({ error: 'Only owner can delete this group' });
+    const pcIds = (await db.filter('pcs', p => p.group_id === groupId)).map(p => p.id);
+    await db.delete('installed_apps', a => pcIds.includes(a.pc_id));
+    await db.delete('sessions', s => pcIds.includes(s.pc_id));
+    await db.delete('pcs', p => p.group_id === groupId);
+    await db.delete('group_members', m => m.group_id === groupId);
+    await db.delete('groups', g => g.id === groupId);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/groups/:groupId/admins', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const group = await db.get('groups', g => g.id === groupId && g.owner_id === req.user.id);
+    if (!group) return res.status(403).json({ error: 'Only owner can add admins' });
+    const user = await db.get('users', u => u.username === req.body.username);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    await db.insertOrIgnore('group_members', { id: uuidv4(), group_id: groupId, user_id: user.id, role: 'admin' });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/groups/:groupId/admins', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    if (!await canManageGroup(req.user.id, groupId)) return res.status(403).json({ error: 'Forbidden' });
+    const members = await db.filter('group_members', m => m.group_id === groupId);
+    const admins = await Promise.all(members.map(async m => {
+      const u = await db.get('users', u => u.id === m.user_id);
+      return u ? { id: u.id, username: u.username, role: m.role } : null;
+    }));
+    res.json(admins.filter(Boolean));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/groups/:groupId/admins/:userId', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { groupId, userId } = req.params;
+    const group = await db.get('groups', g => g.id === groupId && g.owner_id === req.user.id);
+    if (!group) return res.status(403).json({ error: 'Only owner can remove admins' });
+    await db.delete('group_members', m => m.group_id === groupId && m.user_id === userId);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/groups/:groupId/pcs', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    if (!await canManageGroup(req.user.id, groupId)) return res.status(403).json({ error: 'Forbidden' });
+    const pcs = (await db.filter('pcs', p => p.group_id === groupId))
+      .sort((a, b) => (a.order || 0) - (b.order || 0))
+      .map(p => ({ ...p, password: undefined }));
+    res.json(pcs);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/groups/:groupId/pcs', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    if (!await canManageGroup(req.user.id, groupId)) return res.status(403).json({ error: 'Forbidden' });
+    const { name, password, price_per_hour } = req.body;
+    if (!name || !password) return res.status(400).json({ error: 'Name and password required' });
+    const id = uuidv4();
+    const existingPcs = await db.filter('pcs', p => p.group_id === groupId);
+    const maxOrder = existingPcs.reduce((m, p) => Math.max(m, p.order || 0), 0);
+    await db.insert('pcs', {
+      id, group_id: groupId, name,
+      password: bcrypt.hashSync(password, 10),
+      is_online: 0, session_end: 0, stopwatch_start: 0,
+      payment_status: null,
+      price_per_hour: price_per_hour || 0,
+      order: maxOrder + 1,
+      time_history: []
+    });
+    res.json({ id, name, group_id: groupId, is_online: 0, session_end: 0, stopwatch_start: 0, payment_status: null, price_per_hour: price_per_hour || 0, order: maxOrder + 1, time_history: [] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/groups/:groupId/pcs/:pcId', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { groupId, pcId } = req.params;
+    if (!await canManageGroup(req.user.id, groupId)) return res.status(403).json({ error: 'Forbidden' });
+    await db.delete('installed_apps', a => a.pc_id === pcId);
+    await db.delete('sessions', s => s.pc_id === pcId);
+    await db.delete('pcs', p => p.id === pcId && p.group_id === groupId);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/groups/:groupId/pcs/reorder', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { order } = req.body;
+    if (!await canManageGroup(req.user.id, groupId)) return res.status(403).json({ error: 'Forbidden' });
+    for (const item of order)
+      await db.update('pcs', p => p.id === item.pc_id, { order: item.order });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/pcs/:pcId/payment', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { pcId } = req.params;
+    const { payment_status, group_id } = req.body;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    await db.update('pcs', p => p.id === pcId, { payment_status });
+    io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, payment_status });
+    res.json({ success: true, payment_status });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/pcs/:pcId/session/start', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { pcId } = req.params;
+    const { duration_minutes, group_id } = req.body;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    const pc = await db.get('pcs', p => p.id === pcId);
+    if (!pc) return res.status(404).json({ error: 'PC not found' });
+    const session_end = Math.floor(Date.now() / 1000) + duration_minutes * 60;
+    db.update('pcs', p => p.id === pcId, { session_end, stopwatch_start: 0 }).catch(console.error);
+    db.insert('sessions', { id: uuidv4(), pc_id: pcId, started_at: Math.floor(Date.now() / 1000), duration_minutes, price: (duration_minutes / 60) * pc.price_per_hour, ended_at: null }).catch(console.error);
+    const remaining = duration_minutes * 60;
+    io.to(`pc:${pcId}`).emit('session:start', { session_end, duration_minutes, remaining_seconds: remaining });
+    io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end, stopwatch_start: 0, payment_status: pc.payment_status });
+    res.json({ success: true, session_end, remaining_seconds: remaining });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/pcs/:pcId/session/add-time', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { pcId } = req.params;
+    const { minutes, group_id } = req.body;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    const pc = await db.get('pcs', p => p.id === pcId);
+    if (!pc) return res.status(404).json({ error: 'PC not found' });
+    const now = Math.floor(Date.now() / 1000);
+    if (pc.stopwatch_start > 0 && minutes > 0) {
+      const new_start = pc.stopwatch_start - (minutes * 60);
+      db.update('pcs', p => p.id === pcId, { stopwatch_start: new_start }).catch(console.error);
+      io.to(`pc:${pcId}`).emit('session:stopwatch', { started_at: new_start });
+      io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: 0, stopwatch_start: new_start, payment_status: pc.payment_status });
+      return res.json({ success: true, stopwatch_start: new_start });
+    }
+    const current_end = pc.session_end > now ? pc.session_end : now;
+    const new_end = current_end + minutes * 60;
+    if (minutes < 0 && new_end <= now) {
+      db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: 0 }).catch(console.error);
+      db.update('sessions', s => s.pc_id === pcId && !s.ended_at, { ended_at: now }).catch(console.error);
+      io.to(`pc:${pcId}`).emit('session:end', {});
+      io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: 0, stopwatch_start: 0 });
+      return res.json({ success: true, session_ended: true });
+    }
+    const history = pc.time_history || [];
+    const newHistory = [{ mins: minutes, at: Date.now(), type: minutes > 0 ? 'add' : 'remove' }, ...history].slice(0, 5);
+    db.update('pcs', p => p.id === pcId, { session_end: new_end, time_history: newHistory }).catch(console.error);
+    const rem = new_end - now;
+    io.to(`pc:${pcId}`).emit('session:add-time', { session_end: new_end, added_minutes: minutes, remaining_seconds: rem });
+    io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: new_end, stopwatch_start: 0, payment_status: pc.payment_status });
+    res.json({ success: true, session_end: new_end, remaining_seconds: rem });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/pcs/:pcId/session/end', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { pcId } = req.params;
+    const { group_id } = req.body;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: 0 }).catch(console.error);
+    db.update('sessions', s => s.pc_id === pcId && !s.ended_at, { ended_at: Math.floor(Date.now() / 1000) }).catch(console.error);
+    io.to(`pc:${pcId}`).emit('session:end', {});
+    io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: 0, stopwatch_start: 0 });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/pcs/:pcId/session/stopwatch', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { pcId } = req.params;
+    const { group_id } = req.body;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    const started_at = Math.floor(Date.now() / 1000);
+    db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: started_at }).catch(console.error);
+    io.to(`pc:${pcId}`).emit('session:stopwatch', { started_at });
+    io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: 0, stopwatch_start: started_at });
+    res.json({ success: true, started_at });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/pcs/:pcId/session/stopwatch-end', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { pcId } = req.params;
+    const { group_id } = req.body;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: 0 }).catch(console.error);
+    io.to(`pc:${pcId}`).emit('session:stopwatch-end', {});
+    io.to(`pc:${pcId}`).emit('command:lock', {});
+    io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: 0, stopwatch_start: 0 });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/pcs/:pcId/lock', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    if (!await canManageGroup(req.user.id, req.body.group_id)) return res.status(403).json({ error: 'Forbidden' });
+    io.to(`pc:${req.params.pcId}`).emit('command:lock', {});
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/pcs/:pcId/unlock', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    if (!await canManageGroup(req.user.id, req.body.group_id)) return res.status(403).json({ error: 'Forbidden' });
+    io.to(`pc:${req.params.pcId}`).emit('command:unlock', {});
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ✅ SLEEP ENDPOINT
+app.post('/api/pcs/:pcId/sleep', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { pcId } = req.params;
+    const { group_id } = req.body;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    io.to(`pc:${pcId}`).emit('command:sleep', {});
+    console.log(`[AUDIT] ${req.user.username} triggered SLEEP on PC ${pcId}`);
+    res.json({ success: true });
+  } catch(e) { 
+    console.error('Sleep error:', e);
+    res.status(500).json({ error: e.message }); 
+  }
+});
+
+// ✅ SHUTDOWN ENDPOINT
+app.post('/api/pcs/:pcId/shutdown', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { pcId } = req.params;
+    const { group_id } = req.body;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    io.to(`pc:${pcId}`).emit('command:shutdown', {});
+    console.log(`[AUDIT] ${req.user.username} triggered SHUTDOWN on PC ${pcId}`);
+    res.json({ success: true });
+  } catch(e) { 
+    console.error('Shutdown error:', e);
+    res.status(500).json({ error: e.message }); 
+  }
+});
+
+const _pendingProcs = {};
+
+app.post('/api/pcs/:pcId/processes', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { group_id } = req.body;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    const pcId = req.params.pcId;
+    const timeout = setTimeout(() => {
+      if (_pendingProcs[pcId]) {
+        delete _pendingProcs[pcId];
+        res.json({ processes: [] });
+      }
+    }, 6000);
+    _pendingProcs[pcId] = (processes) => {
+      clearTimeout(timeout);
+      delete _pendingProcs[pcId];
+      res.json({ processes });
+    };
+    io.to(`pc:${pcId}`).emit('command:get-processes', {});
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/pcs/:pcId/kill-process', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { group_id, pid, name } = req.body;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    io.to(`pc:${req.params.pcId}`).emit('command:kill-process', { pid, name });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/pcs/:pcId/launch', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { app_path, group_id } = req.body;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    io.to(`pc:${req.params.pcId}`).emit('command:launch', { app_path });
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/pcs/:pcId/apps', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    res.json(await db.filter('installed_apps', a => a.pc_id === req.params.pcId));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/pcs/:pcId/history', authMiddleware, accountCheck, async (req, res) => {
+  try {
+    const { pcId } = req.params;
+    const { group_id } = req.query;
+    if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
+    if (_historyCache[pcId]) {
+      return res.json({ history: _historyCache[pcId] });
+    }
+    const pc = await db.get('pcs', p => p.id === pcId);
+    _historyCache[pcId] = pc.time_history || [];
+    res.json({ history: pc.time_history || [] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await db.get('users', u => u.id === req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    let status = user.status || 'active';
+    if (status === 'active' && user.expiry_date && Date.now() > user.expiry_date) {
+      status = 'expired';
+      await db.update('users', u => u.id === user.id, { status: 'expired' });
+    }
+    res.json({ status, expiry_date: user.expiry_date || null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/health', async (req, res) => {
+  try {
+    await db._ready;
+    res.json({ status: 'ok', database: 'connected', uptime: process.uptime() });
+  } catch { res.json({ status: 'ok', database: 'disconnected', uptime: process.uptime() }); }
+});
+
+io.on('connection', (socket) => {
+  socket.on('pc:heartbeat', ({ pc_name, group_id, timestamp }) => {
+    console.log(`[♥] Heartbeat from ${pc_name}`);
   });
-  
-  console.log(`📥 API ${method} ${path} response:`, res.status);
-  
-  const d = await res.json();
-  console.log(`📦 API ${method} ${path} data:`, d);
-  
-  if (res.status === 401) { 
-    console.warn('⚠️ API 401 - session expired, logging out');
-    doLogout(); 
-    throw new Error('Session expired'); 
-  }
-  if (!res.ok) throw new Error(d.error||'Error');
-  return d;
-}
 
-async function loadAccounts() {
-  console.log('🔍 Loading accounts...');
-  
-  document.getElementById('accounts-list').innerHTML = 
-    '<div style="text-align:center;padding:40px"><span class="spin"></span></div>';
-  
-  try {
-    console.log('📡 Fetching /api/admin/accounts');
-    const accounts = await api('GET','/admin/accounts');
-    
-    console.log('✅ Accounts received:', accounts.length, 
-      accounts.map(a => ({username: a.username, status: a.status})));
-    
-    state.accounts = accounts;
-    renderAccounts();
-    
-    // Show helpful message if no accounts
-    if (!accounts.length) {
-      console.log('ℹ️ No accounts found in database');
-      document.getElementById('accounts-list').innerHTML = 
-        '<div class="empty-state">' +
-        '<i class="fa-solid fa-users"></i>' +
-        '<h3>No accounts found</h3>' +
-        '<p>Either no one has registered yet, or all accounts are already approved</p>' +
-        '<button class="btn btn-ghost btn-sm" onclick="loadAccounts()" style="margin-top:12px">' +
-        '<i class="fa-solid fa-rotate"></i> Refresh' +
-        '</button>' +
-        '</div>';
+  socket.on('pc:status', ({ pc_name, group_id, is_online }) => {
+    console.log(`[STATUS] ${pc_name} is ${is_online ? 'online' : 'offline'}`);
+    io.to(`group:${group_id}`).emit(`group:${group_id}:pc-status`, { 
+        pc_id: pc_name,
+        is_online 
+    });
+  });
+
+  socket.on('pc:auth', async ({ pc_name, group_id, password }, callback) => {
+    const pc = await db.get('pcs', p => p.name === pc_name && p.group_id === group_id);
+    if (!pc || !bcrypt.compareSync(password, pc.password))
+      return callback({ success: false, error: 'Invalid PC credentials' });
+    socket.join(`pc:${pc.id}`);
+    socket.pcId = pc.id;
+    socket.groupId = group_id;
+    await db.update('pcs', p => p.id === pc.id, { is_online: 1 });
+    io.to(`group:${group_id}`).emit(`group:${group_id}:pc-status`, { pc_id: pc.id, is_online: true });
+    console.log(`[+] PC "${pc_name}" connected`);
+    const now = Math.floor(Date.now()/1000);
+    const swStart = (pc.stopwatch_start && pc.stopwatch_start < now) ? pc.stopwatch_start : 0;
+    const remAuth = pc.session_end > now ? pc.session_end - now : 0;
+    callback({ success: true, pc_id: pc.id, session_end: pc.session_end, stopwatch_start: swStart, remaining_seconds: remAuth });
+  });
+
+  socket.on('pc:apps', async ({ apps }) => {
+    if (!socket.pcId) return;
+    await db.delete('installed_apps', a => a.pc_id === socket.pcId);
+    for (const a of apps)
+      await db.insert('installed_apps', { id: uuidv4(), pc_id: socket.pcId, name: a.name, path: a.path });
+  });
+
+  socket.on('admin:subscribe', ({ group_id, token }) => {
+    try { 
+      jwt.verify(token, JWT_SECRET); 
+      socket.join(`group:${group_id}`);
+      console.log(`[+] Admin subscribed to group:${group_id}`);
+    } catch {}
+  });
+
+  socket.on('admin:history-update', async ({ group_id, pc_id, history }) => {
+    _historyCache[pc_id] = history;
+    io.to(`group:${group_id}`).emit('admin:history-update', { 
+      group_id,
+      pc_id, 
+      history 
+    });
+  });
+
+  socket.on('admin:request-history', async ({ group_id, pc_id }) => {
+    if (_historyCache[pc_id]) {
+      io.to(`group:${group_id}`).emit('admin:history-update', { group_id, pc_id, history: _historyCache[pc_id] });
+    } else {
+      const pc = await db.get('pcs', p => p.id === pc_id);
+      if (pc) {
+        _historyCache[pc_id] = pc.time_history || [];
+        io.to(`group:${group_id}`).emit('admin:history-update', { group_id, pc_id, history: pc.time_history || [] });
+      }
     }
-    
-  } catch(e) {
-    console.error('❌ Failed to load accounts:', e);
-    
-    document.getElementById('accounts-list').innerHTML = 
-      `<div class="empty-state">
-        <i class="fa-solid fa-triangle-exclamation" style="color:var(--red);font-size:32px"></i>
-        <h3>Error Loading Accounts</h3>
-        <p style="color:var(--red);font-family:var(--mono);font-size:11px">${e.message}</p>
-        <button class="btn btn-ghost btn-sm" onclick="loadAccounts()" style="margin-top:12px">
-          <i class="fa-solid fa-rotate"></i> Retry
-        </button>
-      </div>`;
-      
-    toast(e.message,'err');
-  }
-}
+  });
 
-function renderAccounts() {
-  const accts = state.accounts;
-  
-  // Stats
-  document.getElementById('st-total').textContent = accts.length;
-  document.getElementById('st-pending').textContent = accts.filter(a=>a.status==='pending').length;
-  document.getElementById('st-active').textContent = accts.filter(a=>a.status==='active').length;
-  document.getElementById('st-inactive').textContent = accts.filter(a=>a.status==='deactivated'||a.status==='expired').length;
-
-  const el = document.getElementById('accounts-list');
-  if (!accts.length) {
-    el.innerHTML = '<div class="empty-state"><i class="fa-solid fa-users"></i><h3>No accounts yet</h3><p>Users will appear here when they register</p></div>';
-    return;
-  }
-
-  const statusColor = { pending:'#f59e0b', active:'#10b981', expired:'#ef4444', deactivated:'#525252' };
-
-  el.innerHTML = '<div class="accounts-list">' + accts.map(a => {
-    const col = statusColor[a.status] || '#525252';
-    const expiryText = !a.expiry_date ? 'No expiry'
-      : Date.now() > a.expiry_date ? '<span style="color:var(--red)">Expired</span>'
-      : `${Math.ceil((a.expiry_date - Date.now()) / 86400000)} days left`;
-    const lastAct = timeAgo(a.last_active);
-    const label = a.label || '';
-
-    let actions = '';
-    if (a.status === 'pending') {
-      actions += `<button class="btn btn-green btn-sm" onclick="quickApprove('${a.id}')"><i class="fa-solid fa-check"></i> Approve</button>`;
-    } else if (a.status === 'active') {
-      actions += `<button class="btn btn-ghost btn-sm" onclick="quickDeactivate('${a.id}')"><i class="fa-solid fa-pause"></i> Deactivate</button>`;
-    } else if (a.status === 'expired' || a.status === 'deactivated') {
-      actions += `<button class="btn btn-green btn-sm" onclick="quickActivate('${a.id}')"><i class="fa-solid fa-play"></i> Activate</button>`;
+  socket.on('pc:processes', ({ processes }) => {
+    if (socket.pcId && _pendingProcs[socket.pcId]) {
+      _pendingProcs[socket.pcId](processes);
     }
-    actions += `<button class="btn btn-ghost btn-sm" onclick="openEdit('${a.id}')"><i class="fa-solid fa-pen"></i> Edit</button>`;
-    actions += `<button class="btn btn-danger btn-sm" onclick="deleteAccount('${a.id}','${(a.label||a.username).replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button>`;
+  });
 
-    return `<div class="acct-card">
-      <div class="acct-bar" style="background:${col}"></div>
-      <div class="acct-body">
-        <div class="acct-top">
-          <div class="acct-info">
-            <div class="acct-label ${label?'':'empty'}">${label || 'No label set'}</div>
-            <div class="acct-username">@${a.username}</div>
-          </div>
-          <span class="status-badge ${a.status}">${a.status}</span>
-        </div>
-        <div class="acct-meta">
-          <div class="meta-item hl"><i class="fa-solid fa-calendar"></i>${expiryText}</div>
-          ${a.price>0 ? `<div class="meta-item hl"><i class="fa-solid fa-coins"></i>${a.price}/mo</div>` : ''}
-          <div class="meta-item"><i class="fa-solid fa-desktop"></i>${a.pc_count} PCs</div>
-          <div class="meta-item"><i class="fa-solid fa-clock"></i>${lastAct}</div>
-        </div>
-        ${a.notes ? `<div class="acct-notes">${a.notes}</div>` : ''}
-        <div class="acct-actions">${actions}</div>
-      </div>
-    </div>`;
-  }).join('') + '</div>';
-}
+  socket.on('disconnect', async () => {
+    if (socket.pcId) {
+      await db.update('pcs', p => p.id === socket.pcId, { is_online: 0 });
+      if (socket.groupId) {
+        io.to(`group:${socket.groupId}`).emit(`group:${socket.groupId}:pc-status`, { pc_id: socket.pcId, is_online: false });
+      }
+    }
+  });
+});
 
-// ── Quick Actions ──────────────────────────────────────────────────────────────
-async function quickApprove(id) {
-  const expiry = Date.now() + 30 * 86400000;
-  try {
-    await api('PATCH','/admin/accounts/'+id,{ status:'active', expiry_date: expiry });
-    const a = state.accounts.find(x=>x.id===id);
-    if (a) { a.status='active'; a.expiry_date=expiry; }
-    renderAccounts(); toast('Approved — 30 days active','ok');
-  } catch(e) { toast(e.message,'err'); }
-}
-
-async function quickActivate(id) {
-  const expiry = Date.now() + 30 * 86400000;
-  try {
-    await api('PATCH','/admin/accounts/'+id,{ status:'active', expiry_date: expiry });
-    const a = state.accounts.find(x=>x.id===id);
-    if (a) { a.status='active'; a.expiry_date=expiry; }
-    renderAccounts(); toast('Activated — 30 days','ok');
-  } catch(e) { toast(e.message,'err'); }
-}
-
-async function quickDeactivate(id) {
-  if (!confirm('Deactivate this account?')) return;
-  try {
-    await api('PATCH','/admin/accounts/'+id,{ status:'deactivated' });
-    const a = state.accounts.find(x=>x.id===id);
-    if (a) a.status='deactivated';
-    renderAccounts(); toast('Account deactivated','ok');
-  } catch(e) { toast(e.message,'err'); }
-}
-
-async function deleteAccount(id, name) {
-  if (!confirm(`Delete account "${name}"?\n\nThis removes ALL their groups, PCs and data permanently.`)) return;
-  try {
-    await api('DELETE','/admin/accounts/'+id);
-    state.accounts = state.accounts.filter(a=>a.id!==id);
-    renderAccounts(); toast('Account deleted','ok');
-  } catch(e) { toast(e.message,'err'); }
-}
-
-// ── Edit Sheet ─────────────────────────────────────────────────────────────────
-function openEdit(id) {
-  const a = state.accounts.find(x=>x.id===id); if(!a) return;
-  document.getElementById('edit-id').value = id;
-  document.getElementById('edit-title').textContent = 'Edit — ' + (a.label || a.username);
-  document.getElementById('edit-label').value = a.label || '';
-  document.getElementById('edit-status').value = a.status;
-  document.getElementById('edit-price').value = a.price || '';
-  document.getElementById('edit-notes').value = a.notes || '';
-  // Set expiry date
-  if (a.expiry_date) {
-    const d = new Date(a.expiry_date);
-    const local = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
-    document.getElementById('edit-expiry').value = local;
-  } else {
-    document.getElementById('edit-expiry').value = '';
-  }
-  updateExpiryDisplay();
-  document.getElementById('bg-edit').classList.add('open');
-  document.getElementById('sheet-edit').classList.add('open');
-}
-
-function closeEdit() {
-  document.getElementById('sheet-edit').classList.remove('open');
-  document.getElementById('bg-edit').classList.remove('open');
-}
-
-function addCustomDays(forceDays) {
-  const days = forceDays || parseInt(document.getElementById('edit-custom-days').value);
-  if (!days || days < 1) return;
-  if (!forceDays) document.getElementById('edit-custom-days').value = '';
-  // Always adds ON TOP of current expiry (or today if no expiry set)
-  const current = document.getElementById('edit-expiry').value;
-  const base = current ? new Date(current).getTime() : Date.now();
-  const newTs = base + days * 86400000;
-  const d = new Date(newTs);
-  const local = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
-  document.getElementById('edit-expiry').value = local;
-  updateExpiryDisplay();
-}
-
-function setExpiry(days) {
-  const d = new Date(Date.now() + days * 86400000);
-  const local = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
-  document.getElementById('edit-expiry').value = local;
-  updateExpiryDisplay();
-}
-
-function clearExpiry() {
-  document.getElementById('edit-expiry').value = '';
-  updateExpiryDisplay();
-}
-
-function updateExpiryDisplay() {
-  const val = document.getElementById('edit-expiry').value;
-  const disp = document.getElementById('edit-expiry-display');
-  if (!val) { disp.textContent = 'No expiry date — account never expires'; return; }
-  const ts = new Date(val).getTime();
-  const days = Math.ceil((ts - Date.now()) / 86400000);
-  disp.textContent = days > 0 ? `${days} days from now` : `Expired ${Math.abs(days)} days ago`;
-  disp.style.color = days > 5 ? 'var(--green)' : days > 0 ? 'var(--amber)' : 'var(--red)';
-}
-
-async function saveEdit() {
-  const id = document.getElementById('edit-id').value;
-  const expiryVal = document.getElementById('edit-expiry').value;
-  const expiry_date = expiryVal ? new Date(expiryVal).getTime() : null;
-  const updates = {
-    label:       document.getElementById('edit-label').value.trim(),
-    status:      document.getElementById('edit-status').value,
-    price:       parseFloat(document.getElementById('edit-price').value)||0,
-    expiry_date,
-    notes:       document.getElementById('edit-notes').value.trim()
-  };
-  document.getElementById('edit-btn-text').innerHTML='<span class="spin"></span>';
-  try {
-    await api('PATCH','/admin/accounts/'+id, updates);
-    const a = state.accounts.find(x=>x.id===id);
-    if (a) Object.assign(a, updates);
-    closeEdit(); renderAccounts(); toast('Saved','ok');
-  } catch(e) { toast(e.message,'err'); }
-  finally { document.getElementById('edit-btn-text').textContent='Save Changes'; }
-}
-
-// ── Utils ──────────────────────────────────────────────────────────────────────
-function timeAgo(ms) {
-  if (!ms) return 'never';
-  const diff = Date.now() - ms;
-  const m = Math.floor(diff/60000), h = Math.floor(diff/3600000), d = Math.floor(diff/86400000);
-  if (m < 1) return 'just now';
-  if (m < 60) return m+'m ago';
-  if (h < 24) return h+'h ago';
-  if (d < 30) return d+'d ago';
-  return new Date(ms).toLocaleDateString();
-}
-
-function toast(msg, type='ok') {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'toast '+type+' show';
-  clearTimeout(_toastT);
-  _toastT = setTimeout(()=>el.classList.remove('show'), 2800);
-}
-</script>
-</body>
-</html>
+db._ready.then(() => {
+  server.listen(PORT, () => {
+    console.log(`\n🎮 GameZone Server running on port ${PORT}`);
+    console.log(`   Mode: ${process.env.MONGODB_URI ? 'MongoDB (cloud)' : 'Local JSON file'}`);
+    console.log(`   Admin panel: /connect\n`);
+  });
+}).catch(err => {
+  console.error('Failed to connect to database:', err);
+  process.exit(1);
+});
