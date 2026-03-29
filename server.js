@@ -326,7 +326,7 @@ app.post('/api/pcs/:pcId/payment', authMiddleware, accountCheck, async (req, res
 });
 
 app.post('/api/pcs/:pcId/session/start', authMiddleware, accountCheck, async (req, res) => {
-  try {
+  try {const session_id = uuidv4();
     const { pcId } = req.params;
     const { duration_minutes, group_id } = req.body;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
@@ -338,7 +338,7 @@ app.post('/api/pcs/:pcId/session/start', authMiddleware, accountCheck, async (re
     const remaining = duration_minutes * 60;
     io.to(`pc:${pcId}`).emit('session:start', { session_end, duration_minutes, remaining_seconds: remaining });
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end, stopwatch_start: 0, payment_status: pc.payment_status });
-    res.json({ success: true, session_end, remaining_seconds: remaining });
+    res.json({ success: true, session_end, remaining_seconds: remaining, session_id });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -390,7 +390,7 @@ app.post('/api/pcs/:pcId/session/end', authMiddleware, accountCheck, async (req,
 });
 
 app.post('/api/pcs/:pcId/session/stopwatch', authMiddleware, accountCheck, async (req, res) => {
-  try {
+  try {const session_id = uuidv4();
     const { pcId } = req.params;
     const { group_id } = req.body;
     if (!await canManageGroup(req.user.id, group_id)) return res.status(403).json({ error: 'Forbidden' });
@@ -398,7 +398,7 @@ app.post('/api/pcs/:pcId/session/stopwatch', authMiddleware, accountCheck, async
     db.update('pcs', p => p.id === pcId, { session_end: 0, stopwatch_start: started_at }).catch(console.error);
     io.to(`pc:${pcId}`).emit('session:stopwatch', { started_at });
     io.to(`group:${group_id}`).emit('group:'+group_id+':pc-session', { pc_id: pcId, session_end: 0, stopwatch_start: started_at });
-    res.json({ success: true, started_at });
+    res.json({ success: true, started_at, session_id });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
