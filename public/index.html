@@ -1104,24 +1104,47 @@ async function startSessionByAmount() {
         toast('Enter amount or minutes','err'); 
         return; 
     }
-    // ... rest of existing function ...
-closeSheet('sheet-startsession');
-try {
-let totalMins = mins;
-if (amount && amount > 0) {
-const rate = getGroupRate();
-const hours = amount / rate;
-totalMins += Math.floor(hours * 60);
-}
-if (totalMins < 1) { toast('Duration too low','err'); return; }
-const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:totalMins,group_id:state.activeGroup.id});
-updatePcField(state.activePc.id,'session_end',r.session_end);
-updatePcField(state.activePc.id,'stopwatch_start',0);
-lhAdd(state.activePc.id, {type:'add',mins:totalMins,at:Date.now()});
-document.getElementById('session-amount').value = '';
-document.getElementById('session-mins').value = '';
-toast(`Session started: ${totalMins}m`,'ok');
-} catch(e) { toast(e.message,'err'); }
+    closeSheet('sheet-startsession');
+    try {
+        let totalMins = mins;
+        if (amount && amount > 0) {
+            const rate = getGroupRate();
+            const hours = amount / rate;
+            totalMins += Math.floor(hours * 60);
+        }
+        if (totalMins < 1) { 
+            toast('Duration too low','err'); 
+            return; 
+        }
+        
+        console.log(`📡 Starting ${totalMins}m session via input on PC ${state.activePc.id}`);
+        const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{
+            duration_minutes: totalMins,
+            group_id: state.activeGroup.id
+        });
+        
+        updatePcField(state.activePc.id, 'session_end', r.session_end);
+        updatePcField(state.activePc.id, 'stopwatch_start', 0);
+        
+        // ✅ FIXED: Use proper session format (same as chip version)
+        lhAdd(state.activePc.id, {
+            type: 'session',
+            mode: 'paid',
+            session_id: r.session_id || Date.now().toString(),
+            minutes: totalMins,
+            added_minutes: 0,
+            started_at: Date.now(),
+            ended_at: null,
+            status: 'active'
+        });
+        
+        document.getElementById('session-amount').value = '';
+        document.getElementById('session-mins').value = '';
+        toast(`Session started: ${totalMins}m`,'ok');
+    } catch(e) { 
+        console.error('❌ startSessionByAmount error:', e);
+        toast(e.message || 'Failed to start session','err'); 
+    }
 }
 function startCustomSession() {
 const hrs=parseInt(document.getElementById('custom-hrs').value)||0;
