@@ -1155,38 +1155,57 @@ if (!amount && !mins) { toast('Enter amount or minutes','err'); return; }
 closeSheet('sheet-addtime');
 try {
 if (amount && amount > 0) {
-const rate = getGroupRate();
-const hours = amount / rate;
-const calcMins = Math.floor(hours * 60);
-if (calcMins < 1) { toast('Amount too low','err'); return; }
-const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:calcMins,group_id:state.activeGroup.id});
-updatePcField(state.activePc.id, 'session_end', r.session_end);
-
-const history = lhGet(state.activePc.id);
-for (let i = 0; i < history.length; i++) {
-    if (history[i].type === 'session' && history[i].mode === 'paid' && history[i].status === 'active') {
-        history[i].added_minutes = (history[i].added_minutes || 0) + calcMins;
-        break;
+    const rate = getGroupRate();
+    const hours = amount / rate;
+    const calcMins = Math.floor(hours * 60);
+    if (calcMins < 1) { toast('Amount too low','err'); return; }
+    const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:calcMins,group_id:state.activeGroup.id});
+    
+    // ✅ Handle both paid and free timer sessions
+    if (r.stopwatch_start !== undefined) {
+        // Free timer path
+        updatePcField(state.activePc.id, 'stopwatch_start', r.stopwatch_start);
+        _freeTimerAdded += calcMins;
+    } else {
+        // Paid session path
+        updatePcField(state.activePc.id, 'session_end', r.session_end);
     }
-}
-lhSet(state.activePc.id, history);
 
-toast(`Added: $${amount.toFixed(2)} = ${calcMins}m`,'ok');
+    // ✅ Update history entry for BOTH paid and free modes
+    const history = lhGet(state.activePc.id);
+    for (let i = 0; i < history.length; i++) {
+        if (history[i].type === 'session' && history[i].status === 'active') {
+            // Update whether it's paid OR free
+            history[i].added_minutes = (history[i].added_minutes || 0) + calcMins;
+            break;
+        }
+    }
+    lhSet(state.activePc.id, history);
+    
+    toast(`Added: $${amount.toFixed(2)} = ${calcMins}m`,'ok');
 }
 else if (mins && mins > 0) {
-const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
-updatePcField(state.activePc.id, 'session_end', r.session_end);
-
-const history = lhGet(state.activePc.id);
-for (let i = 0; i < history.length; i++) {
-    if (history[i].type === 'session' && history[i].mode === 'paid' && history[i].status === 'active') {
-        history[i].added_minutes = (history[i].added_minutes || 0) + mins;
-        break;
+    const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
+    
+    // ✅ Handle both paid and free timer sessions
+    if (r.stopwatch_start !== undefined) {
+        updatePcField(state.activePc.id, 'stopwatch_start', r.stopwatch_start);
+        _freeTimerAdded += mins;
+    } else {
+        updatePcField(state.activePc.id, 'session_end', r.session_end);
     }
-}
-lhSet(state.activePc.id, history);
 
-toast(`Added: ${mins}m`,'ok');
+    // ✅ Update history entry for BOTH paid and free modes
+    const history = lhGet(state.activePc.id);
+    for (let i = 0; i < history.length; i++) {
+        if (history[i].type === 'session' && history[i].status === 'active') {
+            history[i].added_minutes = (history[i].added_minutes || 0) + mins;
+            break;
+        }
+    }
+    lhSet(state.activePc.id, history);
+
+    toast(`Added: ${mins}m`,'ok');
 }
 document.getElementById('add-amount').value = '';
 document.getElementById('add-mins').value = '';
