@@ -1088,9 +1088,23 @@ async function startSession(mins) {
     }
 }
 async function startSessionByAmount() {
-const amount = parseFloat(document.getElementById('session-amount').value);
-const mins = parseInt(document.getElementById('session-mins').value)||0;
-if (!amount && !mins) { toast('Enter amount or minutes','err'); return; }
+    // ✅ Validate state before proceeding
+    if (!state.activePc || !state.activeGroup) {
+        toast('No PC or group selected','err');
+        console.error('startSessionByAmount: missing state', { 
+            activePc: state.activePc, 
+            activeGroup: state.activeGroup 
+        });
+        return;
+    }
+    
+    const amount = parseFloat(document.getElementById('session-amount').value);
+    const mins = parseInt(document.getElementById('session-mins').value)||0;
+    if (!amount && !mins) { 
+        toast('Enter amount or minutes','err'); 
+        return; 
+    }
+    // ... rest of existing function ...
 closeSheet('sheet-startsession');
 try {
 let totalMins = mins;
