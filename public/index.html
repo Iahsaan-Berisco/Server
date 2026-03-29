@@ -1562,6 +1562,20 @@ function connectSocket() {
             }
         }
     });
+    state.socket.on('admin:history-update', (data) => {
+        console.log('📬 Received history update from another device:', data);
+        
+        if (data.group_id === state.activeGroup?.id && data.pc_id === state.activePc?.id) {
+            const h = data.history || [];
+            localStorage.setItem('gz_history_' + data.pc_id, JSON.stringify(h.slice(0,5)));
+            renderPCActions();
+            console.log('✅ History synced for active PC');
+        } else if (data.group_id === state.activeGroup?.id) {
+            localStorage.setItem('gz_history_' + data.pc_id, JSON.stringify(data.history.slice(0,5)));
+            console.log('✅ History updated in background for PC:', data.pc_id);
+        }
+    });
+}
 }
 const _LH_KEY = 'gz_history_';
 function lhGet(pcId) {
@@ -1569,12 +1583,22 @@ function lhGet(pcId) {
 }
 function lhSet(pcId, entries) {
     localStorage.setItem(_LH_KEY+pcId, JSON.stringify(entries.slice(0,5)));
+    
+    // ✅ Broadcast to other devices when history is modified
+    if (state.socket && state.activeGroup) {
+        state.socket.emit('admin:history-update', {
+            group_id: state.activeGroup.id,
+            pc_id: pcId,
+            history: entries.slice(0,5)
+        });
+    }
 }
 function lhAdd(pcId, entry) {
     const h = lhGet(pcId);
     h.unshift(entry);
     lhSet(pcId, h);
     if (state.socket && state.activeGroup) {
+        console.log('📤 Broadcasting history update:', h.slice(0,5));
         state.socket.emit('admin:history-update', {
             group_id: state.activeGroup.id,
             pc_id: pcId,
