@@ -496,10 +496,16 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--san
 </div>
 <div class="sheet-bg" id="bg-apps" onclick="closeSheet('sheet-apps')"></div>
 <div class="sheet" id="sheet-apps">
-<div class="sheet-handle"></div>
-<div class="sheet-title">Launch App</div>
-<div class="sheet-sub" id="apps-pc-name"></div>
-<div id="apps-list"><div style="text-align:center;padding:28px"><span class="spin"></span></div></div>
+    <div class="sheet-handle"></div>
+    <!-- ✅ FIXED: Added title-row with refresh button -->
+    <div class="sheet-title-row">
+        <div class="sheet-title">Launch App</div>
+        <button class="btn btn-ghost btn-sm" onclick="openApps()" style="padding:6px 12px;font-size:10px">
+            <i class="fa-solid fa-rotate"></i> Refresh
+        </button>
+    </div>
+    <div class="sheet-sub" id="apps-pc-name"></div>
+    <div id="apps-list"><div style="text-align:center;padding:28px"><span class="spin"></span></div></div>
 </div>
 <div class="sheet-bg" id="bg-addadmin" onclick="closeSheet('sheet-addadmin')"></div>
 <div class="sheet" id="sheet-addadmin">
