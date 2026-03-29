@@ -970,29 +970,41 @@ let hHtml = `<div class="section-head" style="justify-content:space-between;marg
 <div class="action-grid" style="padding-bottom:0;margin-bottom:20px;display:block">
 <div style="background:var(--s1);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">`;
 history.forEach(entry => {
-const isFree = entry.type === 'free';
-const isAdd  = entry.type === 'add';
-const col    = isFree ? 'var(--blue)' : isAdd ? 'var(--green)' : 'var(--red)';
-let valStr, label;
-if (isFree && entry.elapsed) {
-valStr = fmtTime(entry.elapsed);
-label = 'Free Session';
-} else if (isFree) {
-valStr = 'FREE';
-label = 'Free Timer';
-} else {
-valStr = (isAdd?'+':'-') + Math.abs(entry.mins) + 'm';
-label = isAdd ? 'Added' : 'Removed';
-}
-hHtml += `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--bd)">
-<span style="font-size:13px;font-weight:700;color:${col};font-family:var(--mono)">${valStr}</span>
-<span style="font-size:11px;color:var(--t3)">${label}</span>
-</div>`;
+    const isSession = entry.type === 'session';
+    const isFree = isSession && entry.mode === 'free';
+    const isPaid = isSession && entry.mode === 'paid';
+    const isEnded = entry.status === 'ended';
+    
+    let valStr, label, icon;
+    
+    if (isSession) {
+        // ✅ New session format
+        if (isFree) {
+            icon = '⏱️';
+            label = isEnded ? 'Free Session (ended)' : 'Free Session';
+            valStr = isEnded && entry.elapsed ? `${entry.elapsed}m` : 'FREE';
+        } else {
+            icon = '⏰';
+            const totalMins = (entry.minutes || 0) + (entry.added_minutes || 0);
+            label = isEnded ? `Session (ended)` : 'Session';
+            valStr = `${totalMins}m`;
+        }
+    } else {
+        // ✅ Legacy format (for backward compatibility)
+        const isAdd = entry.type === 'add';
+        icon = isAdd ? '+' : '-';
+        valStr = (isAdd?'+':'-') + Math.abs(entry.mins) + 'm';
+        label = isAdd ? 'Added' : 'Removed';
+    }
+    
+    const col = isFree ? 'var(--blue)' : 'var(--green)';
+    
+    hHtml += `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--bd)">
+        <span style="font-size:13px;font-weight:700;color:${col};font-family:var(--mono)">${icon} ${valStr}</span>
+        <span style="font-size:11px;color:var(--t3)">${label}</span>
+        ${isEnded ? '<span style="font-size:9px;color:var(--t3);margin-left:auto">(ended)</span>' : ''}
+    </div>`;
 });
-hHtml += '</div></div>';
-sessionArea.innerHTML += hHtml;
-}
-}
 
 async function togglePay(status) {
 if (!state.activePc) return;
@@ -1008,14 +1020,31 @@ toast(newStatus ? 'Marked '+newStatus : 'Payment cleared','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 async function startSession(mins) {
-closeSheet('sheet-startsession');
-try {
-const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{duration_minutes:mins,group_id:state.activeGroup.id});
-updatePcField(state.activePc.id,'session_end',r.session_end);
-updatePcField(state.activePc.id,'stopwatch_start',0);
-lhAdd(state.activePc.id, {type:'add',mins:mins,at:Date.now()});
-toast('Session started','ok');
-} catch(e) { toast(e.message,'err'); }
+    closeSheet('sheet-startsession');
+    try {
+        const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{
+            duration_minutes: mins,
+            group_id: state.activeGroup.id
+        });
+        updatePcField(state.activePc.id, 'session_end', r.session_end);
+        updatePcField(state.activePc.id, 'stopwatch_start', 0);
+        
+        // ✅ Create session entry with session_id for tracking
+        lhAdd(state.activePc.id, {
+            type: 'session',
+            mode: 'paid',
+            session_id: r.session_id || Date.now().toString(),
+            minutes: mins,
+            added_minutes: 0,
+            started_at: Date.now(),
+            ended_at: null,
+            status: 'active'
+        });
+        
+        toast('Session started','ok');
+    } catch(e) { 
+        toast(e.message,'err'); 
+    }
 }
 async function startSessionByAmount() {
 const amount = parseFloat(document.getElementById('session-amount').value);
@@ -1049,79 +1078,185 @@ document.getElementById('custom-mins').value='';
 startSession(total);
 }
 async function startStopwatch() {
-closeSheet('sheet-startsession');
-try {
-const r = await api('POST','/pcs/'+state.activePc.id+'/session/stopwatch',{group_id:state.activeGroup.id});
-updatePcField(state.activePc.id,'stopwatch_start',r.started_at);
-updatePcField(state.activePc.id,'session_end',0);
-_freeTimerStart = r.started_at;
-_freeTimerAdded = 0;
-lhAdd(state.activePc.id, {type:'free',mins:0,at:Date.now()});
-toast('Free timer started','ok');
-} catch(e) { toast(e.message,'err'); }
+    closeSheet('sheet-startsession');
+    try {
+        const r = await api('POST','/pcs/'+state.activePc.id+'/session/stopwatch',{
+            group_id: state.activeGroup.id
+        });
+        updatePcField(state.activePc.id, 'stopwatch_start', r.started_at);
+        updatePcField(state.activePc.id, 'session_end', 0);
+        _freeTimerStart = r.started_at;
+        _freeTimerAdded = 0;
+        
+        // ✅ Create free session entry with session_id
+        lhAdd(state.activePc.id, {
+            type: 'session',
+            mode: 'free',
+            session_id: r.session_id || Date.now().toString(),
+            minutes: 0,
+            added_minutes: 0,
+            started_at: Date.now(),
+            ended_at: null,
+            status: 'active'
+        });
+        
+        toast('Free timer started','ok');
+    } catch(e) { 
+        toast(e.message,'err'); 
+    }
 }
 async function addTime(mins) {
-closeSheet('sheet-addtime');
-try {
-const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
-if (r.stopwatch_start !== undefined) {
-updatePcField(state.activePc.id,'stopwatch_start', r.stopwatch_start);
-_freeTimerAdded += mins;
-toast('+'+mins+'m added to free timer','ok');
-} else {
-updatePcField(state.activePc.id,'session_end', r.session_end);
-lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
-toast('+'+mins+'m added','ok');
-}
-} catch(e) { toast(e.message,'err'); }
+    closeSheet('sheet-addtime');
+    try {
+        const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{
+            minutes: mins,
+            group_id: state.activeGroup.id
+        });
+        
+        if (r.stopwatch_start !== undefined) {
+            // ✅ Free timer: update existing entry instead of creating new one
+            updatePcField(state.activePc.id, 'stopwatch_start', r.stopwatch_start);
+            _freeTimerAdded += mins;
+            
+            // Find and update the active free session entry
+            const history = lhGet(state.activePc.id);
+            for (let i = 0; i < history.length; i++) {
+                if (history[i].type === 'session' && history[i].mode === 'free' && history[i].status === 'active') {
+                    history[i].added_minutes = (history[i].added_minutes || 0) + mins;
+                    break;
+                }
+            }
+            lhSet(state.activePc.id, history);
+            
+            toast('+'+mins+'m added to free timer','ok');
+        } else {
+            // ✅ Paid session: update existing entry instead of creating new one
+            updatePcField(state.activePc.id, 'session_end', r.session_end);
+            
+            // Find and update the active paid session entry
+            const history = lhGet(state.activePc.id);
+            for (let i = 0; i < history.length; i++) {
+                if (history[i].type === 'session' && history[i].mode === 'paid' && history[i].status === 'active') {
+                    history[i].added_minutes = (history[i].added_minutes || 0) + mins;
+                    break;
+                }
+            }
+            lhSet(state.activePc.id, history);
+            
+            toast('+'+mins+'m added','ok');
+        }
+    } catch(e) { 
+        toast(e.message,'err'); 
+    }
 }
 async function addTimeByAmount() {
-const amount = parseFloat(document.getElementById('add-amount').value);
-const mins = parseInt(document.getElementById('add-mins').value)||0;
-if (!amount && !mins) { toast('Enter amount or minutes','err'); return; }
-closeSheet('sheet-addtime');
-try {
-if (amount && amount > 0) {
-const rate = getGroupRate();
-const hours = amount / rate;
-const calcMins = Math.floor(hours * 60);
-if (calcMins < 1) { toast('Amount too low','err'); return; }
-const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:calcMins,group_id:state.activeGroup.id});
-updatePcField(state.activePc.id,'session_end', r.session_end);
-lhAdd(state.activePc.id, {type:'add',mins:calcMins,at:Date.now()});
-toast(`Added: $${amount.toFixed(2)} = ${calcMins}m`,'ok');
-}
-else if (mins && mins > 0) {
-const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:mins,group_id:state.activeGroup.id});
-updatePcField(state.activePc.id,'session_end', r.session_end);
-lhAdd(state.activePc.id, {type:'add',mins,at:Date.now()});
-toast(`Added: ${mins}m`,'ok');
-}
-document.getElementById('add-amount').value = '';
-document.getElementById('add-mins').value = '';
-} catch(e) { toast(e.message,'err'); }
-}
-function addCustomTime() {
-const mins = parseInt(document.getElementById('add-mins').value)||0;
-if (mins<1) { toast('Enter duration','err'); return; }
-document.getElementById('add-mins').value='';
-addTime(mins);
+    const amount = parseFloat(document.getElementById('add-amount').value);
+    const mins = parseInt(document.getElementById('add-mins').value)||0;
+    if (!amount && !mins) { 
+        toast('Enter amount or minutes','err'); 
+        return; 
+    }
+    closeSheet('sheet-addtime');
+    try {
+        if (amount && amount > 0) {
+            const rate = getGroupRate();
+            const hours = amount / rate;
+            const calcMins = Math.floor(hours * 60);
+            if (calcMins < 1) { 
+                toast('Amount too low','err'); 
+                return; 
+            }
+            const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{
+                minutes: calcMins,
+                group_id: state.activeGroup.id
+            });
+            updatePcField(state.activePc.id, 'session_end', r.session_end);
+            
+            // ✅ Update existing entry (no new entry created)
+            const history = lhGet(state.activePc.id);
+            for (let i = 0; i < history.length; i++) {
+                if (history[i].type === 'session' && history[i].mode === 'paid' && history[i].status === 'active') {
+                    history[i].added_minutes = (history[i].added_minutes || 0) + calcMins;
+                    break;
+                }
+            }
+            lhSet(state.activePc.id, history);
+            
+            toast(`Added: $${amount.toFixed(2)} = ${calcMins}m`,'ok');
+        }
+        else if (mins && mins > 0) {
+            const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{
+                minutes: mins,
+                group_id: state.activeGroup.id
+            });
+            updatePcField(state.activePc.id, 'session_end', r.session_end);
+            
+            // ✅ Update existing entry (no new entry created)
+            const history = lhGet(state.activePc.id);
+            for (let i = 0; i < history.length; i++) {
+                if (history[i].type === 'session' && history[i].mode === 'paid' && history[i].status === 'active') {
+                    history[i].added_minutes = (history[i].added_minutes || 0) + mins;
+                    break;
+                }
+            }
+            lhSet(state.activePc.id, history);
+            
+            toast(`Added: ${mins}m`,'ok');
+        }
+        document.getElementById('add-amount').value = '';
+        document.getElementById('add-mins').value = '';
+    } catch(e) { 
+        toast(e.message,'err'); 
+    }
 }
 async function removeTime(mins) {
-closeSheet('sheet-removetime');
-try {
-const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{minutes:-mins,group_id:state.activeGroup.id});
-if (r.session_ended) {
-updatePcField(state.activePc.id,'session_end',0);
-updatePcField(state.activePc.id,'stopwatch_start',0);
-lhAdd(state.activePc.id, {type:'remove',mins,at:Date.now()});
-toast('Session ended — time exceeded','ok');
-} else {
-updatePcField(state.activePc.id,'session_end',r.session_end);
-lhAdd(state.activePc.id, {type:'remove',mins,at:Date.now()});
-toast('-'+mins+'m removed','ok');
-}
-} catch(e) { toast(e.message,'err'); }
+    closeSheet('sheet-removetime');
+    try {
+        const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{
+            minutes: -mins,
+            group_id: state.activeGroup.id
+        });
+        
+        if (r.session_ended) {
+            // ✅ Session ended - finalize the entry
+            updatePcField(state.activePc.id, 'session_end', 0);
+            updatePcField(state.activePc.id, 'stopwatch_start', 0);
+            
+            const history = lhGet(state.activePc.id);
+            for (let i = 0; i < history.length; i++) {
+                if (history[i].type === 'session' && history[i].status === 'active') {
+                    history[i].status = 'ended';
+                    history[i].ended_at = Date.now();
+                    if (history[i].mode === 'free') {
+                        const elapsed = Math.floor((Date.now() - history[i].started_at) / 60000) + (history[i].added_minutes || 0);
+                        history[i].elapsed = elapsed;
+                    } else {
+                        history[i].elapsed = (history[i].minutes || 0) + (history[i].added_minutes || 0);
+                    }
+                    break;
+                }
+            }
+            lhSet(state.activePc.id, history);
+            
+            toast('Session ended — time exceeded','ok');
+        } else {
+            // ✅ Remove time from existing entry (no new entry)
+            updatePcField(state.activePc.id, 'session_end', r.session_end);
+            
+            const history = lhGet(state.activePc.id);
+            for (let i = 0; i < history.length; i++) {
+                if (history[i].type === 'session' && history[i].mode === 'paid' && history[i].status === 'active') {
+                    history[i].added_minutes = (history[i].added_minutes || 0) - mins;
+                    break;
+                }
+            }
+            lhSet(state.activePc.id, history);
+            
+            toast('-'+mins+'m removed','ok');
+        }
+    } catch(e) { 
+        toast(e.message,'err'); 
+    }
 }
 function removeCustomTime() {
 const mins = parseInt(document.getElementById('rem-mins').value)||0;
@@ -1130,26 +1265,41 @@ document.getElementById('rem-mins').value='';
 removeTime(mins);
 }
 function confirmEndSession() {
-if (!confirm('End session on '+state.activePc.name+'?\nScreen will lock immediately.')) return;
-const pc = state.activePc;
-const now = Math.floor(Date.now()/1000);
-if (pc.stopwatch_start > 0 && _freeTimerStart > 0) {
-const baseElapsed = now - _freeTimerStart;
-const totalElapsed = baseElapsed + (_freeTimerAdded * 60);
-const history = lhGet(pc.id);
-for (let i = 0; i < history.length; i++) {
-if (history[i].type === 'free' && !history[i].elapsed) {
-history[i].elapsed = totalElapsed;
-break;
-}
-}
-lhSet(pc.id, history);
-_freeTimerStart = 0;
-_freeTimerAdded = 0;
-}
-api('POST','/pcs/'+state.activePc.id+'/session/end',{group_id:state.activeGroup.id})
-.then(()=>{ updatePcField(state.activePc.id,'session_end',0); updatePcField(state.activePc.id,'stopwatch_start',0); toast('Session ended','ok'); renderPCActions(); })
-.catch(e=>toast(e.message,'err'));
+    if (!confirm('End session on '+state.activePc.name+'?\nScreen will lock immediately.')) return;
+    const pc = state.activePc;
+    const now = Math.floor(Date.now()/1000);
+    
+    // ✅ Finalize the active session entry before ending
+    const history = lhGet(pc.id);
+    for (let i = 0; i < history.length; i++) {
+        if (history[i].type === 'session' && history[i].status === 'active') {
+            history[i].status = 'ended';
+            history[i].ended_at = Date.now();
+            
+            if (history[i].mode === 'free') {
+                // Calculate free timer elapsed time
+                const baseElapsed = now - _freeTimerStart;
+                const totalElapsed = Math.floor(baseElapsed / 60) + (_freeTimerAdded || 0);
+                history[i].elapsed = totalElapsed;
+                _freeTimerStart = 0;
+                _freeTimerAdded = 0;
+            } else {
+                // Calculate paid session total
+                history[i].elapsed = (history[i].minutes || 0) + (history[i].added_minutes || 0);
+            }
+            break;
+        }
+    }
+    lhSet(pc.id, history);
+    
+    api('POST','/pcs/'+state.activePc.id+'/session/end',{group_id:state.activeGroup.id})
+    .then(()=>{ 
+        updatePcField(state.activePc.id,'session_end',0); 
+        updatePcField(state.activePc.id,'stopwatch_start',0); 
+        toast('Session ended','ok'); 
+        renderPCActions(); 
+    })
+    .catch(e=>toast(e.message,'err'));
 }
 async function pcCmd(action) {
 try {
