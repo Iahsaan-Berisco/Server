@@ -1237,11 +1237,6 @@ async function removeTime(mins) {
                     history[i].status = 'ended';
                     history[i].ended_at = Date.now();
 if (history[i].mode === 'free') {
-    // ✅ Use started_at from history entry (persisted & synced)
-    const startTime = history[i].started_at || _freeTimerStart;
-    const baseElapsed = startTime > 0 ? Math.floor((Date.now() - startTime) / 1000) : 0;
-    const totalElapsed = baseElapsed + (history[i].added_minutes || 0);
-    
     // ✅ Safety: Cap at reasonable maximum (12 hours = 720 minutes)
     history[i].elapsed = Math.min(totalElapsed, 720);
     
@@ -1277,7 +1272,6 @@ if (history[i].mode === 'free') {
 function confirmEndSession() {
     if (!confirm('End session on '+state.activePc.name+'?\nScreen will lock immediately.')) return;
     const pc = state.activePc;
-    const now = Math.floor(Date.now()/1000);
     
     const history = lhGet(pc.id);
     for (let i = 0; i < history.length; i++) {
@@ -1286,17 +1280,34 @@ function confirmEndSession() {
             history[i].ended_at = Date.now();
             
             if (history[i].mode === 'free') {
-                // ✅ Use started_at from history (persisted & synced across devices)
-                const startTime = history[i].started_at || _freeTimerStart;
-                const baseElapsed = startTime > 0 ? Math.floor((Date.now() - startTime) / 1000) : 0;
-                const totalElapsed = baseElapsed + (history[i].added_minutes || 0);
+                // ✅ SIMPLE: Read the displayed timer value directly
+                const timerEl = document.querySelector('.timer-big');
+                const timerText = timerEl?.textContent || '00:00';
                 
-                // ✅ Safety cap: 12 hours max (720 minutes)
-                history[i].elapsed = Math.min(totalElapsed, 720);
+                // Parse "MM:SS" or "HH:MM:SS" format to total minutes
+                let totalElapsed = 0;
+                const parts = timerText.split(':').map(p => parseInt(p, 10));
+                
+                if (parts.length === 3) {
+                    // HH:MM:SS format
+                    totalElapsed = parts[0] * 60 + parts[1] + Math.round(parts[2] / 60);
+                } else if (parts.length === 2) {
+                    // MM:SS format
+                    totalElapsed = parts[0] + Math.round(parts[1] / 60);
+                }
+                
+                // Round to nearest minute for display
+                history[i].elapsed = Math.round(totalElapsed);
+                
+                // Safety cap: 12 hours max (720 minutes)
+                if (history[i].elapsed > 720) {
+                    history[i].elapsed = 720;
+                }
                 
                 _freeTimerStart = 0;
                 _freeTimerAdded = 0;
             } else {
+                // Paid session: simple addition
                 history[i].elapsed = (history[i].minutes || 0) + (history[i].added_minutes || 0);
             }
             break;
