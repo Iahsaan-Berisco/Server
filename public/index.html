@@ -1020,28 +1020,29 @@ toast(newStatus ? 'Marked '+newStatus : 'Payment cleared','ok');
 } catch(e) { toast(e.message,'err'); }
 }
 
-async function startSession(mins) {
+async function startStopwatch() {
     closeSheet('sheet-startsession');
     try {
-        const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{
-            duration_minutes: mins,
+        const r = await api('POST','/pcs/'+state.activePc.id+'/session/stopwatch',{
             group_id: state.activeGroup.id
         });
-        updatePcField(state.activePc.id, 'session_end', r.session_end);
-        updatePcField(state.activePc.id, 'stopwatch_start', 0);
+        updatePcField(state.activePc.id, 'stopwatch_start', r.started_at);
+        updatePcField(state.activePc.id, 'session_end', 0);
+        _freeTimerStart = r.started_at;
+        _freeTimerAdded = 0;
         
         lhAdd(state.activePc.id, {
             type: 'session',
-            mode: 'paid',
+            mode: 'free',
             session_id: r.session_id || Date.now().toString(),
-            minutes: mins,
+            minutes: 0,
             added_minutes: 0,
             started_at: Date.now(),
             ended_at: null,
             status: 'active'
         });
         
-        toast('Session started','ok');
+        toast('Free timer started','ok');
     } catch(e) { 
         toast(e.message,'err'); 
     }
@@ -1235,10 +1236,18 @@ async function removeTime(mins) {
                 if (history[i].type === 'session' && history[i].status === 'active') {
                     history[i].status = 'ended';
                     history[i].ended_at = Date.now();
-                    if (history[i].mode === 'free') {
-                        const elapsed = Math.floor((Date.now() - history[i].started_at) / 60000) + (history[i].added_minutes || 0);
-                        history[i].elapsed = elapsed;
-                    } else {
+if (history[i].mode === 'free') {
+    // ✅ Use started_at from history entry (persisted & synced)
+    const startTime = history[i].started_at || _freeTimerStart;
+    const baseElapsed = startTime > 0 ? Math.floor((Date.now() - startTime) / 1000) : 0;
+    const totalElapsed = baseElapsed + (history[i].added_minutes || 0);
+    
+    // ✅ Safety: Cap at reasonable maximum (12 hours = 720 minutes)
+    history[i].elapsed = Math.min(totalElapsed, 720);
+    
+    _freeTimerStart = 0;
+    _freeTimerAdded = 0;
+} else {
                         history[i].elapsed = (history[i].minutes || 0) + (history[i].added_minutes || 0);
                     }
                     break;
@@ -1265,13 +1274,6 @@ async function removeTime(mins) {
         toast(e.message,'err'); 
     }
 }
-function removeCustomTime() {
-const mins = parseInt(document.getElementById('rem-mins').value)||0;
-if (mins<1) { toast('Enter duration','err'); return; }
-document.getElementById('rem-mins').value='';
-removeTime(mins);
-}
-
 function confirmEndSession() {
     if (!confirm('End session on '+state.activePc.name+'?\nScreen will lock immediately.')) return;
     const pc = state.activePc;
@@ -1284,9 +1286,14 @@ function confirmEndSession() {
             history[i].ended_at = Date.now();
             
             if (history[i].mode === 'free') {
-                const baseElapsed = now - _freeTimerStart;
-                const totalElapsed = Math.floor(baseElapsed / 60) + (_freeTimerAdded || 0);
-                history[i].elapsed = totalElapsed;
+                // ✅ Use started_at from history (persisted & synced across devices)
+                const startTime = history[i].started_at || _freeTimerStart;
+                const baseElapsed = startTime > 0 ? Math.floor((Date.now() - startTime) / 1000) : 0;
+                const totalElapsed = baseElapsed + (history[i].added_minutes || 0);
+                
+                // ✅ Safety cap: 12 hours max (720 minutes)
+                history[i].elapsed = Math.min(totalElapsed, 720);
+                
                 _freeTimerStart = 0;
                 _freeTimerAdded = 0;
             } else {
