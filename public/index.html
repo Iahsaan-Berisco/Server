@@ -1047,7 +1047,46 @@ async function startStopwatch() {
         toast(e.message,'err'); 
     }
 }
-
+async function startSession(mins) {
+    // ✅ Validate state before proceeding
+    if (!state.activePc || !state.activeGroup) {
+        toast('No PC or group selected','err');
+        console.error('startSession: missing state', { 
+            activePc: state.activePc, 
+            activeGroup: state.activeGroup 
+        });
+        return;
+    }
+    
+    closeSheet('sheet-startsession');
+    try {
+        console.log(`📡 Starting ${mins}m session on PC ${state.activePc.id}`);
+        const r = await api('POST','/pcs/'+state.activePc.id+'/session/start',{
+            duration_minutes: mins,
+            group_id: state.activeGroup.id
+        });
+        
+        updatePcField(state.activePc.id, 'session_end', r.session_end);
+        updatePcField(state.activePc.id, 'stopwatch_start', 0);
+        
+        // ✅ Create session entry with session_id for tracking
+        lhAdd(state.activePc.id, {
+            type: 'session',
+            mode: 'paid',
+            session_id: r.session_id || Date.now().toString(),
+            minutes: mins,
+            added_minutes: 0,
+            started_at: Date.now(),
+            ended_at: null,
+            status: 'active'
+        });
+        
+        toast('Session started','ok');
+    } catch(e) { 
+        console.error('❌ startSession error:', e);
+        toast(e.message || 'Failed to start session','err'); 
+    }
+}
 async function startSessionByAmount() {
 const amount = parseFloat(document.getElementById('session-amount').value);
 const mins = parseInt(document.getElementById('session-mins').value)||0;
