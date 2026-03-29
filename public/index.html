@@ -1109,14 +1109,23 @@ async function startStopwatch() {
 }
 
 async function addTime(mins) {
+    // ✅ Validate state before proceeding
+    if (!state.activePc || !state.activeGroup) {
+        toast('No PC or group selected','err');
+        console.error('addTime: missing state', { activePc: state.activePc, activeGroup: state.activeGroup });
+        return;
+    }
+    
     closeSheet('sheet-addtime');
     try {
+        console.log(`📡 Adding ${mins}m to PC ${state.activePc.id}`);
         const r = await api('POST','/pcs/'+state.activePc.id+'/session/add-time',{
             minutes: mins,
             group_id: state.activeGroup.id
         });
         
         if (r.stopwatch_start !== undefined) {
+            // Free timer path
             updatePcField(state.activePc.id, 'stopwatch_start', r.stopwatch_start);
             _freeTimerAdded += mins;
             
@@ -1131,6 +1140,7 @@ async function addTime(mins) {
             
             toast('+'+mins+'m added to free timer','ok');
         } else {
+            // Paid session path
             updatePcField(state.activePc.id, 'session_end', r.session_end);
             
             const history = lhGet(state.activePc.id);
@@ -1145,10 +1155,10 @@ async function addTime(mins) {
             toast('+'+mins+'m added','ok');
         }
     } catch(e) { 
-        toast(e.message,'err'); 
+        console.error('❌ addTime error:', e);
+        toast(e.message || 'Failed to add time','err'); 
     }
 }
-
 async function addTimeByAmount() {
 const amount = parseFloat(document.getElementById('add-amount').value);
 const mins = parseInt(document.getElementById('add-mins').value)||0;
@@ -1346,6 +1356,34 @@ window._apps = apps;
 if (!apps.length) { document.getElementById('apps-list').innerHTML='<div style="color:var(--t2);text-align:center;padding:28px;font-size:12px">No shortcuts found.<br>Add .lnk files to the shortcuts folder.</div>'; return; }
 document.getElementById('apps-list').innerHTML = apps.map((a,i)=>`<div class="app-row"><div class="app-name"><i class="fa-solid fa-file"></i>${a.name}</div><button class="launch-btn" onclick="launchApp(${i})"><i class="fa-solid fa-play"></i> Launch</button></div>`).join('');
 } catch(e) { document.getElementById('apps-list').innerHTML='<div style="color:var(--red);text-align:center;padding:20px">Failed to load apps</div>'; }
+}
+    async function refreshApps() {
+    if (!state.activePc || !state.socket) {
+        toast('No PC connected','err');
+        return;
+    }
+    
+    document.getElementById('apps-list').innerHTML = '<div style="text-align:center;padding:28px"><span class="spin"></span><div style="color:var(--t3);font-size:11px;margin-top:10px">Requesting app refresh...</div></div>';
+    
+    // Request PC client to re-scan Launchers folder and send updated list
+    state.socket.emit('command:refresh-apps', { pc_id: state.activePc.id });
+    
+    // Wait 3 seconds then reload apps list from server
+    setTimeout(async () => {
+        try {
+            const apps = await api('GET','/pcs/'+state.activePc.id+'/apps');
+            window._apps = apps;
+            if (!apps.length) { 
+                document.getElementById('apps-list').innerHTML='<div style="color:var(--t2);text-align:center;padding:28px;font-size:12px">No apps found.<br>Add .lnk files to the Launchers folder.</div>'; 
+                return; 
+            }
+            document.getElementById('apps-list').innerHTML = apps.map((a,i)=>`<div class="app-row"><div class="app-name"><i class="fa-solid fa-file"></i>${a.name}</div><button class="launch-btn" onclick="launchApp(${i})"><i class="fa-solid fa-play"></i> Launch</button></div>`).join('');
+            toast('Apps refreshed','ok');
+        } catch(e) { 
+            document.getElementById('apps-list').innerHTML='<div style="color:var(--red);text-align:center;padding:20px">Failed to load apps</div>'; 
+            toast(e.message,'err');
+        }
+    }, 3000);
 }
 async function openKillSheet() {
 document.getElementById('killtasks-pc-name').textContent = 'on '+state.activePc.name;
